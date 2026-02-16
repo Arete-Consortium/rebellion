@@ -129,7 +129,7 @@ name = "eve_rebellion"
 
 [dev-dependencies]
 bevy = { version = "0.15", default-features = false, features = ["dynamic_linking"] }
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 
 [[bench]]
 name = "game_systems"
