@@ -1,8 +1,8 @@
 # EVE Rebellion
 
-[![CI](https://github.com/AreteDriver/eve_rebellion_rust/actions/workflows/ci.yml/badge.svg)](https://github.com/AreteDriver/eve_rebellion_rust/actions)
-[![Release](https://img.shields.io/github/v/release/AreteDriver/eve_rebellion_rust)](https://github.com/AreteDriver/eve_rebellion_rust/releases)
-[![Play Now](https://img.shields.io/badge/Play%20Now-GitHub%20Pages-blue?logo=github)](https://aretedriver.github.io/eve_rebellion_rust)
+[![CI](https://github.com/Arete-Consortium/eve_rebellion_rust/actions/workflows/ci.yml/badge.svg)](https://github.com/Arete-Consortium/eve_rebellion_rust/actions)
+[![Release](https://img.shields.io/github/v/release/Arete-Consortium/eve_rebellion_rust)](https://github.com/Arete-Consortium/eve_rebellion_rust/releases)
+[![Play Now](https://img.shields.io/badge/Play%20Now-GitHub%20Pages-blue?logo=github)](https://arete-consortium.github.io/eve_rebellion_rust)
 [![Play on itch.io](https://img.shields.io/badge/Play-itch.io-FA5C5C?logo=itch.io)](https://aretedriver.itch.io/eve-rebellion)
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)

@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["ARETE"]
 description = "EVE Online arcade shooter suite - Rust/Bevy rewrite"
 license = "MIT"
-repository = "https://github.com/AreteDriver/eve_rebellion_rust"
+repository = "https://github.com/Arete-Consortium/eve_rebellion_rust"
 
 [dependencies]
 # UI
