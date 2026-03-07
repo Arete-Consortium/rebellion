@@ -11,6 +11,10 @@ updates:
       - "rust"
     commit-message:
       prefix: "deps"
+    ignore:
+      # Transitive dep (via aws-lc-rs <- rustls <- reqwest).
+      # Dependabot can't update it directly — must go through aws-lc-rs.
+      - dependency-name: "aws-lc-sys"
     groups:
       rust-minor:
         update-types:
