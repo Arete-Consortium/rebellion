@@ -112,6 +112,13 @@
         import init from './eve_rebellion.js';
 
         async function run() {
+            // Hide loading screen after a short delay — Bevy's init() enters
+            // the browser event loop and never returns/resolves, so we can't
+            // wait for it. The game renders its own loading state via ECS.
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 2000);
+
             try {
                 await init();
             } catch (error) {
@@ -121,20 +128,18 @@
                     || msg.includes('don\'t mind me')
                     || msg.includes('not actually an error')
                     || msg.includes('unreachable');
-                if (!isControlFlow) {
-                    console.error('Failed to initialize:', error);
-                    document.getElementById('loading').innerHTML = `
-                        <div class="error">
-                            <h2>Failed to Load</h2>
-                            <p>An error occurred while loading the game.</p>
-                            <p>${msg}</p>
-                        </div>
-                    `;
-                    return;
+                if (isControlFlow) {
+                    return; // Expected, game is running
                 }
+                console.error('Failed to initialize:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div class="error">
+                        <h2>Failed to Load</h2>
+                        <p>An error occurred while loading the game.</p>
+                        <p>${msg}</p>
+                    </div>
+                `;
             }
-            // Hide loading screen once WASM is running
-            document.getElementById('loading').classList.add('hidden');
         }
 
         run();
