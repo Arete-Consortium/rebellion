@@ -21,8 +21,11 @@ pub struct MusicPlugin;
 impl Plugin for MusicPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MusicAssets>()
-            .init_resource::<MusicState>()
-            .add_systems(Startup, generate_music)
+            .init_resource::<MusicState>();
+
+        // Audio generation and playback only on native — WASM has no wav codec
+        #[cfg(not(target_arch = "wasm32"))]
+        app.add_systems(Startup, generate_music)
             .add_systems(
                 Update,
                 (
