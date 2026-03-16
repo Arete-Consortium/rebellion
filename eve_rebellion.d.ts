@@ -6,17 +6,17 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly main: (a: number, b: number) => number;
-  readonly __wasm_bindgen_func_elem_77973: (a: number, b: number, c: number, d: number) => void;
-  readonly __wasm_bindgen_func_elem_77963: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_74275: (a: number, b: number, c: number) => void;
-  readonly __wasm_bindgen_func_elem_74274: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_77966: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_74205: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_74204: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_77894: (a: number, b: number, c: number) => void;
+  readonly __wasm_bindgen_func_elem_77893: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_77896: (a: number, b: number, c: number) => void;
   readonly __wasm_bindgen_func_elem_11326: (a: number, b: number, c: number) => void;
   readonly __wasm_bindgen_func_elem_11325: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_77964: (a: number, b: number, c: number) => void;
-  readonly __wasm_bindgen_func_elem_72892: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_72891: (a: number, b: number) => void;
-  readonly __wasm_bindgen_func_elem_77971: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_72822: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_72821: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_77901: (a: number, b: number) => void;
+  readonly __wasm_bindgen_func_elem_77903: (a: number, b: number, c: number, d: number) => void;
   readonly __wbindgen_export: (a: number, b: number) => number;
   readonly __wbindgen_export2: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export3: (a: number) => void;
