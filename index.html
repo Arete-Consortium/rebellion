@@ -1,1 +1,134 @@
-# Benchmark Results
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Rebellion - Arcade Space Shooter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #0a0a0f;
+            overflow: hidden;
+        }
+
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            z-index: 1000;
+        }
+
+        #loading h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, #ff6b35, #f7c59f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        #loading p {
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 2rem;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #333;
+            border-top: 4px solid #ff6b35;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #loading.hidden {
+            display: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Error styling */
+        .error {
+            color: #ff4444;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .error h2 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <h1>EVE REBELLION</h1>
+        <p>Loading game assets...</p>
+        <div class="spinner"></div>
+    </div>
+
+    <script type="module">
+        // Check for WebGL2 support
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl2');
+
+        if (!gl) {
+            document.getElementById('loading').innerHTML = `
+                <div class="error">
+                    <h2>WebGL2 Not Supported</h2>
+                    <p>Your browser does not support WebGL2, which is required for this game.</p>
+                    <p>Please try using a modern browser like Chrome, Firefox, or Edge.</p>
+                </div>
+            `;
+            throw new Error('WebGL2 not supported');
+        }
+
+        // Import and run the WASM module
+        import init from './eve_rebellion.js';
+
+        async function run() {
+            try {
+                await init();
+                // Hide loading screen once WASM is initialized
+                document.getElementById('loading').classList.add('hidden');
+            } catch (error) {
+                console.error('Failed to initialize:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div class="error">
+                        <h2>Failed to Load</h2>
+                        <p>An error occurred while loading the game.</p>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        run();
+    </script>
+</body>
+</html>
