@@ -406,7 +406,7 @@ fn check_sprite_loading(
     mut cache: ResMut<ShipSpriteCache>,
     asset_server: Res<AssetServer>,
     time: Res<Time>,
-    mut timer: Local<f32>,
+    mut elapsed: Local<f32>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     if cache.ready {
@@ -414,28 +414,33 @@ fn check_sprite_loading(
         return;
     }
 
-    *timer += time.delta_secs();
+    *elapsed += time.delta_secs();
 
-    // Check every 0.25 seconds
-    if *timer < 0.25 {
-        return;
+    // Don't check too frequently
+    if (*elapsed * 4.0) as u32 == ((*elapsed - time.delta_secs()) * 4.0) as u32 {
+        return; // Same quarter-second bucket
     }
-    *timer = 0.0;
 
-    // Check if all queued sprites are loaded (or failed)
-    let all_done = cache.sprites.values().all(|handle| {
-        use bevy::asset::LoadState;
-        matches!(
-            asset_server.get_load_state(handle.id()),
-            Some(LoadState::Loaded) | Some(LoadState::Failed(_)) | None
-        )
-    });
+    // Count loaded vs total
+    let mut loaded = 0;
+    let mut failed = 0;
+    for handle in cache.sprites.values() {
+        match asset_server.get_load_state(handle.id()) {
+            Some(bevy::asset::LoadState::Loaded) => loaded += 1,
+            Some(bevy::asset::LoadState::Failed(_)) => failed += 1,
+            _ => {} // Still loading or not tracked
+        }
+    }
 
-    if all_done || *timer > 15.0 {
-        let loaded_count = cache.sprites.values().filter(|h| {
-            matches!(asset_server.get_load_state(h.id()), Some(bevy::asset::LoadState::Loaded))
-        }).count();
-        info!("Sprites ready: {}/{} loaded", loaded_count, cache.sprites.len());
+    let total = cache.sprites.len();
+    let done = loaded + failed;
+
+    // Transition when all done OR after 10s timeout
+    if done >= total || *elapsed > 10.0 {
+        info!(
+            "Sprites ready: {}/{} loaded, {} failed, {:.1}s elapsed",
+            loaded, total, failed, *elapsed
+        );
         cache.loading.clear();
         cache.ready = true;
     }
