@@ -197,35 +197,25 @@ fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, mut images: ResMut<
     }
 }
 
-/// Start loading ship sprites (WASM - bundled only, no downloads)
+/// Start loading ship sprites (WASM - use Bevy AssetServer, not filesystem)
 #[cfg(target_arch = "wasm32")]
-fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, mut images: ResMut<Assets<Image>>) {
+fn start_loading_sprites(
+    mut cache: ResMut<ShipSpriteCache>,
+    asset_server: Res<AssetServer>,
+) {
     info!(
-        "Loading {} ship sprites (WASM mode)...",
+        "Loading {} ship sprites (WASM mode via AssetServer)...",
         SHIPS_TO_LOAD.len()
     );
 
-    let bundled_dir = PathBuf::from(BUNDLED_SHIPS_DIR);
-    let mut loaded = 0;
-
     for &type_id in SHIPS_TO_LOAD {
-        let bundled_path = bundled_dir.join(format!("{}.png", type_id));
-        if bundled_path.exists() {
-            match load_image_file(&bundled_path) {
-                Ok(image) => {
-                    let handle = images.add(image);
-                    cache.sprites.insert(type_id, handle);
-                    loaded += 1;
-                }
-                Err(e) => {
-                    warn!("Failed to load sprite {}: {}", type_id, e);
-                }
-            }
-        }
+        let path = format!("ships/{}.png", type_id);
+        let handle: Handle<Image> = asset_server.load(&path);
+        cache.sprites.insert(type_id, handle);
+        cache.loading.push(type_id);
     }
 
-    info!("Loaded {} bundled sprites", loaded);
-    cache.ready = true;
+    info!("Queued {} sprites for loading via AssetServer", SHIPS_TO_LOAD.len());
 }
 
 /// Load an image file (JPEG or PNG) and convert to Bevy Image
@@ -410,11 +400,44 @@ fn check_sprite_loading(
     }
 }
 
-/// Check if sprites are loaded and transition state (WASM - immediate)
+/// Check if sprites are loaded and transition state (WASM - wait for AssetServer)
 #[cfg(target_arch = "wasm32")]
-fn check_sprite_loading(cache: Res<ShipSpriteCache>, mut next_state: ResMut<NextState<GameState>>) {
+fn check_sprite_loading(
+    mut cache: ResMut<ShipSpriteCache>,
+    asset_server: Res<AssetServer>,
+    time: Res<Time>,
+    mut timer: Local<f32>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
     if cache.ready {
         next_state.set(GameState::MainMenu);
+        return;
+    }
+
+    *timer += time.delta_secs();
+
+    // Check every 0.25 seconds
+    if *timer < 0.25 {
+        return;
+    }
+    *timer = 0.0;
+
+    // Check if all queued sprites are loaded (or failed)
+    let all_done = cache.sprites.values().all(|handle| {
+        use bevy::asset::LoadState;
+        matches!(
+            asset_server.get_load_state(handle.id()),
+            Some(LoadState::Loaded) | Some(LoadState::Failed(_)) | None
+        )
+    });
+
+    if all_done || *timer > 15.0 {
+        let loaded_count = cache.sprites.values().filter(|h| {
+            matches!(asset_server.get_load_state(h.id()), Some(bevy::asset::LoadState::Loaded))
+        }).count();
+        info!("Sprites ready: {}/{} loaded", loaded_count, cache.sprites.len());
+        cache.loading.clear();
+        cache.ready = true;
     }
 }
 
