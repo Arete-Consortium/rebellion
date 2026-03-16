@@ -14,7 +14,7 @@ Space arcade shooter suite built with Rust and Bevy
 ## Architecture
 
 ```
-eve_rebellion_rust/
+rebellion/
 ├── .cargo/
 ├── .github/
 │   └── workflows/

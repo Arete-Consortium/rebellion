@@ -2,7 +2,7 @@
 # Colorize ship sprites with faction colors using ImageMagick
 # Preserves original format while tinting
 
-cd /home/arete/projects/eve_rebellion_rust/assets/ships
+cd "$(dirname "$0")/assets/ships"
 
 # Faction color tints (hue rotation in degrees)
 # Amarr: Gold/bronze - warm yellow-orange

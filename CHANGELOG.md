@@ -128,14 +128,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Procedural audio system
 - Ship unlocks and progression
 
-[Unreleased]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.9.0...HEAD
-[1.9.0]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.8.0...v1.9.0
-[1.8.0]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.5.1...v1.8.0
-[1.5.1]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.5.0...v1.5.1
-[1.5.0]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.4.2...v1.5.0
-[1.4.2]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.4.1...v1.4.2
-[1.4.1]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.4.0...v1.4.1
-[1.4.0]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.2.1...v1.3.0
-[1.2.1]: https://github.com/AreteDriver/eve_rebellion_rust/compare/v1.2.0...v1.2.1
-[1.2.0]: https://github.com/AreteDriver/eve_rebellion_rust/releases/tag/v1.2.0
+[Unreleased]: https://github.com/Arete-Consortium/rebellion/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/Arete-Consortium/rebellion/compare/v1.8.0...v1.9.0
+[1.8.0]: https://github.com/Arete-Consortium/rebellion/compare/v1.5.1...v1.8.0
+[1.5.1]: https://github.com/Arete-Consortium/rebellion/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/Arete-Consortium/rebellion/compare/v1.4.2...v1.5.0
+[1.4.2]: https://github.com/Arete-Consortium/rebellion/compare/v1.4.1...v1.4.2
+[1.4.1]: https://github.com/Arete-Consortium/rebellion/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/Arete-Consortium/rebellion/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/Arete-Consortium/rebellion/compare/v1.2.1...v1.3.0
+[1.2.1]: https://github.com/Arete-Consortium/rebellion/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/Arete-Consortium/rebellion/releases/tag/v1.2.0

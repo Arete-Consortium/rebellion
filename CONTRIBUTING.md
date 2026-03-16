@@ -8,7 +8,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 If you find a bug or have a suggestion:
 
-1. Check if the issue already exists in [GitHub Issues](https://github.com/Arete-Consortium/eve_rebellion_rust/issues)
+1. Check if the issue already exists in [GitHub Issues](https://github.com/Arete-Consortium/rebellion/issues)
 2. If not, create a new issue with:
    - Clear description of the problem or suggestion
    - Steps to reproduce (for bugs)
@@ -19,8 +19,8 @@ If you find a bug or have a suggestion:
 
 1. **Fork and clone**
    ```bash
-   git clone https://github.com/Arete-Consortium/eve_rebellion_rust.git
-   cd eve_rebellion_rust
+   git clone https://github.com/Arete-Consortium/rebellion.git
+   cd rebellion
    ```
 
 2. **Install system dependencies**
@@ -79,7 +79,7 @@ If you find a bug or have a suggestion:
 ## Project Structure
 
 ```
-eve_rebellion_rust/
+rebellion/
 ├── src/
 │   ├── main.rs              # Entry point, plugin registration
 │   ├── core/                # Game states, resources, events, constants
