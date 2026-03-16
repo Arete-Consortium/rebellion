@@ -77,7 +77,7 @@ impl EnemyBehavior {
 /// Enemy stats
 #[derive(Component, Debug, Clone)]
 pub struct EnemyStats {
-    /// EVE type ID
+    /// Ship type ID
     pub type_id: u32,
     /// Display name
     pub name: String,
@@ -887,7 +887,7 @@ pub fn get_ship_rotation_correction(type_id: u32) -> f32 {
     }
 }
 
-/// Spawn a single enemy with 3D model, EVE sprite, or fallback color
+/// Spawn a single enemy with 3D model, sprite, or fallback color
 pub fn spawn_enemy(
     commands: &mut Commands,
     type_id: u32,
@@ -1288,7 +1288,7 @@ pub fn spawn_tank(
 // Triglavian Ships (Disintegrator beam weapons with ramping damage)
 // ============================================================================
 
-/// Triglavian ship type IDs (EVE Image Server)
+/// Triglavian ship type IDs
 pub mod triglavian {
     pub const DAMAVIK: u32 = 47269; // Light frigate
     pub const VEDMAK: u32 = 47270; // Cruiser

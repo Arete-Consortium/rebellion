@@ -3,9 +3,9 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use bevy::ecs::world::World;
 use bevy::math::Vec2;
 
-use eve_rebellion::core::{ScoreSystem, StyleGrade};
-use eve_rebellion::systems::collision::SpatialGrid;
-use eve_rebellion::systems::scoring_v2::{ComboHeatSystem, HeatLevel};
+use rebellion::core::{ScoreSystem, StyleGrade};
+use rebellion::systems::collision::SpatialGrid;
+use rebellion::systems::scoring_v2::{ComboHeatSystem, HeatLevel};
 
 fn bench_score_on_kill(c: &mut Criterion) {
     c.bench_function("score_on_kill_x1000", |b| {

@@ -1,6 +1,6 @@
 //! Unified Faction System
 //!
-//! All 4 EVE factions with ships, colors, doctrines, and lore.
+//! All 4 factions with ships, colors, doctrines, and lore.
 
 #![allow(dead_code)]
 
@@ -930,7 +930,7 @@ mod tests {
 
     #[test]
     fn faction_carrier_type_ids() {
-        // These are actual EVE Online type IDs
+        // These are actual ship type IDs
         assert_eq!(Faction::Minmatar.carrier_type_id(), 24483); // Nidhoggur
         assert_eq!(Faction::Amarr.carrier_type_id(), 23757); // Archon
         assert_eq!(Faction::Caldari.carrier_type_id(), 23915); // Chimera

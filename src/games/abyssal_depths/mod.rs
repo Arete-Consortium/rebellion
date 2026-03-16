@@ -1,6 +1,6 @@
 //! Abyssal Depths Mode
 //!
-//! Roguelike extraction mode inspired by EVE Online's Abyssal Deadspace.
+//! Roguelike extraction mode inspired by Abyssal Deadspace.
 //! Navigate through 3 rooms, defeat enemies, and extract before time runs out.
 
 use bevy::prelude::*;

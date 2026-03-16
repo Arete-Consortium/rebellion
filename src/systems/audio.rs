@@ -73,7 +73,7 @@ pub struct SoundAssets {
     pub shield_hit: Option<Handle<AudioSource>>,
     pub armor_hit: Option<Handle<AudioSource>>,
     pub hull_hit: Option<Handle<AudioSource>>,
-    // EVE-style warning alarms
+    // Warning alarms
     pub shield_warning: Option<Handle<AudioSource>>,
     pub armor_warning: Option<Handle<AudioSource>>,
     pub hull_warning: Option<Handle<AudioSource>>,
@@ -167,7 +167,7 @@ fn generate_sounds(
         sounds.hull_hit = Some(audio_sources.add(source));
     }
 
-    // EVE-style warning alarms (when health drops below 20%)
+    // Warning alarms (when health drops below 20%)
     if let Some(source) = generate_shield_warning() {
         sounds.shield_warning = Some(audio_sources.add(source));
     }
@@ -645,7 +645,7 @@ fn play_damage_sounds(
     }
 }
 
-/// Play EVE-style warning sounds when health drops below 20%
+/// Play warning sounds when health drops below 20%
 fn play_health_warnings(
     mut commands: Commands,
     player_query: Query<&crate::entities::ShipStats, With<crate::entities::Player>>,
@@ -733,10 +733,10 @@ fn play_health_warnings(
 }
 
 // =============================================================================
-// EVE-STYLE WARNING SOUND GENERATORS
+// WARNING SOUND GENERATORS
 // =============================================================================
 
-/// Generate shield warning - high-pitched triple beep (EVE style)
+/// Generate shield warning - high-pitched triple beep
 fn generate_shield_warning() -> Option<AudioSource> {
     let sample_rate = 44100u32;
     let duration = 0.6;
@@ -769,7 +769,7 @@ fn generate_shield_warning() -> Option<AudioSource> {
     create_audio_source(&samples, sample_rate)
 }
 
-/// Generate armor warning - mid-tone double beep with urgency (EVE style)
+/// Generate armor warning - mid-tone double beep with urgency
 fn generate_armor_warning() -> Option<AudioSource> {
     let sample_rate = 44100u32;
     let duration = 0.5;
@@ -804,7 +804,7 @@ fn generate_armor_warning() -> Option<AudioSource> {
     create_audio_source(&samples, sample_rate)
 }
 
-/// Generate hull warning - low urgent alarm (EVE style critical warning)
+/// Generate hull warning - low urgent alarm (critical warning)
 fn generate_hull_warning() -> Option<AudioSource> {
     let sample_rate = 44100u32;
     let duration = 0.8;

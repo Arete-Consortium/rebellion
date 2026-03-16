@@ -115,7 +115,7 @@ pub const SALT_MINER_DAMAGE_MULT: f32 = 2.0;
 pub const SALT_MINER_SPEED_MULT: f32 = 1.5;
 
 // =============================================================================
-// CAPACITOR (EVE-STYLE)
+// CAPACITOR
 // =============================================================================
 
 /// Base capacitor for frigates (GJ)
@@ -168,11 +168,11 @@ pub const SIZE_CARRIER: f32 = 600.0;
 pub const PLAYER_SIZE_BONUS: f32 = 1.15;
 
 // =============================================================================
-// EVE IMAGE SERVER
+// IMAGE SERVER
 // =============================================================================
 
-/// EVE Image Server base URL
-pub const EVE_IMAGE_SERVER: &str = "https://images.evetech.net";
+/// Image Server base URL
+pub const IMAGE_SERVER: &str = "https://images.evetech.net";
 
 /// Default ship render size
 pub const SHIP_RENDER_SIZE: u32 = 256;

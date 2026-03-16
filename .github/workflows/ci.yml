@@ -128,8 +128,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: eve_rebellion-linux
-          path: target/release/eve_rebellion
+          name: rebellion-linux
+          path: target/release/rebellion
 
   benchmark:
     name: Benchmark
@@ -196,11 +196,11 @@ jobs:
           wasm-bindgen \
             --out-dir web \
             --target web \
-            target/wasm32-unknown-unknown/release/eve_rebellion.wasm
+            target/wasm32-unknown-unknown/release/rebellion.wasm
 
       - name: Check WASM size
         run: |
-          WASM_SIZE=$(stat -c%s target/wasm32-unknown-unknown/release/eve_rebellion.wasm)
+          WASM_SIZE=$(stat -c%s target/wasm32-unknown-unknown/release/rebellion.wasm)
           WASM_MB=$(echo "scale=2; $WASM_SIZE / 1048576" | bc)
           echo "WASM binary size: ${WASM_MB}MB ($WASM_SIZE bytes)"
           if [ "$WASM_SIZE" -gt 52428800 ]; then
@@ -215,5 +215,5 @@ jobs:
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v7
         with:
-          name: eve_rebellion-wasm
+          name: rebellion-wasm
           path: web/

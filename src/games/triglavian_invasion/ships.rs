@@ -1,6 +1,6 @@
 //! Triglavian Invasion Ship Definitions
 //!
-//! Ship type IDs from EVE Online for both factions.
+//! Ship type IDs for both factions.
 
 use bevy::prelude::*;
 
@@ -12,7 +12,7 @@ pub struct TriglavianShips {
 
 // =============================================================================
 // TRIGLAVIAN COLLECTIVE SHIPS
-// Type IDs from EVE Online
+// Ship type IDs
 // =============================================================================
 
 /// Triglavian ship type IDs
@@ -46,7 +46,7 @@ pub mod triglavian {
 
 // =============================================================================
 // EDENCOM SHIPS
-// Type IDs from EVE Online
+// Ship type IDs
 // =============================================================================
 
 /// EDENCOM ship type IDs

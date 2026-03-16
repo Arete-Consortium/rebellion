@@ -367,7 +367,7 @@ impl Default for AudioSettings {
     }
 }
 
-/// Difficulty levels - EVE-themed
+/// Difficulty levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub enum DifficultyLevel {
     /// Easy - Relaxed gameplay, generous shields, forgiving combat

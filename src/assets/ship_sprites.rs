@@ -1,4 +1,4 @@
-//! EVE Ship Sprite Loading
+//! Ship Sprite Loading
 //!
 //! Loads ship sprites from bundled assets, with fallback to CCP's Image Server.
 //! Priority: assets/ships/{type_id}.png -> cache -> download
@@ -13,7 +13,7 @@ use std::path::PathBuf;
 
 use crate::core::*;
 
-/// EVE Image Server base URL (fallback only)
+/// Image Server base URL (fallback only)
 const IMAGE_SERVER: &str = "https://images.evetech.net";
 
 /// Default render size for downloads
@@ -106,7 +106,7 @@ fn setup_sprite_cache(mut cache: ResMut<ShipSpriteCache>) {
     // Use home directory cache
     let cache_dir = dirs::cache_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("eve_rebellion")
+        .join("rebellion")
         .join("sprites");
 
     // Create directory if it doesn't exist
@@ -131,7 +131,7 @@ fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, mut images: ResMut<
     if cache.cache_dir.as_os_str().is_empty() {
         cache.cache_dir = dirs::cache_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("eve_rebellion")
+            .join("rebellion")
             .join("sprites");
         if let Err(e) = fs::create_dir_all(&cache.cache_dir) {
             warn!("Failed to create sprite cache dir: {}", e);
@@ -280,7 +280,7 @@ fn remove_black_background(img: &mut image::RgbaImage) {
     let (width, height) = img.dimensions();
 
     // First pass: identify background pixels and make them transparent
-    // EVE ship renders have a dark/black background
+    // Ship renders have a dark/black background
     for y in 0..height {
         for x in 0..width {
             let pixel = img.get_pixel(x, y);
@@ -451,7 +451,7 @@ fn check_sprite_loading(
 pub fn get_sprite_cache_dir() -> PathBuf {
     dirs::cache_dir()
         .unwrap_or_else(|| PathBuf::from("."))
-        .join("eve_rebellion")
+        .join("rebellion")
         .join("sprites")
 }
 

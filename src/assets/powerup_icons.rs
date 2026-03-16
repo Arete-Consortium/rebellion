@@ -1,4 +1,4 @@
-//! EVE Powerup Icon Loading
+//! Powerup Icon Loading
 //!
 //! Loads powerup icons from the assets/powerups directory.
 

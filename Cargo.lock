@@ -2212,29 +2212,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "eve_rebellion"
-version = "1.9.0"
-dependencies = [
- "bevy",
- "bevy_egui",
- "console_error_panic_hook",
- "criterion",
- "dirs",
- "fastrand",
- "getrandom 0.3.4",
- "hound",
- "image",
- "libc",
- "rand 0.8.5",
- "reqwest",
- "serde",
- "serde_json",
- "tokio",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "event-listener"
 version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4275,6 +4252,29 @@ checksum = "69aacb76b5c29acfb7f90155d39759a29496aebb49395830e928a9703d2eec2f"
 dependencies = [
  "bytemuck",
  "font-types",
+]
+
+[[package]]
+name = "rebellion"
+version = "1.9.0"
+dependencies = [
+ "bevy",
+ "bevy_egui",
+ "console_error_panic_hook",
+ "criterion",
+ "dirs",
+ "fastrand",
+ "getrandom 0.3.4",
+ "hound",
+ "image",
+ "libc",
+ "rand 0.8.5",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tokio",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]

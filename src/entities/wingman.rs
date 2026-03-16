@@ -230,7 +230,7 @@ pub fn spawn_wingman(
             },
             WingmanWeapon::default(),
             sprite,
-            // EVE renders already face UP - no rotation needed
+            // Ship renders already face UP - no rotation needed
             Transform::from_xyz(spawn_pos.x, spawn_pos.y, LAYER_PLAYER),
         ))
         .id()

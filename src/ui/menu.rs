@@ -1598,7 +1598,7 @@ fn spawn_difficulty_menu(mut commands: Commands, mut selection: ResMut<MenuSelec
                 ..default()
             });
 
-            // Difficulty options - EVE-themed
+            // Difficulty options
             for (i, diff) in Difficulty::all().iter().enumerate() {
                 spawn_difficulty_item(parent, *diff, i);
             }
@@ -3252,12 +3252,12 @@ fn get_horizontal_input(keyboard: &ButtonInput<KeyCode>, joystick: &JoystickStat
 }
 
 // ============================================================================
-// Death Screen (EVE-style frozen corpse in wreckage)
+// Death Screen (frozen corpse in wreckage)
 // ============================================================================
 
-/// EVE UI amber color
-const COLOR_EVE_AMBER: Color = Color::srgb(0.83, 0.66, 0.29);
-const COLOR_EVE_AMBER_BRIGHT: Color = Color::srgb(1.0, 0.8, 0.0);
+/// UI amber color
+const COLOR_AMBER: Color = Color::srgb(0.83, 0.66, 0.29);
+const COLOR_AMBER_BRIGHT: Color = Color::srgb(1.0, 0.8, 0.0);
 
 fn spawn_death_screen(
     mut commands: Commands,
@@ -3379,7 +3379,7 @@ fn spawn_death_screen(
                     font_size: 64.0,
                     ..default()
                 },
-                TextColor(COLOR_EVE_AMBER),
+                TextColor(COLOR_AMBER),
             ));
 
             // Mission failed info
@@ -3417,7 +3417,7 @@ fn spawn_death_screen(
                     font_size: 36.0,
                     ..default()
                 },
-                TextColor(COLOR_EVE_AMBER),
+                TextColor(COLOR_AMBER),
             ));
 
             // Previous high score (if not beaten)
@@ -3586,7 +3586,7 @@ fn spawn_death_screen(
                             border: UiRect::all(Val::Px(2.0)),
                             ..default()
                         },
-                        BorderColor(COLOR_EVE_AMBER),
+                        BorderColor(COLOR_AMBER),
                         BackgroundColor(Color::srgba(0.83, 0.66, 0.29, 0.1)),
                     ))
                     .with_children(|btn| {
@@ -3596,7 +3596,7 @@ fn spawn_death_screen(
                                 font_size: 24.0,
                                 ..default()
                             },
-                            TextColor(COLOR_EVE_AMBER),
+                            TextColor(COLOR_AMBER),
                         ));
                     });
 
@@ -3613,7 +3613,7 @@ fn spawn_death_screen(
                             border: UiRect::all(Val::Px(2.0)),
                             ..default()
                         },
-                        BorderColor(COLOR_EVE_AMBER),
+                        BorderColor(COLOR_AMBER),
                         BackgroundColor(Color::NONE),
                     ))
                     .with_children(|btn| {
@@ -3623,7 +3623,7 @@ fn spawn_death_screen(
                                 font_size: 24.0,
                                 ..default()
                             },
-                            TextColor(COLOR_EVE_AMBER),
+                            TextColor(COLOR_AMBER),
                         ));
                     });
                 });
@@ -3704,10 +3704,10 @@ fn update_death_screen_animation(
     // Update button highlights
     for (button, mut border, mut bg) in button_query.iter_mut() {
         if button.action == selection.selected {
-            border.0 = COLOR_EVE_AMBER_BRIGHT;
+            border.0 = COLOR_AMBER_BRIGHT;
             bg.0 = Color::srgba(1.0, 0.8, 0.0, 0.15);
         } else {
-            border.0 = COLOR_EVE_AMBER;
+            border.0 = COLOR_AMBER;
             bg.0 = Color::NONE;
         }
     }

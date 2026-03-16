@@ -1,6 +1,6 @@
-//! EVE-Style HUD Wheel
+//! HUD Wheel
 //!
-//! EVE Online-inspired HUD display:
+//! Capacitor-style HUD display:
 //! - Three concentric semicircular health arcs (Shield/Armor/Structure)
 //! - Central HEAT gauge with radial spoke pattern (fills as heat builds)
 //! - Speed display at bottom center
@@ -69,7 +69,7 @@ fn update_capacitor_animation(time: Res<Time>, mut anim: ResMut<CapacitorAnimati
     }
 }
 
-/// Draw EVE-style capacitor wheel using egui
+/// Draw capacitor wheel using egui
 fn draw_capacitor_wheel(
     mut egui_ctx: EguiContexts,
     player_query: Query<(&ShipStats, Option<&Movement>), With<Player>>,
@@ -89,7 +89,7 @@ fn draw_capacitor_wheel(
         return;
     };
 
-    // Position at bottom RIGHT corner (EVE style)
+    // Position at bottom RIGHT corner
     let wheel_radius = 38.0; // 30% smaller (was 55)
     let center_x = window.width() - 70.0; // Right side
     let center_y = window.height() - 55.0;
@@ -134,7 +134,7 @@ fn draw_capacitor_wheel(
                 egui::Stroke::new(1.5, egui::Color32::from_rgb(40, 45, 55)),
             );
 
-            // === HEALTH ARCS (top semicircle, EVE style) ===
+            // === HEALTH ARCS (top semicircle) ===
             let arc_width = 5.0; // Scaled down for smaller wheel
             let arc_gap = 1.5;
             let arc_start = -PI; // Left
@@ -142,7 +142,7 @@ fn draw_capacitor_wheel(
 
             // Shield arc (outermost) - grayish white
             let shield_radius = wheel_radius - 2.0;
-            draw_eve_health_arc(
+            draw_health_arc(
                 &painter,
                 center,
                 shield_radius,
@@ -157,7 +157,7 @@ fn draw_capacitor_wheel(
 
             // Armor arc (middle)
             let armor_radius = shield_radius - arc_width - arc_gap;
-            draw_eve_health_arc(
+            draw_health_arc(
                 &painter,
                 center,
                 armor_radius,
@@ -172,7 +172,7 @@ fn draw_capacitor_wheel(
 
             // Structure/Hull arc (innermost)
             let structure_radius = armor_radius - arc_width - arc_gap;
-            draw_eve_health_arc(
+            draw_health_arc(
                 &painter,
                 center,
                 structure_radius,
@@ -237,7 +237,7 @@ fn draw_capacitor_wheel(
         });
 }
 
-/// Get text color based on capacitor percentage - EVE yellow theme
+/// Get text color based on capacitor percentage
 fn capacitor_text_color(pct: f32) -> egui::Color32 {
     if pct < 0.15 {
         egui::Color32::from_rgb(200, 80, 80) // Critical - reddish
@@ -248,8 +248,8 @@ fn capacitor_text_color(pct: f32) -> egui::Color32 {
     }
 }
 
-/// Draw EVE-style health arc (semicircular, segmented)
-fn draw_eve_health_arc(
+/// Draw health arc (semicircular, segmented)
+fn draw_health_arc(
     painter: &egui::Painter,
     center: egui::Pos2,
     radius: f32,
@@ -265,7 +265,7 @@ fn draw_eve_health_arc(
     let total_arc = arc_end - arc_start;
     let segment_arc = (total_arc / num_segments as f32) - segment_gap;
 
-    // EVE fills segments from edges toward center
+    // Fills segments from edges toward center
     let filled_segments = (fill_pct * num_segments as f32).ceil() as u32;
 
     for i in 0..num_segments {
@@ -342,7 +342,7 @@ fn draw_arc_segment(
     }
 }
 
-/// Draw EVE Online-style CAPACITOR display
+/// Draw CAPACITOR display
 /// Bright yellow dashes when full, grey when depleted
 fn draw_capacitor_rings(
     painter: &egui::Painter,
@@ -353,7 +353,7 @@ fn draw_capacitor_rings(
     _heat_pct: f32,
     pulse: f32,
 ) {
-    // EVE style - ring of dashes/cells
+    // Ring of dashes/cells
     let num_cells = 18;
 
     // Cells filled based on capacitor percentage
@@ -373,7 +373,7 @@ fn draw_capacitor_rings(
         // Fill from index 0 up
         let is_filled = i < filled_cells;
 
-        // EVE colors: bright yellow when full, grey when empty
+        // Bright yellow when full, grey when empty
         let filled_color = {
             let pulse_mod = 0.92 + 0.08 * pulse;
             egui::Color32::from_rgb(
@@ -414,7 +414,7 @@ fn draw_capacitor_rings(
     }
 }
 
-/// Draw a single capacitor cell with EVE-style appearance
+/// Draw a single capacitor cell
 fn draw_cap_cell(
     painter: &egui::Painter,
     center: egui::Pos2,

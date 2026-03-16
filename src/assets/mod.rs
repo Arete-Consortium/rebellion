@@ -1,6 +1,6 @@
 //! Asset Management
 //!
-//! Handles loading EVE ship sprites, 3D models, and powerup icons.
+//! Handles loading ship sprites, 3D models, and powerup icons.
 
 pub mod powerup_icons;
 pub mod ship_models;

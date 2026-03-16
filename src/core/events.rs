@@ -143,7 +143,7 @@ pub struct PlaySoundEvent {
 // SUPPORTING TYPES
 // =============================================================================
 
-/// Damage types (EVE Online style)
+/// Damage types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DamageType {
     EM,        // Lasers, smartbombs
@@ -167,7 +167,7 @@ pub enum WeaponType {
 
 /// Ammo types for Minmatar autocannons (affects damage and fire rate)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[allow(clippy::upper_case_acronyms)] // EVE Online uses "EMP" as damage type name
+#[allow(clippy::upper_case_acronyms)] // "EMP" is standard name as damage type name
 pub enum AmmoType {
     /// Balanced ammo - no bonuses or penalties
     #[default]

@@ -28,7 +28,7 @@ pub enum GameState {
     Paused,
 }
 
-/// Game difficulty settings - EVE-themed
+/// Game difficulty settings
 /// (Wraps DifficultyLevel from resources.rs for backwards compatibility)
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, Resource)]
 pub enum Difficulty {
@@ -200,7 +200,7 @@ pub enum MinmatarShip {
 }
 
 impl MinmatarShip {
-    /// Get EVE type ID for this ship
+    /// Get type ID for this ship
     pub fn type_id(&self) -> u32 {
         match self {
             MinmatarShip::Rifter => 587,

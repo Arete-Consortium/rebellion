@@ -1,8 +1,8 @@
-# CLAUDE.md — eve_rebellion_rust
+# CLAUDE.md — rebellion
 
 ## Project Overview
 
-EVE Online arcade shooter suite - Rust/Bevy rewrite
+Space arcade shooter suite built with Rust and Bevy
 
 ## Current State
 
@@ -143,7 +143,7 @@ eve_rebellion_rust/
 - `BackgroundShipClass`
 
 ### Outstanding Items
-- **TODO**: we could test for more things here, like `Set`s and `Map`s. (`web/eve_rebellion.js`)
+- **TODO**: we could test for more things here, like `Set`s and `Map`s. (`web/rebellion.js`)
 
 ## AI Skills
 

@@ -159,7 +159,7 @@ impl BossType {
         }
     }
 
-    pub fn eve_type_id(&self) -> u32 {
+    pub fn type_id(&self) -> u32 {
         match self {
             BossType::None => 0,
             BossType::TransportOverseer => 20185, // Bestower
@@ -601,7 +601,7 @@ mod tests {
         let avatar = BossType::AvatarTitan;
         assert_eq!(avatar.health(), 5000.0);
         assert_eq!(avatar.phases(), 5);
-        assert_eq!(avatar.eve_type_id(), 11567); // Avatar titan type_id
+        assert_eq!(avatar.type_id(), 11567); // Avatar titan type_id
     }
 
     #[test]

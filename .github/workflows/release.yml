@@ -62,7 +62,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           mkdir -p package
-          cp target/${{ matrix.target }}/release/eve_rebellion package/
+          cp target/${{ matrix.target }}/release/rebellion package/
           cp -r assets package/
           cd package
           tar -czvf ../${{ github.event.repository.name }}-${{ matrix.artifact }}.tar.gz *
@@ -71,7 +71,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           mkdir -p package
-          cp target/${{ matrix.target }}/release/eve_rebellion package/
+          cp target/${{ matrix.target }}/release/rebellion package/
           cp -r assets package/
           cd package
           tar -czvf ../${{ github.event.repository.name }}-${{ matrix.artifact }}.tar.gz *
@@ -81,7 +81,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path package
-          Copy-Item target/${{ matrix.target }}/release/eve_rebellion.exe package/
+          Copy-Item target/${{ matrix.target }}/release/rebellion.exe package/
           Copy-Item -Recurse assets package/
           Compress-Archive -Path package/* -DestinationPath ${{ github.event.repository.name }}-${{ matrix.artifact }}.zip
 
@@ -160,14 +160,14 @@ jobs:
 
       - name: Generate JS bindings
         run: |
-          wasm-bindgen --out-dir web --out-name eve_rebellion --target web \
-            target/wasm32-unknown-unknown/release/eve_rebellion.wasm
+          wasm-bindgen --out-dir web --out-name rebellion --target web \
+            target/wasm32-unknown-unknown/release/rebellion.wasm
 
       - name: Copy assets
         run: cp -r assets web/
 
       - name: Copy index.html
-        run: cp web/index.html web/ 2>/dev/null || echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>EVE Rebellion</title><style>body{margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh}canvas{max-width:100%;max-height:100%}</style></head><body><script type="module">import init from "./eve_rebellion.js";init();</script></body></html>' > web/index.html
+        run: cp web/index.html web/ 2>/dev/null || echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rebellion</title><style>body{margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh}canvas{max-width:100%;max-height:100%}</style></head><body><script type="module">import init from "./rebellion.js";init();</script></body></html>' > web/index.html
 
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v7

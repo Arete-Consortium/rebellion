@@ -1178,7 +1178,7 @@ fn spawn_cg_boss(
             fire_rate, // Scaled by difficulty
         },
         sprite,
-        // Rotate 180° to face down (EVE ships face up by default)
+        // Rotate 180° to face down (ships face up by default)
         Transform::from_xyz(0.0, 400.0, 10.0)
             .with_rotation(Quat::from_rotation_z(std::f32::consts::PI)),
     ));
@@ -2518,7 +2518,7 @@ fn spawn_last_stand(
     let titan_type_id = 3764u32;
     let sprite = sprite_cache.get(titan_type_id);
 
-    // Titan size: ~18km long in EVE, frigates ~100m
+    // Titan size: ~18km long, frigates ~100m
     // So titan is ~180x frigate size, but we compress for gameplay
     // Frigates render at ~50px, titan at ~820px (~16x) for visual impact
     let titan_size = 820.0;

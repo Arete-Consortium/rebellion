@@ -1,7 +1,7 @@
 //! Heads-Up Display
 //!
 //! In-game UI: health bars, score, combo, heat, salt miner meter, powerup indicators.
-//! EVE-style status panel with capacitor and health rings.
+//! Status panel with capacitor and health rings.
 
 #![allow(dead_code)]
 

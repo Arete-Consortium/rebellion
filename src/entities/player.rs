@@ -1,6 +1,6 @@
 //! Player Ship Entity
 //!
-//! The player-controlled ship with EVE-style shield/armor/hull.
+//! The player-controlled ship with shield/armor/hull.
 
 #![allow(dead_code)]
 
@@ -24,7 +24,7 @@ pub struct Player;
 /// Player ship stats
 #[derive(Component, Debug, Clone)]
 pub struct ShipStats {
-    /// EVE Online type ID
+    /// Ship type ID
     pub type_id: u32,
     /// Ship display name
     pub name: String,
@@ -109,7 +109,7 @@ impl ShipStats {
         }
     }
 
-    /// Take damage with EVE-style damage application order
+    /// Take damage with shield/armor/hull application order
     /// Returns true if ship is destroyed (legacy compatibility)
     pub fn take_damage(&mut self, damage: f32, damage_type: DamageType) -> bool {
         self.take_damage_detailed(damage, damage_type).destroyed

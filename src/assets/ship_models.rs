@@ -1,4 +1,4 @@
-//! EVE Ship 3D Model Loading
+//! Ship 3D Model Loading
 //!
 //! Loads and caches 3D ship models from GLTF/GLB files.
 //! Falls back to 2D sprites when models are unavailable.

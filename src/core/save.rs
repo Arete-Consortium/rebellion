@@ -127,7 +127,7 @@ impl SaveData {
     fn save_path() -> PathBuf {
         dirs::data_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("eve_rebellion")
+            .join("rebellion")
             .join("save.json")
     }
 
@@ -158,7 +158,7 @@ impl SaveData {
 
         if let Some(window) = window() {
             if let Ok(Some(storage)) = window.local_storage() {
-                if let Ok(Some(data)) = storage.get_item("eve_rebellion_save") {
+                if let Ok(Some(data)) = storage.get_item("rebellion_save") {
                     if let Ok(save) = serde_json::from_str(&data) {
                         info!("Loaded save data from localStorage");
                         return save;
@@ -203,7 +203,7 @@ impl SaveData {
         if let Some(window) = window() {
             if let Ok(Some(storage)) = window.local_storage() {
                 if let Ok(data) = serde_json::to_string(self) {
-                    if storage.set_item("eve_rebellion_save", &data).is_ok() {
+                    if storage.set_item("rebellion_save", &data).is_ok() {
                         info!("Saved progress to localStorage");
                     }
                 }

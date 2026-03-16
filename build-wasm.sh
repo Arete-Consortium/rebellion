@@ -1,9 +1,9 @@
 #!/bin/bash
-# Build EVE Rebellion for WebAssembly
+# Build Rebellion for WebAssembly
 
 set -e
 
-echo "Building EVE Rebellion for WASM..."
+echo "Building Rebellion for WASM..."
 
 # Check for wasm-bindgen-cli
 if ! command -v wasm-bindgen &> /dev/null; then
@@ -20,7 +20,7 @@ echo "Generating JavaScript bindings..."
 wasm-bindgen \
     --out-dir web \
     --target web \
-    target/wasm32-unknown-unknown/release/eve_rebellion.wasm
+    target/wasm32-unknown-unknown/release/rebellion.wasm
 
 # Copy assets
 echo "Copying assets..."
@@ -29,7 +29,7 @@ cp -r assets web/
 # Optimize WASM (optional, requires wasm-opt from binaryen)
 if command -v wasm-opt &> /dev/null; then
     echo "Optimizing WASM..."
-    wasm-opt -Oz -o web/eve_rebellion_bg.wasm web/eve_rebellion_bg.wasm
+    wasm-opt -Oz -o web/rebellion_bg.wasm web/rebellion_bg.wasm
 else
     echo "Note: Install binaryen for WASM optimization (wasm-opt)"
 fi

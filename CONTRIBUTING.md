@@ -1,4 +1,4 @@
-# Contributing to EVE Rebellion
+# Contributing to Rebellion
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
 
@@ -112,7 +112,7 @@ eve_rebellion_rust/
 │   ├── ui/                  # HUD and menus
 │   │   ├── hud.rs           # In-game HUD overlay
 │   │   ├── menu.rs          # Main menu, faction select
-│   │   ├── capacitor.rs     # EVE-style capacitor wheel
+│   │   ├── capacitor.rs     # Capacitor wheel
 │   │   ├── backgrounds.rs   # Parallax starfield rendering
 │   │   └── transitions.rs   # Screen transitions
 │   └── games/               # Campaign modules (Bevy plugins)
@@ -120,7 +120,7 @@ eve_rebellion_rust/
 │       ├── caldari_gallente/ # Battle of Caldari Prime (5 missions + Nightmare)
 │       ├── abyssal_depths/  # Abyssal Deadspace (expansion)
 │       └── triglavian_invasion/ # Triglavian Invasion (in development)
-├── assets/                  # Sprites, icons (EVE Image Server cache)
+├── assets/                  # Sprites, icons
 ├── config/                  # JSON definitions (enemies, bosses, dialogue, stages)
 ├── web/                     # WASM build files and HTML shell
 ├── docs/                    # Design documents and narrative bible

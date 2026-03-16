@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to EVE Rebellion will be documented in this file.
+All notable changes to Rebellion will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Faction-aware dialogue system
 
 ### Changed
-- Capacitor wheel moved to bottom-right corner, EVE-style yellow dashes
+- Capacitor wheel moved to bottom-right corner, capacitor-style yellow dashes
 - Binary size reduced 29% (75MB → 53MB) via profile optimizations
 
 ### Fixed

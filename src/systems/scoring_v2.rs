@@ -18,7 +18,7 @@ pub const COMBO_TIER_3: u32 = 20; // 2.0x
 pub const COMBO_TIER_4: u32 = 50; // 3.0x
 
 /// Heat level classification
-/// Heat system matches Python EVE Rebellion:
+/// Heat system matches Python Rebellion:
 /// - Overheat at 100, exit at 50
 /// - Doesn't block firing, just slows fire rate by 30% when overheated
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -74,7 +74,7 @@ impl HeatLevel {
 }
 
 /// Combo and Heat tracking (works with existing SaltMinerSystem)
-/// Heat values match Python EVE Rebellion
+/// Heat values match Python Rebellion
 #[derive(Resource, Debug)]
 pub struct ComboHeatSystem {
     // === Combo System ===

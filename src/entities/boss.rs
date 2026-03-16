@@ -26,7 +26,7 @@ pub struct BossData {
     pub title: String,
     /// Ship class name
     pub ship_class: String,
-    /// EVE type ID (for sprite)
+    /// Ship type ID (for sprite)
     pub type_id: u32,
     /// Maximum health
     pub max_health: f32,
@@ -570,7 +570,7 @@ pub fn spawn_boss(
             radius: size / 2.0 * 0.8,
         },
         sprite,
-        // EVE renders face UP, rotate 180° to face DOWN
+        // Ship renders face UP, rotate 180° to face DOWN
         transform: Transform::from_xyz(0.0, start_y, LAYER_ENEMIES)
             .with_rotation(Quat::from_rotation_z(std::f32::consts::PI)),
     });

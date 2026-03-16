@@ -1,4 +1,4 @@
-# EVE Rebellion
+# Rebellion
 
 [![CI](https://github.com/Arete-Consortium/eve_rebellion_rust/actions/workflows/ci.yml/badge.svg)](https://github.com/Arete-Consortium/eve_rebellion_rust/actions)
 [![Release](https://img.shields.io/github/v/release/Arete-Consortium/eve_rebellion_rust)](https://github.com/Arete-Consortium/eve_rebellion_rust/releases)
@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20Web-purple.svg)]()
 
-**EVE Rebellion** is a collection of arcade shooters set in the EVE Online universe. Experience pivotal moments in New Eden's history through fast-paced vertical shooter gameplay.
+**Rebellion** is a collection of space arcade shooters. Experience pivotal moments through fast-paced vertical shooter gameplay.
 
 ## Campaigns
 
@@ -31,7 +31,7 @@ Defend New Eden from the Triglavian invasion, or embrace the Flow and fight for 
 
 ## Features
 
-- **Vertical Shooter Action** — Fast-paced shmup gameplay with EVE Online ships and lore
+- **Vertical Shooter Action** — Fast-paced shmup gameplay with faction ships and lore
 - **Multiple Campaigns** — Story-driven missions across different eras of New Eden
 - **Four Factions** — Minmatar, Amarr, Caldari, Gallente (Triglavian coming soon)
 - **Heat & Combo System** — Push your weapons to the limit for score multipliers
@@ -40,7 +40,7 @@ Defend New Eden from the Triglavian invasion, or embrace the Flow and fight for 
 - **Ship Progression** — Unlock faction ships as you advance
 - **The Last Stand** — Defend Shiigeru as a fixed-platform titan battle
 - **Endless Mode** — High-score survival with escalating difficulty
-- **Authentic EVE Visuals** — Ships with faction color tints and parallax starfield
+- **Authentic Visuals** — Ships with faction color tints and parallax starfield
 - **Procedural Audio** — Dynamic soundtrack and sound effects generated at runtime
 - **Layer-Based Damage** — Shield ripples, armor sparks, hull fire with screen shake
 - **Powerup Rarity System** — Common to Epic tiers with orbital particles and glow effects
@@ -96,7 +96,7 @@ eve_rebellion_rust/
 │       ├── caldari_gallente/     # Caldari vs Gallente (5 missions + Nightmare)
 │       ├── abyssal_depths/       # Abyssal Deadspace expansion
 │       └── triglavian_invasion/  # Triglavian Invasion (in development)
-├── assets/               # Sprites, icons (EVE Image Server cache)
+├── assets/               # Sprites, icons
 ├── config/               # JSON configuration
 │   ├── enemies_amarr.json    # Amarr enemy definitions
 │   ├── bosses_campaign.json  # 13-boss campaign structure
