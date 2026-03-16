@@ -114,18 +114,24 @@
         async function run() {
             try {
                 await init();
-                // Hide loading screen once WASM is initialized
-                document.getElementById('loading').classList.add('hidden');
             } catch (error) {
-                console.error('Failed to initialize:', error);
-                document.getElementById('loading').innerHTML = `
-                    <div class="error">
-                        <h2>Failed to Load</h2>
-                        <p>An error occurred while loading the game.</p>
-                        <p>${error.message}</p>
-                    </div>
-                `;
+                // Bevy uses exceptions for control flow in WASM — not a real error
+                if (error.message && error.message.includes('Using exceptions for control flow')) {
+                    console.debug('Bevy WASM control flow exception (expected)');
+                } else {
+                    console.error('Failed to initialize:', error);
+                    document.getElementById('loading').innerHTML = `
+                        <div class="error">
+                            <h2>Failed to Load</h2>
+                            <p>An error occurred while loading the game.</p>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                    return;
+                }
             }
+            // Hide loading screen once WASM is running
+            document.getElementById('loading').classList.add('hidden');
         }
 
         run();
