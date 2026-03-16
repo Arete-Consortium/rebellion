@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["ARETE"]
 description = "Space arcade shooter suite built with Rust and Bevy"
 license = "MIT"
-repository = "https://github.com/Arete-Consortium/eve_rebellion_rust"
+repository = "https://github.com/Arete-Consortium/rebellion"
 
 [dependencies]
 # UI
