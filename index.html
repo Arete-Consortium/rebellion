@@ -115,16 +115,19 @@
             try {
                 await init();
             } catch (error) {
-                // Bevy uses exceptions for control flow in WASM — not a real error
-                if (error.message && error.message.includes('Using exceptions for control flow')) {
-                    console.debug('Bevy WASM control flow exception (expected)');
-                } else {
+                const msg = String(error.message || error);
+                // Bevy/wasm-bindgen uses exceptions for control flow — not a real error
+                const isControlFlow = msg.includes('exceptions for control flow')
+                    || msg.includes('don\'t mind me')
+                    || msg.includes('not actually an error')
+                    || msg.includes('unreachable');
+                if (!isControlFlow) {
                     console.error('Failed to initialize:', error);
                     document.getElementById('loading').innerHTML = `
                         <div class="error">
                             <h2>Failed to Load</h2>
                             <p>An error occurred while loading the game.</p>
-                            <p>${error.message}</p>
+                            <p>${msg}</p>
                         </div>
                     `;
                     return;
