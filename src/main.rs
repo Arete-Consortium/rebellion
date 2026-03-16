@@ -1,7 +1,7 @@
-//! EVE Rebellion - Arcade Space Shooter
+//! Rebellion - Arcade Space Shooter
 //!
-//! A Rust/Bevy rewrite of the Python arcade game inspired by EVE Online.
-//! Features 5 campaigns, EVE-style mechanics, and ship sprites from CCP's Image Server.
+//! A Rust/Bevy space arcade game featuring 5 campaigns,
+//! factional warfare mechanics, and procedural content.
 
 // Bevy systems naturally have complex query types and many parameters
 #![allow(clippy::type_complexity)]
@@ -92,5 +92,5 @@ fn setup(mut commands: Commands) {
     // Use 2D camera - sprites work reliably with this
     commands.spawn(Camera2d);
 
-    info!("EVE Rebellion initialized!");
+    info!("Rebellion initialized!");
 }

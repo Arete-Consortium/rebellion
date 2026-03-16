@@ -1,4 +1,4 @@
-//! EVE Rebellion library crate — exposes game systems for benchmarks.
+//! Rebellion library crate — exposes game systems for benchmarks.
 
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]

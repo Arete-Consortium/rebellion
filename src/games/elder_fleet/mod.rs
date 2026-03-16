@@ -1,7 +1,7 @@
 //! Elder Fleet Invasion Module
 //!
 //! Minmatar Republic vs Amarr Empire campaign.
-//! The original EVE Rebellion campaign - 13 missions across 3 acts.
+//! The original Rebellion campaign - 13 missions across 3 acts.
 
 use super::{ActiveModule, FactionInfo, GameModuleInfo, ModuleRegistry};
 use bevy::prelude::*;

@@ -3,7 +3,7 @@ name = "eve_rebellion"
 version = "1.9.0"
 edition = "2021"
 authors = ["ARETE"]
-description = "EVE Online arcade shooter suite - Rust/Bevy rewrite"
+description = "Space arcade shooter suite built with Rust and Bevy"
 license = "MIT"
 repository = "https://github.com/Arete-Consortium/eve_rebellion_rust"
 

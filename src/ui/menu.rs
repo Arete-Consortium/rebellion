@@ -373,7 +373,7 @@ fn spawn_loading_screen(mut commands: Commands) {
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("EVE REBELLION"),
+                Text::new("REBELLION"),
                 TextFont {
                     font_size: 48.0,
                     ..default()
@@ -440,7 +440,7 @@ fn spawn_main_menu(
         .with_children(|parent| {
             // Title
             parent.spawn((
-                Text::new("EVE REBELLION"),
+                Text::new("REBELLION"),
                 TextFont {
                     font_size: 72.0,
                     ..default()

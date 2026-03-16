@@ -1,4 +1,4 @@
-//! EVE Rebellion Enhanced Scoring System
+//! Rebellion Enhanced Scoring System
 //!
 //! Adds to existing SaltMinerSystem:
 //! - Combo: Consecutive kill chains with timer

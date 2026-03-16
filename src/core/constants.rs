@@ -17,7 +17,7 @@ pub const SCREEN_WIDTH: f32 = 800.0;
 pub const SCREEN_HEIGHT: f32 = 700.0;
 
 /// Window title
-pub const WINDOW_TITLE: &str = "EVE Rebellion";
+pub const WINDOW_TITLE: &str = "Rebellion";
 
 // =============================================================================
 // PLAYER

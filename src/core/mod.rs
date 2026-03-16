@@ -1,4 +1,4 @@
-//! Core game systems and types for EVE Rebellion
+//! Core game systems and types for Rebellion
 //!
 //! This module contains the fundamental building blocks:
 //! - Game states and transitions

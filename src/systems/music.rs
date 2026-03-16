@@ -1,6 +1,6 @@
 //! Music System
 //!
-//! Procedural ambient music for EVE Rebellion.
+//! Procedural ambient music for Rebellion.
 //! Generates atmospheric tracks for menu, gameplay, and boss fights.
 
 #![allow(dead_code)]

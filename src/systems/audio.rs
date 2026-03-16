@@ -1,6 +1,6 @@
 //! Audio System
 //!
-//! Procedural sound effects for EVE Rebellion.
+//! Procedural sound effects for Rebellion.
 //! Uses hound crate for proper WAV generation.
 
 #![allow(dead_code)]
