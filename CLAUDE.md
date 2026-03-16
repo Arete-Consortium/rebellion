@@ -9,7 +9,7 @@ EVE Online arcade shooter suite - Rust/Bevy rewrite
 - **Version**: 1.9.0
 - **Language**: Rust
 - **Files**: 276 across 6 languages
-- **Lines**: 52,983
+- **Lines**: 53,098
 
 ## Architecture
 
@@ -81,13 +81,13 @@ eve_rebellion_rust/
 - Do NOT skip writing tests for new code
 - Do NOT use `any` type — define proper type interfaces
 - Do NOT use `var` — use `const` or `let`
+- Do NOT use `.unwrap()` in production code — use proper error handling
+- Do NOT use `unsafe` without a safety comment
+- Do NOT clone when a reference will do
 - Do NOT use `os.path` — use `pathlib.Path` everywhere
 - Do NOT use bare `except:` — catch specific exceptions
 - Do NOT use mutable default arguments
 - Do NOT use `print()` for logging — use the `logging` module
-- Do NOT use `.unwrap()` in production code — use proper error handling
-- Do NOT use `unsafe` without a safety comment
-- Do NOT clone when a reference will do
 
 ## Dependencies
 
