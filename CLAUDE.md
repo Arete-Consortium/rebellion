@@ -1,93 +1,163 @@
-# EVE Rebellion - Project Instructions
+# CLAUDE.md — eve_rebellion_rust
 
 ## Project Overview
-EVE Online arcade shooter suite built with Rust and Bevy. Features multiple campaigns, faction selection, procedural audio, and WASM support.
 
-**Stack**: Rust, Bevy 0.15, bevy_egui
-**Version**: 1.9.0
-**Platforms**: Linux, Windows, macOS, Web (WASM)
+EVE Online arcade shooter suite - Rust/Bevy rewrite
 
----
+## Current State
+
+- **Version**: 1.9.0
+- **Language**: Rust
+- **Files**: 276 across 6 languages
+- **Lines**: 52,983
 
 ## Architecture
 
 ```
-src/
-├── main.rs           # Entry point, plugin registration
-├── core/             # Game states, resources, events
-├── entities/         # ECS components (Player, Enemy, Projectile)
-├── systems/          # Game logic (collision, spawning, scoring)
-├── ui/               # Menus, HUD, overlays
-├── games/            # Campaign-specific logic
-│   ├── elder_fleet/  # Minmatar/Amarr campaign (13 stages)
-│   └── caldari_gallente/ # CG campaign + Nightmare mode
-├── assets/           # Asset loading, ship sprites
-└── config/           # JSON enemy/boss/dialogue definitions
+eve_rebellion_rust/
+├── .cargo/
+├── .github/
+│   └── workflows/
+├── assets/
+│   ├── audio/
+│   ├── backgrounds/
+│   ├── fonts/
+│   ├── models/
+│   ├── powerups/
+│   ├── ships/
+│   └── sprites/
+├── benches/
+├── config/
+├── docs/
+│   └── harvested_from_python/
+├── games/
+│   └── caldari_gallente/
+├── platforms/
+│   ├── linux/
+│   ├── macos/
+│   ├── web/
+│   └── windows/
+├── src/
+│   ├── assets/
+│   ├── audio/
+│   ├── campaigns/
+│   ├── core/
+│   ├── entities/
+│   ├── esi/
+│   ├── games/
+│   ├── systems/
+│   └── ui/
+├── web/
+│   └── assets/
+├── .gitignore
+├── CHANGELOG.md
+├── CLAUDE.md
+├── CONTRIBUTING.md
+├── Cargo.lock
+├── Cargo.toml
+├── LICENSE
+├── README.md
+├── build-wasm.sh
+├── colorize_sprites.sh
 ```
 
-### Key Systems
-- **GameState**: MainMenu → FactionSelect → Playing → Victory/Death
-- **Scoring**: Chain combos, style grades, Salt Miner mode
-- **Combat**: Shield → Armor → Hull damage model
-- **Campaigns**: Elder Fleet (13 stages), CG (5 missions + Nightmare)
+## Tech Stack
 
----
+- **Language**: Rust, Python, Shell, TypeScript, JavaScript, HTML
+- **Framework**: bevy, rust
+- **Package Manager**: cargo
+- **Linters**: clippy
+- **Test Frameworks**: cargo test
+- **CI/CD**: GitHub Actions
 
-## Development Workflow
+## Coding Standards
 
-```bash
-# Build
-cargo build
+- **Naming**: snake_case
+- **Line Length (p95)**: 74 characters
 
-# Run (debug)
-cargo run
+## Anti-Patterns (Do NOT Do)
 
-# Run (release)
-cargo run --release
+- Do NOT commit secrets, API keys, or credentials
+- Do NOT skip writing tests for new code
+- Do NOT use `any` type — define proper type interfaces
+- Do NOT use `var` — use `const` or `let`
+- Do NOT use `os.path` — use `pathlib.Path` everywhere
+- Do NOT use bare `except:` — catch specific exceptions
+- Do NOT use mutable default arguments
+- Do NOT use `print()` for logging — use the `logging` module
+- Do NOT use `.unwrap()` in production code — use proper error handling
+- Do NOT use `unsafe` without a safety comment
+- Do NOT clone when a reference will do
 
-# Test
-cargo test
+## Dependencies
 
-# Lint
-cargo fmt --check
-cargo clippy
+### Core
+- bevy_egui
+- serde
+- serde_json
+- rand
+- fastrand
+- image
 
-# WASM build
-./build-wasm.sh
-```
+## Domain Context
 
----
+### Key Models/Classes
+- `Ability`
+- `AbilityActivatedEvent`
+- `AbilityAura`
+- `AbilityEffectParticle`
+- `AbilityEffectType`
+- `AbilityEffects`
+- `AbilityEndedEvent`
+- `AbilityIndicatorContainer`
+- `AbilityIndicatorFill`
+- `AbilityIndicatorText`
+- `AbilityKeyHint`
+- `AbilityPlugin`
+- `AbilityType`
+- `AbyssalDepthsPlugin`
+- `AbyssalEnemyText`
 
-## Code Conventions
-- Bevy 0.15 ECS patterns (systems, components, resources)
-- Systems named: `update_*`, `spawn_*`, `handle_*`, `check_*`
-- No `.unwrap()` in game logic — use `.unwrap_or_default()` or proper error handling
-- Components in `entities/`, systems in `systems/`
-- States as enums with `States` derive
+### Domain Terms
+- Abyssal Deadspace
+- Activate Salt Miner
+- Activate Ship Ability
+- Active Buff Visuals
+- Arrow Keys
+- Barrel Roll
+- Based Damage
+- Building Requires Rust
+- CCP
+- CI
 
----
+### Enums/Constants
+- `Ability`
+- `AbilityEffectType`
+- `AbilityType`
+- `AbyssalRoom`
+- `Achievement`
+- `Act`
+- `AmmoType`
+- `Armor`
+- `BackButtonAction`
+- `BackgroundShipClass`
 
-## Asset Pipeline
-- Ship sprites from EVE Image Server (cached in ~/.cache/eve_rebellion/)
-- Sprites embedded in binary for WASM builds
-- Procedural audio generated at startup (no external audio files)
+### Outstanding Items
+- **TODO**: we could test for more things here, like `Set`s and `Map`s. (`web/eve_rebellion.js`)
 
----
+## AI Skills
 
-## Campaigns
+**Installed**: 122 skills in `~/.claude/skills/`
+- `a11y`, `accessibility-checker`, `agent-teams-orchestrator`, `align-debug`, `api-client`, `api-docs`, `api-tester`, `apple-dev-best-practices`, `arch`, `backup`, `brand-voice-architect`, `build`, `changelog`, `ci`, `cicd-pipeline`
+- ... and 107 more
 
-| Campaign | Factions | Stages | Special |
-|----------|----------|--------|---------|
-| Elder Fleet | Minmatar vs Amarr | 13 | Tribe bonuses |
-| Caldari/Gallente | Caldari vs Gallente | 5 | T3 unlocks |
-| Shiigeru Nightmare | Caldari | Endless | Survival mode |
-| Endless Mode | All | Infinite | High score chase |
+**Recommended bundles**: `full-stack-dev`
 
----
+**Recommended skills** (not yet installed):
+- `full-stack-dev`
 
-## CCP Attribution
-```
-EVE Online and the EVE logo are registered trademarks of CCP hf.
-All ship images and EVE-related content are property of CCP.
-This is a fan project, not affiliated with or endorsed by CCP hf.
-```
+## Git Conventions
+
+- Commit messages: Conventional commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`)
+- Branch naming: `feat/description`, `fix/description`
+- Run tests before committing
