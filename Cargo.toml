@@ -109,6 +109,7 @@ features = [
     "bevy_audio",
     "bevy_color",
     "bevy_core_pipeline",
+    "bevy_gilrs",
     "bevy_gltf",
     "bevy_render",
     "bevy_scene",
