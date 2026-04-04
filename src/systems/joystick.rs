@@ -268,10 +268,10 @@ impl JoystickState {
         self.dpad_x > 0 && self.prev_dpad_x <= 0
     }
     pub fn stick_just_up(&self) -> bool {
-        self.left_y < -0.5 && self.prev_left_y >= -0.5
+        self.left_y > 0.5 && self.prev_left_y <= 0.5 // Bevy: up = +1.0
     }
     pub fn stick_just_down(&self) -> bool {
-        self.left_y > 0.5 && self.prev_left_y <= 0.5
+        self.left_y < -0.5 && self.prev_left_y >= -0.5 // Bevy: down = -1.0
     }
 
     pub fn movement(&self) -> Vec2 {
@@ -280,7 +280,7 @@ impl JoystickState {
 
     pub fn movement_with_deadzone(&self, deadzone: f32) -> Vec2 {
         let mut x = self.left_x;
-        let mut y = -self.left_y;
+        let mut y = self.left_y; // Bevy: up = +1.0, matches game coords
         if x.abs() < deadzone {
             x = 0.0;
         }
@@ -291,7 +291,7 @@ impl JoystickState {
             x = self.dpad_x as f32;
         }
         if self.dpad_y != 0 {
-            y = -self.dpad_y as f32;
+            y = -self.dpad_y as f32; // D-pad: up = -1 in our convention
         }
         Vec2::new(x, y)
     }
@@ -301,7 +301,7 @@ impl JoystickState {
     }
 
     pub fn aim_direction_with_deadzone(&self, deadzone: f32) -> Option<Vec2> {
-        let aim = Vec2::new(self.right_x, -self.right_y);
+        let aim = Vec2::new(self.right_x, self.right_y); // Bevy: up = +1.0
         if aim.length() > deadzone {
             Some(aim.normalize())
         } else {
@@ -393,19 +393,27 @@ impl Plugin for JoystickPlugin {
 fn detect_gamepad(
     mut state: ResMut<JoystickState>,
     mut profile: ResMut<ControllerProfile>,
-    gamepads: Query<(Entity, &Gamepad), Added<Gamepad>>,
+    gamepads: Query<(Entity, &Gamepad)>,
     names: Query<&Name>,
 ) {
-    for (entity, _gamepad) in gamepads.iter() {
-        state.connected = true;
+    let count = gamepads.iter().count();
 
-        let name = names
-            .get(entity)
-            .map(|n| n.as_str().to_string())
-            .unwrap_or_else(|_| "Unknown Controller".to_string());
+    if count > 0 && !state.connected {
+        // First detection
+        if let Some((entity, _gamepad)) = gamepads.iter().next() {
+            state.connected = true;
 
-        info!("Gamepad connected: {}", name);
-        *profile = ControllerProfile::from_name(&name);
+            let name = names
+                .get(entity)
+                .map(|n| n.as_str().to_string())
+                .unwrap_or_else(|_| "Unknown Controller".to_string());
+
+            info!("Gamepad connected: {} ({} gamepad(s) found)", name, count);
+            *profile = ControllerProfile::from_name(&name);
+        }
+    } else if count == 0 && state.connected {
+        state.connected = false;
+        info!("Gamepad disconnected");
     }
 }
 
@@ -429,15 +437,12 @@ fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
 
     state.connected = true;
 
-    // Axes
+    // Axes — store raw Bevy values (up = +1.0)
+    // movement() and aim_direction() handle coordinate conversion
     state.left_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
     state.left_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
-    // Bevy Y axis: up = +1, but our JoystickState convention: up = -1 (Linux convention)
-    // The movement() method already inverts Y, so keep raw Bevy values but negate to match
-    state.left_y = -state.left_y;
-
     state.right_x = gamepad.get(GamepadAxis::RightStickX).unwrap_or(0.0);
-    state.right_y = -gamepad.get(GamepadAxis::RightStickY).unwrap_or(0.0);
+    state.right_y = gamepad.get(GamepadAxis::RightStickY).unwrap_or(0.0);
 
     state.left_trigger = gamepad.get(GamepadAxis::LeftZ).unwrap_or(0.0).max(0.0);
     state.right_trigger = gamepad.get(GamepadAxis::RightZ).unwrap_or(0.0).max(0.0);
