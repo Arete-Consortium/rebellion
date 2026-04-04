@@ -45,6 +45,11 @@ fn main() {
                 title: core::WINDOW_TITLE.into(),
                 resolution: (core::SCREEN_WIDTH, core::SCREEN_HEIGHT).into(),
                 resizable: true,
+                // WASM: fit the canvas to the browser window
+                fit_canvas_to_parent: true,
+                // WASM: prevent right-click context menu on canvas
+                prevent_default_event_handling: true,
+                canvas: Some("#bevy-canvas".to_string()),
                 ..default()
             }),
             ..default()
