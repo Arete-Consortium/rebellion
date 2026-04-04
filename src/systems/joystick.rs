@@ -1,10 +1,9 @@
-//! Raw Linux Joystick Input
+//! Cross-Platform Gamepad Input
 //!
-//! Reads from /dev/input/js0 directly without needing libudev-dev.
-//! On non-Unix platforms, provides a no-op implementation.
+//! Uses Bevy's built-in Gamepad API for controller support on all platforms
+//! including WASM (browser Gamepad API), Linux, Windows, macOS, and Steam Deck.
 //!
-//! Also provides rumble/haptic feedback via Bevy's gamepad system.
-//! Includes Steam Deck controller profile with tuned deadzones.
+//! Provides a unified JoystickState resource consumed by all game systems.
 
 #![allow(dead_code)]
 
@@ -32,21 +31,13 @@ pub enum ControllerType {
 /// Controller-specific tuning parameters
 #[derive(Resource, Debug, Clone)]
 pub struct ControllerProfile {
-    /// Detected controller type
     pub controller_type: ControllerType,
-    /// Controller name (from device)
     pub name: String,
-    /// Left stick deadzone (movement)
     pub left_stick_deadzone: f32,
-    /// Right stick deadzone (aiming)
     pub right_stick_deadzone: f32,
-    /// Trigger deadzone
     pub trigger_deadzone: f32,
-    /// Movement sensitivity multiplier
     pub movement_sensitivity: f32,
-    /// Aim sensitivity multiplier
     pub aim_sensitivity: f32,
-    /// Rumble intensity multiplier
     pub rumble_multiplier: f32,
 }
 
@@ -66,67 +57,59 @@ impl Default for ControllerProfile {
 }
 
 impl ControllerProfile {
-    /// Steam Deck optimized profile
     pub fn steam_deck() -> Self {
         Self {
             controller_type: ControllerType::SteamDeck,
             name: "Steam Deck".to_string(),
-            left_stick_deadzone: 0.12,  // Steam Deck sticks are precise
-            right_stick_deadzone: 0.15, // Tighter for aiming
-            trigger_deadzone: 0.08,     // Steam Deck triggers are responsive
+            left_stick_deadzone: 0.12,
+            right_stick_deadzone: 0.15,
+            trigger_deadzone: 0.08,
             movement_sensitivity: 1.0,
-            aim_sensitivity: 0.9,   // Slightly higher for twin-stick
-            rumble_multiplier: 0.7, // Steam Deck haptics are subtle
+            aim_sensitivity: 0.9,
+            rumble_multiplier: 0.7,
         }
     }
 
-    /// Xbox controller profile
     pub fn xbox() -> Self {
         Self {
             controller_type: ControllerType::Xbox,
-            name: "Xbox".to_string(),
+            name: "Xbox Controller".to_string(),
             left_stick_deadzone: 0.15,
-            right_stick_deadzone: 0.20,
+            right_stick_deadzone: 0.18,
             trigger_deadzone: 0.10,
             movement_sensitivity: 1.0,
-            aim_sensitivity: 0.8,
+            aim_sensitivity: 0.85,
             rumble_multiplier: 1.0,
         }
     }
 
-    /// PlayStation DualSense profile
     pub fn playstation() -> Self {
         Self {
             controller_type: ControllerType::PlayStation,
-            name: "PlayStation".to_string(),
+            name: "PlayStation Controller".to_string(),
             left_stick_deadzone: 0.12,
-            right_stick_deadzone: 0.18,
-            trigger_deadzone: 0.05, // DualSense triggers are very precise
+            right_stick_deadzone: 0.15,
+            trigger_deadzone: 0.08,
             movement_sensitivity: 1.0,
-            aim_sensitivity: 0.85,
-            rumble_multiplier: 0.8, // DualSense haptics are strong
+            aim_sensitivity: 0.9,
+            rumble_multiplier: 0.9,
         }
     }
 
-    /// Detect profile from controller name
     pub fn from_name(name: &str) -> Self {
         let lower = name.to_lowercase();
-
-        if lower.contains("steam") || lower.contains("deck") || lower.contains("valve") {
-            info!("Detected Steam Deck controller");
+        if lower.contains("steam deck") || lower.contains("steamdeck") {
             Self::steam_deck()
-        } else if lower.contains("xbox") || lower.contains("microsoft") {
-            info!("Detected Xbox controller");
+        } else if lower.contains("xbox") || lower.contains("microsoft") || lower.contains("xinput")
+        {
             Self::xbox()
         } else if lower.contains("playstation")
-            || lower.contains("dualsense")
             || lower.contains("dualshock")
+            || lower.contains("dualsense")
             || lower.contains("sony")
         {
-            info!("Detected PlayStation controller");
             Self::playstation()
         } else {
-            info!("Unknown controller type, using default profile: {}", name);
             Self {
                 name: name.to_string(),
                 ..Default::default()
@@ -135,7 +118,10 @@ impl ControllerProfile {
     }
 }
 
-/// Back button actions for Steam Deck (L4/R4/L5/R5)
+// =============================================================================
+// BACK BUTTON CONFIG
+// =============================================================================
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BackButtonAction {
     AmmoPrev,
@@ -146,16 +132,11 @@ pub enum BackButtonAction {
     None,
 }
 
-/// Steam Deck back button mappings
 #[derive(Resource, Debug, Clone)]
 pub struct BackButtonConfig {
-    /// L4 button action (button 13 on many controllers)
     pub l4: BackButtonAction,
-    /// L5 button action (button 15)
     pub l5: BackButtonAction,
-    /// R4 button action (button 14)
     pub r4: BackButtonAction,
-    /// R5 button action (button 16)
     pub r5: BackButtonAction,
 }
 
@@ -170,10 +151,12 @@ impl Default for BackButtonConfig {
     }
 }
 
-/// Rumble/haptic feedback settings
+// =============================================================================
+// RUMBLE
+// =============================================================================
+
 #[derive(Resource, Debug)]
 pub struct RumbleSettings {
-    /// Rumble intensity multiplier (0.0 = off, 1.0 = full)
     pub intensity: f32,
 }
 
@@ -183,277 +166,13 @@ impl Default for RumbleSettings {
     }
 }
 
-/// Joystick input plugin
-pub struct JoystickPlugin;
-
-impl Plugin for JoystickPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<JoystickState>()
-            .init_resource::<RumbleSettings>()
-            .init_resource::<ControllerProfile>()
-            .init_resource::<BackButtonConfig>()
-            .add_event::<RumbleRequest>()
-            .add_event::<BackButtonEvent>()
-            .add_systems(Update, (process_rumble_requests, process_back_buttons));
-
-        #[cfg(unix)]
-        {
-            app.add_systems(Startup, setup_joystick)
-                .add_systems(PreUpdate, poll_joystick);
-        }
-
-        #[cfg(not(unix))]
-        {
-            info!("Joystick support is only available on Unix platforms");
-        }
-    }
-}
-
-/// Event fired when a back button action is triggered
-#[derive(Event, Debug, Clone, Copy)]
-pub struct BackButtonEvent {
-    pub action: BackButtonAction,
-}
-
-/// Current joystick state
-/// Controller mapping (Xbox style - twin-stick shooter):
-/// - Left stick: movement
-/// - Right stick: aim AND fire (push to shoot in that direction)
-/// - RT (right trigger): special ability (FREE - was fire)
-/// - LT (left trigger): available
-/// - A (button 0): context action / menu confirm
-/// - B (button 1): emergency burn / menu back
-/// - Y (button 3): formation switch
-/// - RB (button 5): barrel roll
-/// - LB (button 4): thrust
-/// - Start (button 7): pause
-#[derive(Resource, Default, Debug)]
-pub struct JoystickState {
-    /// Left stick X axis (-1.0 to 1.0)
-    pub left_x: f32,
-    /// Left stick Y axis (-1.0 to 1.0)
-    pub left_y: f32,
-    /// Right stick X axis
-    pub right_x: f32,
-    /// Right stick Y axis
-    pub right_y: f32,
-    /// Left trigger (0.0 to 1.0)
-    pub left_trigger: f32,
-    /// Right trigger (0.0 to 1.0)
-    pub right_trigger: f32,
-    /// D-pad X (-1, 0, 1)
-    pub dpad_x: i8,
-    /// D-pad Y (-1, 0, 1)
-    pub dpad_y: i8,
-    /// Previous D-pad state for edge detection
-    pub prev_dpad_x: i8,
-    pub prev_dpad_y: i8,
-    /// Previous analog stick Y for edge detection
-    pub prev_left_y: f32,
-    /// Buttons (indexed by button number) - current frame
-    pub buttons: [bool; 16],
-    /// Buttons from previous frame (for just_pressed detection)
-    pub prev_buttons: [bool; 16],
-    /// Whether joystick is connected
-    pub connected: bool,
-}
-
-impl JoystickState {
-    /// Check if a button was just pressed this frame (edge detection)
-    pub fn just_pressed(&self, button: usize) -> bool {
-        button < 16 && self.buttons[button] && !self.prev_buttons[button]
-    }
-
-    /// Check if dpad just moved in a direction (edge detection)
-    pub fn dpad_just_up(&self) -> bool {
-        self.dpad_y < 0 && self.prev_dpad_y >= 0
-    }
-
-    pub fn dpad_just_down(&self) -> bool {
-        self.dpad_y > 0 && self.prev_dpad_y <= 0
-    }
-
-    pub fn dpad_just_left(&self) -> bool {
-        self.dpad_x < 0 && self.prev_dpad_x >= 0
-    }
-
-    pub fn dpad_just_right(&self) -> bool {
-        self.dpad_x > 0 && self.prev_dpad_x <= 0
-    }
-
-    /// Check if left stick just moved up (edge detection)
-    pub fn stick_just_up(&self) -> bool {
-        self.left_y < -0.5 && self.prev_left_y >= -0.5
-    }
-
-    /// Check if left stick just moved down (edge detection)
-    pub fn stick_just_down(&self) -> bool {
-        self.left_y > 0.5 && self.prev_left_y <= 0.5
-    }
-
-    /// Get movement vector from left stick with deadzone (uses default deadzone)
-    pub fn movement(&self) -> Vec2 {
-        self.movement_with_deadzone(DEFAULT_DEADZONE)
-    }
-
-    /// Get movement vector with custom deadzone from controller profile
-    pub fn movement_with_deadzone(&self, deadzone: f32) -> Vec2 {
-        let mut x = self.left_x;
-        let mut y = -self.left_y; // Invert Y for game coordinates
-
-        // Apply deadzone
-        if x.abs() < deadzone {
-            x = 0.0;
-        }
-        if y.abs() < deadzone {
-            y = 0.0;
-        }
-
-        // Combine with dpad
-        if self.dpad_x != 0 {
-            x = self.dpad_x as f32;
-        }
-        if self.dpad_y != 0 {
-            y = -self.dpad_y as f32;
-        }
-
-        Vec2::new(x, y)
-    }
-
-    /// Get aim direction from right stick (twin-stick shooter style)
-    /// Returns normalized direction if stick is pushed past deadzone, None otherwise
-    pub fn aim_direction(&self) -> Option<Vec2> {
-        self.aim_direction_with_deadzone(0.3)
-    }
-
-    /// Get aim direction with custom deadzone from controller profile
-    pub fn aim_direction_with_deadzone(&self, deadzone: f32) -> Option<Vec2> {
-        let aim = Vec2::new(self.right_x, -self.right_y); // Invert Y for game coordinates
-        let magnitude = aim.length();
-
-        if magnitude > deadzone {
-            Some(aim.normalize())
-        } else {
-            None
-        }
-    }
-
-    /// Check back button L4 (button 13 on Steam Deck)
-    pub fn l4_just_pressed(&self) -> bool {
-        self.just_pressed(13)
-    }
-
-    /// Check back button L5 (button 15 on Steam Deck)
-    pub fn l5_just_pressed(&self) -> bool {
-        self.just_pressed(15)
-    }
-
-    /// Check back button R4 (button 14 on Steam Deck)
-    pub fn r4_just_pressed(&self) -> bool {
-        self.just_pressed(14)
-    }
-
-    /// Check back button R5 (button 16 - may need adjustment per controller)
-    pub fn r5_just_pressed(&self) -> bool {
-        // Some controllers use button 10 or 11 for extra buttons
-        self.just_pressed(10) || self.just_pressed(11)
-    }
-
-    /// Check if fire is active (twin-stick: right stick pushed past threshold)
-    /// Uses right stick magnitude for continuous fire
-    pub fn fire(&self) -> bool {
-        self.aim_direction().is_some()
-    }
-
-    /// Check if right trigger is pressed (now free for special ability)
-    pub fn right_trigger_pressed(&self) -> bool {
-        self.right_trigger > 0.1
-    }
-
-    /// Check if context action pressed (A button) - held state for gameplay
-    pub fn context_action(&self) -> bool {
-        self.buttons[0]
-    }
-
-    /// Check if emergency burn pressed (B button) - held state for gameplay
-    pub fn emergency_burn(&self) -> bool {
-        self.buttons[1]
-    }
-
-    /// Check if formation switch just pressed (Y button) - edge triggered
-    pub fn formation_switch(&self) -> bool {
-        self.just_pressed(3)
-    }
-
-    /// Check if confirm button just pressed (A/Cross) - for menus (edge triggered)
-    pub fn confirm(&self) -> bool {
-        self.just_pressed(0)
-    }
-
-    /// Check if back button just pressed (B/Circle) - for menus (edge triggered)
-    pub fn back(&self) -> bool {
-        self.just_pressed(1)
-    }
-
-    /// Check if start/menu button just pressed (edge triggered)
-    pub fn start(&self) -> bool {
-        self.just_pressed(7) || self.just_pressed(9) // Start or Menu
-    }
-
-    /// Check if left bumper pressed (LB - thrust) - held state
-    pub fn left_bumper(&self) -> bool {
-        self.buttons[4]
-    }
-
-    /// Check if right bumper just pressed (RB - barrel roll) - edge triggered
-    pub fn right_bumper(&self) -> bool {
-        self.just_pressed(5)
-    }
-
-    /// Check if Y button just pressed (salt miner activation) - edge triggered
-    /// Xbox: Y (button 3), PlayStation: Triangle
-    pub fn salt_miner(&self) -> bool {
-        self.just_pressed(3)
-    }
-
-    /// Check if X button just pressed - edge triggered
-    /// Xbox: X (button 2), PlayStation: Square
-    /// Used for secondary ability (e.g., special weapon)
-    pub fn x_button(&self) -> bool {
-        self.just_pressed(2)
-    }
-
-    /// Check if Y button just pressed - edge triggered
-    /// Xbox: Y (button 3), PlayStation: Triangle
-    /// Used for Doomsday in Last Stand mode
-    pub fn y_button(&self) -> bool {
-        self.just_pressed(3)
-    }
-
-    /// Check if left trigger is pressed (held state)
-    pub fn left_trigger_pressed(&self) -> bool {
-        self.left_trigger > 0.1
-    }
-}
-
-// ============================================================================
-// Controller Rumble/Haptic Feedback
-// ============================================================================
-
-/// Types of rumble effects
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RumbleType {
-    /// Light rumble for taking damage (weak motor, short)
     PlayerHit,
-    /// Medium rumble for explosions (both motors, medium)
     Explosion,
-    /// Heavy rumble for big explosions/boss kills (strong motor, long)
     BigExplosion,
-    /// Powerful surge for salt miner activation (escalating pattern)
     SaltMinerActivate,
-    /// Light pulse for powerup collection
     PowerupCollect,
-    /// Custom rumble with specified intensities
     Custom {
         strong: f32,
         weak: f32,
@@ -462,7 +181,6 @@ pub enum RumbleType {
 }
 
 impl RumbleType {
-    /// Get rumble parameters: (strong_motor, weak_motor, duration_ms)
     fn params(&self) -> (f32, f32, u64) {
         match self {
             RumbleType::PlayerHit => (0.0, 0.4, 80),
@@ -479,7 +197,6 @@ impl RumbleType {
     }
 }
 
-/// Event to request controller rumble
 #[derive(Event, Clone, Copy, Debug)]
 pub struct RumbleRequest {
     pub rumble_type: RumbleType,
@@ -489,71 +206,313 @@ impl RumbleRequest {
     pub fn new(rumble_type: RumbleType) -> Self {
         Self { rumble_type }
     }
-
     pub fn player_hit() -> Self {
         Self::new(RumbleType::PlayerHit)
     }
-
     pub fn explosion() -> Self {
         Self::new(RumbleType::Explosion)
     }
-
     pub fn big_explosion() -> Self {
         Self::new(RumbleType::BigExplosion)
     }
-
     pub fn salt_miner() -> Self {
         Self::new(RumbleType::SaltMinerActivate)
     }
-
     pub fn powerup() -> Self {
         Self::new(RumbleType::PowerupCollect)
     }
 }
 
-/// System to process back button presses and fire events
+#[derive(Event, Debug, Clone, Copy)]
+pub struct BackButtonEvent {
+    pub action: BackButtonAction,
+}
+
+// =============================================================================
+// JOYSTICK STATE (public interface consumed by all game systems)
+// =============================================================================
+
+#[derive(Resource, Default, Debug)]
+pub struct JoystickState {
+    pub left_x: f32,
+    pub left_y: f32,
+    pub right_x: f32,
+    pub right_y: f32,
+    pub left_trigger: f32,
+    pub right_trigger: f32,
+    pub dpad_x: i8,
+    pub dpad_y: i8,
+    pub prev_dpad_x: i8,
+    pub prev_dpad_y: i8,
+    pub prev_left_y: f32,
+    pub buttons: [bool; 16],
+    pub prev_buttons: [bool; 16],
+    pub connected: bool,
+}
+
+impl JoystickState {
+    pub fn just_pressed(&self, button: usize) -> bool {
+        button < 16 && self.buttons[button] && !self.prev_buttons[button]
+    }
+
+    pub fn dpad_just_up(&self) -> bool {
+        self.dpad_y < 0 && self.prev_dpad_y >= 0
+    }
+    pub fn dpad_just_down(&self) -> bool {
+        self.dpad_y > 0 && self.prev_dpad_y <= 0
+    }
+    pub fn dpad_just_left(&self) -> bool {
+        self.dpad_x < 0 && self.prev_dpad_x >= 0
+    }
+    pub fn dpad_just_right(&self) -> bool {
+        self.dpad_x > 0 && self.prev_dpad_x <= 0
+    }
+    pub fn stick_just_up(&self) -> bool {
+        self.left_y < -0.5 && self.prev_left_y >= -0.5
+    }
+    pub fn stick_just_down(&self) -> bool {
+        self.left_y > 0.5 && self.prev_left_y <= 0.5
+    }
+
+    pub fn movement(&self) -> Vec2 {
+        self.movement_with_deadzone(DEFAULT_DEADZONE)
+    }
+
+    pub fn movement_with_deadzone(&self, deadzone: f32) -> Vec2 {
+        let mut x = self.left_x;
+        let mut y = -self.left_y;
+        if x.abs() < deadzone {
+            x = 0.0;
+        }
+        if y.abs() < deadzone {
+            y = 0.0;
+        }
+        if self.dpad_x != 0 {
+            x = self.dpad_x as f32;
+        }
+        if self.dpad_y != 0 {
+            y = -self.dpad_y as f32;
+        }
+        Vec2::new(x, y)
+    }
+
+    pub fn aim_direction(&self) -> Option<Vec2> {
+        self.aim_direction_with_deadzone(0.3)
+    }
+
+    pub fn aim_direction_with_deadzone(&self, deadzone: f32) -> Option<Vec2> {
+        let aim = Vec2::new(self.right_x, -self.right_y);
+        if aim.length() > deadzone {
+            Some(aim.normalize())
+        } else {
+            None
+        }
+    }
+
+    pub fn l4_just_pressed(&self) -> bool {
+        self.just_pressed(13)
+    }
+    pub fn l5_just_pressed(&self) -> bool {
+        self.just_pressed(15)
+    }
+    pub fn r4_just_pressed(&self) -> bool {
+        self.just_pressed(14)
+    }
+    pub fn r5_just_pressed(&self) -> bool {
+        self.just_pressed(10) || self.just_pressed(11)
+    }
+
+    pub fn fire(&self) -> bool {
+        self.aim_direction().is_some()
+    }
+    pub fn right_trigger_pressed(&self) -> bool {
+        self.right_trigger > 0.1
+    }
+    pub fn context_action(&self) -> bool {
+        self.buttons[0]
+    }
+    pub fn emergency_burn(&self) -> bool {
+        self.buttons[1]
+    }
+    pub fn formation_switch(&self) -> bool {
+        self.just_pressed(3)
+    }
+    pub fn confirm(&self) -> bool {
+        self.just_pressed(0)
+    }
+    pub fn back(&self) -> bool {
+        self.just_pressed(1)
+    }
+    pub fn start(&self) -> bool {
+        self.just_pressed(7) || self.just_pressed(9)
+    }
+    pub fn left_bumper(&self) -> bool {
+        self.buttons[4]
+    }
+    pub fn right_bumper(&self) -> bool {
+        self.just_pressed(5)
+    }
+    pub fn salt_miner(&self) -> bool {
+        self.just_pressed(3)
+    }
+    pub fn x_button(&self) -> bool {
+        self.just_pressed(2)
+    }
+    pub fn y_button(&self) -> bool {
+        self.just_pressed(3)
+    }
+    pub fn left_trigger_pressed(&self) -> bool {
+        self.left_trigger > 0.1
+    }
+}
+
+// =============================================================================
+// PLUGIN
+// =============================================================================
+
+pub struct JoystickPlugin;
+
+impl Plugin for JoystickPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<JoystickState>()
+            .init_resource::<RumbleSettings>()
+            .init_resource::<ControllerProfile>()
+            .init_resource::<BackButtonConfig>()
+            .add_event::<RumbleRequest>()
+            .add_event::<BackButtonEvent>()
+            .add_systems(PreUpdate, (detect_gamepad, poll_gamepad).chain())
+            .add_systems(Update, (process_rumble_requests, process_back_buttons));
+    }
+}
+
+// =============================================================================
+// BEVY GAMEPAD POLLING (cross-platform: Linux, Windows, macOS, WASM)
+// =============================================================================
+
+/// Detect newly connected gamepads and set up profile
+fn detect_gamepad(
+    mut state: ResMut<JoystickState>,
+    mut profile: ResMut<ControllerProfile>,
+    gamepads: Query<(Entity, &Gamepad), Added<Gamepad>>,
+    names: Query<&Name>,
+) {
+    for (entity, _gamepad) in gamepads.iter() {
+        state.connected = true;
+
+        let name = names
+            .get(entity)
+            .map(|n| n.as_str().to_string())
+            .unwrap_or_else(|_| "Unknown Controller".to_string());
+
+        info!("Gamepad connected: {}", name);
+        *profile = ControllerProfile::from_name(&name);
+    }
+}
+
+/// Poll Bevy's gamepad state and write to JoystickState
+fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
+    // Save previous state for edge detection
+    state.prev_buttons = state.buttons;
+    state.prev_dpad_x = state.dpad_x;
+    state.prev_dpad_y = state.dpad_y;
+    state.prev_left_y = state.left_y;
+
+    // Use first connected gamepad
+    let Some(gamepad) = gamepads.iter().next() else {
+        // No gamepad connected — keep previous state zeroed
+        if state.connected {
+            state.connected = false;
+            info!("Gamepad disconnected");
+        }
+        return;
+    };
+
+    state.connected = true;
+
+    // Axes
+    state.left_x = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
+    state.left_y = gamepad.get(GamepadAxis::LeftStickY).unwrap_or(0.0);
+    // Bevy Y axis: up = +1, but our JoystickState convention: up = -1 (Linux convention)
+    // The movement() method already inverts Y, so keep raw Bevy values but negate to match
+    state.left_y = -state.left_y;
+
+    state.right_x = gamepad.get(GamepadAxis::RightStickX).unwrap_or(0.0);
+    state.right_y = -gamepad.get(GamepadAxis::RightStickY).unwrap_or(0.0);
+
+    state.left_trigger = gamepad.get(GamepadAxis::LeftZ).unwrap_or(0.0).max(0.0);
+    state.right_trigger = gamepad.get(GamepadAxis::RightZ).unwrap_or(0.0).max(0.0);
+
+    // D-pad
+    state.dpad_x = 0;
+    state.dpad_y = 0;
+    if gamepad.pressed(GamepadButton::DPadLeft) {
+        state.dpad_x = -1;
+    }
+    if gamepad.pressed(GamepadButton::DPadRight) {
+        state.dpad_x = 1;
+    }
+    if gamepad.pressed(GamepadButton::DPadUp) {
+        state.dpad_y = -1;
+    }
+    if gamepad.pressed(GamepadButton::DPadDown) {
+        state.dpad_y = 1;
+    }
+
+    // Buttons — mapped to our index convention:
+    // 0=South(A), 1=East(B), 2=West(X), 3=North(Y),
+    // 4=LeftTrigger(LB), 5=RightTrigger(RB),
+    // 6=LeftTrigger2(LT as button), 7=Select(Back/View),
+    // 8=unused, 9=Start(Menu),
+    // 10=LeftThumb, 11=RightThumb
+    state.buttons[0] = gamepad.pressed(GamepadButton::South); // A
+    state.buttons[1] = gamepad.pressed(GamepadButton::East); // B
+    state.buttons[2] = gamepad.pressed(GamepadButton::West); // X
+    state.buttons[3] = gamepad.pressed(GamepadButton::North); // Y
+    state.buttons[4] = gamepad.pressed(GamepadButton::LeftTrigger); // LB
+    state.buttons[5] = gamepad.pressed(GamepadButton::RightTrigger); // RB
+    state.buttons[6] = gamepad.pressed(GamepadButton::LeftTrigger2); // LT as button
+    state.buttons[7] = gamepad.pressed(GamepadButton::Select); // Back/View
+    state.buttons[9] = gamepad.pressed(GamepadButton::Start); // Start/Menu
+    state.buttons[10] = gamepad.pressed(GamepadButton::LeftThumb); // L3
+    state.buttons[11] = gamepad.pressed(GamepadButton::RightThumb); // R3
+}
+
+// =============================================================================
+// RUMBLE & BACK BUTTON PROCESSING
+// =============================================================================
+
 fn process_back_buttons(
     state: Res<JoystickState>,
     config: Res<BackButtonConfig>,
     profile: Res<ControllerProfile>,
     mut events: EventWriter<BackButtonEvent>,
 ) {
-    // Only process back buttons for Steam Deck (other controllers may not have them)
     if profile.controller_type != ControllerType::SteamDeck
         && profile.controller_type != ControllerType::Unknown
     {
         return;
     }
 
-    // L4 button
     if state.l4_just_pressed() && config.l4 != BackButtonAction::None {
         events.send(BackButtonEvent { action: config.l4 });
     }
-
-    // L5 button
     if state.l5_just_pressed() && config.l5 != BackButtonAction::None {
         events.send(BackButtonEvent { action: config.l5 });
     }
-
-    // R4 button
     if state.r4_just_pressed() && config.r4 != BackButtonAction::None {
         events.send(BackButtonEvent { action: config.r4 });
     }
-
-    // R5 button
     if state.r5_just_pressed() && config.r5 != BackButtonAction::None {
         events.send(BackButtonEvent { action: config.r5 });
     }
 }
 
-/// System to process rumble requests and send to Bevy's gamepad system
 fn process_rumble_requests(
     mut rumble_events: EventReader<RumbleRequest>,
     mut rumble_writer: EventWriter<GamepadRumbleRequest>,
     gamepads: Query<Entity, With<Gamepad>>,
     rumble_settings: Res<RumbleSettings>,
 ) {
-    // Skip if rumble is disabled
     if rumble_settings.intensity <= 0.001 {
         rumble_events.clear();
         return;
@@ -563,12 +522,9 @@ fn process_rumble_requests(
 
     for request in rumble_events.read() {
         let (strong, weak, duration_ms) = request.rumble_type.params();
-
-        // Apply intensity multiplier
         let strong = (strong * multiplier).clamp(0.0, 1.0);
         let weak = (weak * multiplier).clamp(0.0, 1.0);
 
-        // Send rumble to all connected gamepads
         for gamepad_entity in gamepads.iter() {
             rumble_writer.send(GamepadRumbleRequest::Add {
                 gamepad: gamepad_entity,
@@ -581,182 +537,3 @@ fn process_rumble_requests(
         }
     }
 }
-
-// Unix-specific implementation
-#[cfg(unix)]
-mod unix_impl {
-    use super::*;
-    use std::fs::File;
-    use std::io::Read;
-    use std::os::unix::io::AsRawFd;
-
-    const JOYSTICK_DEVICE: &str = "/dev/input/js0";
-
-    // ioctl constants for getting joystick name
-    const JSIOCGNAME: libc::c_ulong = 0x80006a13; // ioctl number for getting name (128 byte buffer)
-
-    /// Joystick file handle resource
-    #[derive(Resource, Default)]
-    pub struct JoystickHandle {
-        file: Option<File>,
-    }
-
-    /// Linux joystick event structure
-    #[repr(C)]
-    struct JsEvent {
-        time: u32,      // event timestamp in milliseconds
-        value: i16,     // value
-        event_type: u8, // event type
-        number: u8,     // axis/button number
-    }
-
-    const JS_EVENT_BUTTON: u8 = 0x01;
-    const JS_EVENT_AXIS: u8 = 0x02;
-    const JS_EVENT_INIT: u8 = 0x80;
-
-    /// Get joystick name via ioctl
-    fn get_joystick_name(fd: i32) -> String {
-        let mut name_buf = [0u8; 128];
-
-        // SAFETY: fd is a valid file descriptor, name_buf is a valid buffer
-        // JSIOCGNAME ioctl reads controller name into the buffer
-        let result = unsafe { libc::ioctl(fd, JSIOCGNAME, name_buf.as_mut_ptr()) };
-
-        if result >= 0 {
-            // Find null terminator and convert to string
-            let len = name_buf
-                .iter()
-                .position(|&c| c == 0)
-                .unwrap_or(name_buf.len());
-            String::from_utf8_lossy(&name_buf[..len]).to_string()
-        } else {
-            "Unknown Controller".to_string()
-        }
-    }
-
-    pub fn setup_joystick(
-        mut commands: Commands,
-        mut state: ResMut<JoystickState>,
-        mut profile: ResMut<ControllerProfile>,
-    ) {
-        match File::open(JOYSTICK_DEVICE) {
-            Ok(file) => {
-                let fd = file.as_raw_fd();
-
-                // Set non-blocking mode
-                // SAFETY: file is a valid open file descriptor obtained from File::open().
-                // fcntl with F_GETFL/F_SETFL is safe on valid file descriptors.
-                // The file handle remains valid for the lifetime of this resource.
-                unsafe {
-                    let flags = libc::fcntl(fd, libc::F_GETFL);
-                    libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK);
-                }
-
-                // Get controller name and detect profile
-                let name = get_joystick_name(fd);
-                info!("Joystick connected: {} ({})", name, JOYSTICK_DEVICE);
-
-                // Apply detected profile
-                *profile = ControllerProfile::from_name(&name);
-
-                state.connected = true;
-                commands.insert_resource(JoystickHandle { file: Some(file) });
-            }
-            Err(e) => {
-                info!("No joystick found: {} ({})", JOYSTICK_DEVICE, e);
-                commands.insert_resource(JoystickHandle::default());
-            }
-        }
-    }
-
-    pub fn poll_joystick(mut handle: ResMut<JoystickHandle>, mut state: ResMut<JoystickState>) {
-        // Save previous state for edge detection
-        state.prev_buttons = state.buttons;
-        state.prev_dpad_x = state.dpad_x;
-        state.prev_dpad_y = state.dpad_y;
-        state.prev_left_y = state.left_y;
-
-        let Some(ref mut file) = handle.file else {
-            return;
-        };
-
-        // Read all pending events
-        let mut buffer = [0u8; 8];
-        loop {
-            match file.read_exact(&mut buffer) {
-                Ok(_) => {
-                    // Parse event
-                    // SAFETY: buffer is exactly 8 bytes (size of JsEvent struct).
-                    // JsEvent is repr(C) with known layout matching Linux joystick API.
-                    // read_exact ensures buffer is fully populated before we read it.
-                    let event = unsafe { std::ptr::read(buffer.as_ptr() as *const JsEvent) };
-
-                    let event_type = event.event_type & !JS_EVENT_INIT;
-
-                    match event_type {
-                        JS_EVENT_BUTTON => {
-                            let pressed = event.value != 0;
-                            let button = event.number as usize;
-                            if button < 16 {
-                                if pressed {
-                                    info!("Joystick button {} pressed", button);
-                                }
-                                state.buttons[button] = pressed;
-                            }
-                        }
-                        JS_EVENT_AXIS => {
-                            let value = event.value as f32 / 32767.0;
-                            match event.number {
-                                // Left stick
-                                0 => state.left_x = value,
-                                1 => state.left_y = value,
-                                // Left trigger (LT) - axis 2
-                                // Triggers go from -1 (released) to +1 (pressed), normalize to 0-1
-                                2 => state.left_trigger = (value + 1.0) / 2.0,
-                                // Right stick
-                                3 => state.right_x = value,
-                                4 => state.right_y = value,
-                                // Right trigger (RT) - axis 5
-                                5 => state.right_trigger = (value + 1.0) / 2.0,
-                                // D-pad as axes
-                                6 => {
-                                    state.dpad_x = if value < -0.5 {
-                                        -1
-                                    } else if value > 0.5 {
-                                        1
-                                    } else {
-                                        0
-                                    }
-                                }
-                                7 => {
-                                    state.dpad_y = if value < -0.5 {
-                                        -1
-                                    } else if value > 0.5 {
-                                        1
-                                    } else {
-                                        0
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    // No more events
-                    break;
-                }
-                Err(_) => {
-                    // Device disconnected
-                    state.connected = false;
-                    handle.file = None;
-                    break;
-                }
-            }
-        }
-    }
-}
-
-#[cfg(unix)]
-use unix_impl::{poll_joystick, setup_joystick};
