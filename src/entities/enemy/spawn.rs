@@ -524,3 +524,145 @@ pub fn spawn_blinding_vedmak(commands: &mut Commands, position: Vec2, sprite: Op
 pub fn spawn_drekavac_boss(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
     spawn_variant(commands, EnemyVariant::DrekavacBoss, position, sprite, model_cache)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn all_variants() -> Vec<EnemyVariant> {
+        vec![
+            EnemyVariant::Kamikaze,
+            EnemyVariant::Weaver,
+            EnemyVariant::Sniper,
+            EnemyVariant::Spawner,
+            EnemyVariant::Tank,
+            EnemyVariant::Damavik,
+            EnemyVariant::StarvingDamavik,
+            EnemyVariant::Vedmak,
+            EnemyVariant::BlindingVedmak,
+            EnemyVariant::DrekavacBoss,
+        ]
+    }
+
+    #[test]
+    fn all_variants_have_positive_health() {
+        for variant in all_variants() {
+            let config = variant.config();
+            assert!(config.health > 0.0, "{} has zero health", config.name);
+        }
+    }
+
+    #[test]
+    fn all_variants_have_positive_speed() {
+        for variant in all_variants() {
+            let config = variant.config();
+            assert!(config.speed > 0.0, "{} has zero speed", config.name);
+        }
+    }
+
+    #[test]
+    fn all_variants_have_positive_score() {
+        for variant in all_variants() {
+            let config = variant.config();
+            assert!(config.score_value > 0, "{} has zero score", config.name);
+        }
+    }
+
+    #[test]
+    fn all_variants_have_names() {
+        for variant in all_variants() {
+            let config = variant.config();
+            assert!(!config.name.is_empty());
+        }
+    }
+
+    #[test]
+    fn only_drekavac_is_boss() {
+        for variant in all_variants() {
+            let config = variant.config();
+            if config.name == "Drekavac" {
+                assert!(config.is_boss, "Drekavac should be a boss");
+            } else {
+                assert!(!config.is_boss, "{} should not be a boss", config.name);
+            }
+        }
+    }
+
+    #[test]
+    fn kamikaze_is_fast_and_fragile() {
+        let config = EnemyVariant::Kamikaze.config();
+        let tank = EnemyVariant::Tank.config();
+        assert!(config.speed > tank.speed);
+        assert!(config.health < tank.health);
+    }
+
+    #[test]
+    fn tank_is_slow_and_tanky() {
+        let config = EnemyVariant::Tank.config();
+        assert!(config.health >= 150.0);
+        assert!(config.speed <= 40.0);
+    }
+
+    #[test]
+    fn sniper_has_weapon_override() {
+        let config = EnemyVariant::Sniper.config();
+        assert!(config.weapon_override.is_some());
+    }
+
+    #[test]
+    fn spawner_has_spawner_component() {
+        let config = EnemyVariant::Spawner.config();
+        assert!(config.spawner.is_some());
+    }
+
+    #[test]
+    fn triglavian_variants_have_disintegrator() {
+        let trig_variants = vec![
+            EnemyVariant::Damavik,
+            EnemyVariant::StarvingDamavik,
+            EnemyVariant::Vedmak,
+            EnemyVariant::BlindingVedmak,
+            EnemyVariant::DrekavacBoss,
+        ];
+        for variant in trig_variants {
+            let config = variant.config();
+            assert!(config.disintegrator.is_some(), "{} should have disintegrator", config.name);
+            assert!(config.remove_weapon, "{} should remove standard weapon", config.name);
+            assert_eq!(config.behavior, EnemyBehavior::Disintegrator);
+        }
+    }
+
+    #[test]
+    fn standard_variants_no_disintegrator() {
+        let standard = vec![
+            EnemyVariant::Kamikaze,
+            EnemyVariant::Weaver,
+            EnemyVariant::Sniper,
+            EnemyVariant::Spawner,
+            EnemyVariant::Tank,
+        ];
+        for variant in standard {
+            let config = variant.config();
+            assert!(config.disintegrator.is_none(), "{} should not have disintegrator", config.name);
+            assert!(!config.remove_weapon);
+        }
+    }
+
+    #[test]
+    fn drekavac_boss_has_highest_health() {
+        let boss = EnemyVariant::DrekavacBoss.config();
+        for variant in all_variants() {
+            let config = variant.config();
+            assert!(boss.health >= config.health, "Drekavac should have highest health");
+        }
+    }
+
+    #[test]
+    fn drekavac_boss_has_highest_score() {
+        let boss = EnemyVariant::DrekavacBoss.config();
+        for variant in all_variants() {
+            let config = variant.config();
+            assert!(boss.score_value >= config.score_value, "Drekavac should have highest score");
+        }
+    }
+}

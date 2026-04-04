@@ -308,3 +308,169 @@ impl Default for EnemyBundle {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // EnemyBehavior tests
+    #[test]
+    fn behavior_dodge_sensitivity_ranges() {
+        let behaviors = [
+            EnemyBehavior::Linear,
+            EnemyBehavior::Zigzag,
+            EnemyBehavior::Homing,
+            EnemyBehavior::Orbital,
+            EnemyBehavior::Sniper,
+            EnemyBehavior::Kamikaze,
+            EnemyBehavior::Weaver,
+            EnemyBehavior::Spawner,
+            EnemyBehavior::Tank,
+            EnemyBehavior::Disintegrator,
+        ];
+        for b in &behaviors {
+            let ds = b.dodge_sensitivity();
+            assert!((0.0..=1.0).contains(&ds), "{:?} dodge_sensitivity {} out of range", b, ds);
+        }
+    }
+
+    #[test]
+    fn behavior_kamikaze_never_dodges() {
+        assert_eq!(EnemyBehavior::Kamikaze.dodge_sensitivity(), 0.0);
+    }
+
+    #[test]
+    fn behavior_kamikaze_never_aims() {
+        assert_eq!(EnemyBehavior::Kamikaze.aim_accuracy(), 0.0);
+    }
+
+    #[test]
+    fn behavior_sniper_has_high_accuracy() {
+        assert!(EnemyBehavior::Sniper.aim_accuracy() > 0.8);
+    }
+
+    #[test]
+    fn behavior_aim_accuracy_ranges() {
+        let behaviors = [
+            EnemyBehavior::Linear,
+            EnemyBehavior::Zigzag,
+            EnemyBehavior::Homing,
+            EnemyBehavior::Orbital,
+            EnemyBehavior::Sniper,
+            EnemyBehavior::Kamikaze,
+            EnemyBehavior::Weaver,
+            EnemyBehavior::Spawner,
+            EnemyBehavior::Tank,
+            EnemyBehavior::Disintegrator,
+        ];
+        for b in &behaviors {
+            let aa = b.aim_accuracy();
+            assert!((0.0..=1.0).contains(&aa), "{:?} aim_accuracy {} out of range", b, aa);
+        }
+    }
+
+    // EnemyStats defaults
+    #[test]
+    fn enemy_stats_default_not_boss() {
+        let stats = EnemyStats::default();
+        assert!(!stats.is_boss);
+    }
+
+    #[test]
+    fn enemy_stats_default_health_equals_max() {
+        let stats = EnemyStats::default();
+        assert_eq!(stats.health, stats.max_health);
+    }
+
+    #[test]
+    fn enemy_stats_default_positive_values() {
+        let stats = EnemyStats::default();
+        assert!(stats.health > 0.0);
+        assert!(stats.speed > 0.0);
+        assert!(stats.score_value > 0);
+    }
+
+    // EnemyAI defaults
+    #[test]
+    fn enemy_ai_default_linear() {
+        let ai = EnemyAI::default();
+        assert_eq!(ai.behavior, EnemyBehavior::Linear);
+        assert!(ai.active);
+    }
+
+    // DisintegratorRamp tests
+    #[test]
+    fn disintegrator_new_sets_params() {
+        let ramp = DisintegratorRamp::new(10.0, 3.0, 5.0);
+        assert_eq!(ramp.base_damage, 10.0);
+        assert_eq!(ramp.ramp_max, 3.0);
+        assert_eq!(ramp.ramp_time, 5.0);
+    }
+
+    #[test]
+    fn disintegrator_starts_at_base_damage() {
+        let ramp = DisintegratorRamp::new(10.0, 3.0, 5.0);
+        assert_eq!(ramp.current_damage(), 10.0);
+        assert_eq!(ramp.current_mult, 1.0);
+    }
+
+    #[test]
+    fn disintegrator_ramp_increases_on_target() {
+        let mut ramp = DisintegratorRamp::new(10.0, 3.0, 5.0);
+        ramp.update(2.5, true); // Half ramp time
+        assert!(ramp.current_mult > 1.0);
+        assert!(ramp.current_damage() > 10.0);
+        assert!(ramp.beam_active);
+    }
+
+    #[test]
+    fn disintegrator_ramp_maxes_out() {
+        let mut ramp = DisintegratorRamp::new(10.0, 3.0, 5.0);
+        ramp.update(10.0, true); // Way past ramp time
+        assert_eq!(ramp.current_mult, 3.0);
+        assert_eq!(ramp.current_damage(), 30.0);
+    }
+
+    #[test]
+    fn disintegrator_ramp_resets_off_target() {
+        let mut ramp = DisintegratorRamp::new(10.0, 3.0, 5.0);
+        ramp.update(5.0, true);
+        assert!(ramp.current_mult > 1.0);
+        ramp.update(0.1, false);
+        assert_eq!(ramp.current_mult, 1.0);
+        assert!(!ramp.beam_active);
+    }
+
+    #[test]
+    fn disintegrator_ramp_progress_clamped() {
+        let mut ramp = DisintegratorRamp::new(10.0, 2.0, 6.0);
+        ramp.update(100.0, true);
+        assert_eq!(ramp.ramp_progress(), 1.0);
+    }
+
+    #[test]
+    fn disintegrator_beam_intensity_scales() {
+        let mut ramp = DisintegratorRamp::new(10.0, 2.0, 6.0);
+        ramp.update(0.0, true);
+        let start_intensity = ramp.beam_intensity;
+        ramp.update(6.0, true);
+        assert!(ramp.beam_intensity > start_intensity);
+    }
+
+    // EnemyWeapon defaults
+    #[test]
+    fn enemy_weapon_default_laser() {
+        let weapon = EnemyWeapon::default();
+        assert_eq!(weapon.weapon_type, WeaponType::Laser);
+        assert_eq!(weapon.pattern, FiringPattern::Single);
+    }
+
+    // EnemySpawner defaults
+    #[test]
+    fn enemy_spawner_default_values() {
+        let spawner = EnemySpawner::default();
+        assert!(spawner.spawn_rate > 0.0);
+        assert!(spawner.max_spawned > 0);
+        assert_eq!(spawner.spawned_count, 0);
+    }
+}

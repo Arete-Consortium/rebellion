@@ -408,6 +408,223 @@ impl ShipUnlocks {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Difficulty tests
+    #[test]
+    fn difficulty_default_is_newbro() {
+        assert_eq!(Difficulty::default(), Difficulty::Newbro);
+    }
+
+    #[test]
+    fn difficulty_all_returns_four() {
+        assert_eq!(Difficulty::all().len(), 4);
+    }
+
+    #[test]
+    fn difficulty_next_cycles() {
+        assert_eq!(Difficulty::Carebear.next(), Difficulty::Newbro);
+        assert_eq!(Difficulty::Triglavian.next(), Difficulty::Carebear);
+    }
+
+    #[test]
+    fn difficulty_prev_cycles() {
+        assert_eq!(Difficulty::Carebear.prev(), Difficulty::Triglavian);
+        assert_eq!(Difficulty::Newbro.prev(), Difficulty::Carebear);
+    }
+
+    #[test]
+    fn difficulty_multipliers_scale_with_difficulty() {
+        // Higher difficulty = more enemy health/damage/speed
+        assert!(Difficulty::Carebear.enemy_health_mult() < Difficulty::Newbro.enemy_health_mult());
+        assert!(Difficulty::Newbro.enemy_health_mult() < Difficulty::BitterVet.enemy_health_mult());
+        assert!(
+            Difficulty::BitterVet.enemy_health_mult() < Difficulty::Triglavian.enemy_health_mult()
+        );
+
+        assert!(
+            Difficulty::Carebear.enemy_damage_mult() < Difficulty::Triglavian.enemy_damage_mult()
+        );
+        assert!(
+            Difficulty::Carebear.enemy_speed_mult() < Difficulty::Triglavian.enemy_speed_mult()
+        );
+    }
+
+    #[test]
+    fn difficulty_player_shield_decreases_with_difficulty() {
+        assert!(
+            Difficulty::Carebear.player_shield_mult()
+                > Difficulty::Triglavian.player_shield_mult()
+        );
+    }
+
+    #[test]
+    fn difficulty_score_increases_with_difficulty() {
+        assert!(Difficulty::Carebear.score_mult() < Difficulty::Triglavian.score_mult());
+    }
+
+    #[test]
+    fn difficulty_names_not_empty() {
+        for diff in Difficulty::all() {
+            assert!(!diff.name().is_empty());
+            assert!(!diff.tagline().is_empty());
+            assert!(!diff.description().is_empty());
+        }
+    }
+
+    #[test]
+    fn difficulty_newbro_is_baseline() {
+        assert_eq!(Difficulty::Newbro.enemy_health_mult(), 1.0);
+        assert_eq!(Difficulty::Newbro.enemy_damage_mult(), 1.0);
+        assert_eq!(Difficulty::Newbro.enemy_speed_mult(), 1.0);
+        assert_eq!(Difficulty::Newbro.player_shield_mult(), 1.0);
+        assert_eq!(Difficulty::Newbro.score_mult(), 1.0);
+    }
+
+    // MinmatarShip tests
+    #[test]
+    fn ship_default_is_rifter() {
+        assert_eq!(MinmatarShip::default(), MinmatarShip::Rifter);
+    }
+
+    #[test]
+    fn ship_all_base_has_four() {
+        assert_eq!(MinmatarShip::all().len(), 4);
+    }
+
+    #[test]
+    fn ship_all_including_unlocks_has_six() {
+        assert_eq!(MinmatarShip::all_including_unlocks().len(), 6);
+    }
+
+    #[test]
+    fn ship_type_ids_unique() {
+        let ids: Vec<u32> = MinmatarShip::all_including_unlocks()
+            .iter()
+            .map(|s| s.type_id())
+            .collect();
+        for (i, id) in ids.iter().enumerate() {
+            assert!(!ids[i + 1..].contains(id), "Duplicate type_id: {}", id);
+        }
+    }
+
+    #[test]
+    fn ship_rifter_is_baseline() {
+        assert_eq!(MinmatarShip::Rifter.speed_mult(), 1.0);
+        assert_eq!(MinmatarShip::Rifter.damage_mult(), 1.0);
+        assert_eq!(MinmatarShip::Rifter.health_mult(), 1.0);
+        assert_eq!(MinmatarShip::Rifter.fire_rate_mult(), 1.0);
+    }
+
+    #[test]
+    fn ship_base_frigates_always_available() {
+        for ship in MinmatarShip::all() {
+            assert!(!ship.requires_unlock());
+            assert_eq!(ship.unlock_act(), 0);
+        }
+    }
+
+    #[test]
+    fn ship_wolf_requires_act_2() {
+        assert!(MinmatarShip::Wolf.requires_unlock());
+        assert_eq!(MinmatarShip::Wolf.unlock_act(), 2);
+    }
+
+    #[test]
+    fn ship_jaguar_requires_act_3() {
+        assert!(MinmatarShip::Jaguar.requires_unlock());
+        assert_eq!(MinmatarShip::Jaguar.unlock_act(), 3);
+    }
+
+    #[test]
+    fn ship_names_not_empty() {
+        for ship in MinmatarShip::all_including_unlocks() {
+            assert!(!ship.name().is_empty());
+            assert!(!ship.description().is_empty());
+            assert!(!ship.ship_class().is_empty());
+            assert!(!ship.special().is_empty());
+        }
+    }
+
+    // ShipUnlocks tests
+    #[test]
+    fn ship_unlocks_default_has_four_ships() {
+        let unlocks = ShipUnlocks::default();
+        assert_eq!(unlocks.available_ships().len(), 4);
+    }
+
+    #[test]
+    fn ship_unlocks_base_ships_always_unlocked() {
+        let unlocks = ShipUnlocks::default();
+        assert!(unlocks.is_unlocked(MinmatarShip::Rifter));
+        assert!(unlocks.is_unlocked(MinmatarShip::Slasher));
+        assert!(unlocks.is_unlocked(MinmatarShip::Breacher));
+        assert!(unlocks.is_unlocked(MinmatarShip::Probe));
+    }
+
+    #[test]
+    fn ship_unlocks_wolf_locked_by_default() {
+        let unlocks = ShipUnlocks::default();
+        assert!(!unlocks.is_unlocked(MinmatarShip::Wolf));
+    }
+
+    #[test]
+    fn ship_unlocks_complete_act_2_unlocks_wolf() {
+        let mut unlocks = ShipUnlocks::default();
+        unlocks.complete_act(2);
+        assert!(unlocks.is_unlocked(MinmatarShip::Wolf));
+        assert!(!unlocks.is_unlocked(MinmatarShip::Jaguar));
+    }
+
+    #[test]
+    fn ship_unlocks_complete_act_3_unlocks_jaguar() {
+        let mut unlocks = ShipUnlocks::default();
+        unlocks.complete_act(3);
+        assert!(unlocks.is_unlocked(MinmatarShip::Jaguar));
+    }
+
+    #[test]
+    fn ship_unlocks_complete_act_3_gives_six_ships() {
+        let mut unlocks = ShipUnlocks::default();
+        unlocks.complete_act(2);
+        unlocks.complete_act(3);
+        assert_eq!(unlocks.available_ships().len(), 6);
+    }
+
+    #[test]
+    fn ship_unlocks_explicit_unlock() {
+        let mut unlocks = ShipUnlocks::default();
+        unlocks.unlock_ship(MinmatarShip::Wolf);
+        assert!(unlocks.is_unlocked(MinmatarShip::Wolf));
+    }
+
+    #[test]
+    fn ship_unlocks_duplicate_unlock_no_duplicate() {
+        let mut unlocks = ShipUnlocks::default();
+        unlocks.unlock_ship(MinmatarShip::Wolf);
+        unlocks.unlock_ship(MinmatarShip::Wolf);
+        assert_eq!(
+            unlocks
+                .unlocked_ships
+                .iter()
+                .filter(|s| **s == MinmatarShip::Wolf)
+                .count(),
+            1
+        );
+    }
+
+    // CurrentStage tests
+    #[test]
+    fn current_stage_defaults() {
+        let stage = CurrentStage::default();
+        assert_eq!(stage.stage_number, 1);
+        assert_eq!(stage.wave_number, 1);
+        assert!(!stage.is_boss_stage);
+    }
+}
+
 /// Selected ship for current run
 #[derive(Debug, Clone, Resource, Default)]
 pub struct SelectedShip {
