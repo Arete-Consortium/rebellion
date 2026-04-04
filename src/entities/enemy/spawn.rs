@@ -233,179 +233,266 @@ pub(super) fn spawner_update(
     }
 }
 
-/// Spawn a specialized Kamikaze enemy (glowing, suicide rush)
-pub fn spawn_kamikaze(
+// ============================================================================
+// Enemy Variant System (data-driven specialized spawning)
+// ============================================================================
+
+/// Configuration for a specialized enemy variant.
+/// Captures stat overrides, weapon overrides, and extra components.
+pub struct EnemyVariantConfig {
+    pub type_id: u32,
+    pub behavior: EnemyBehavior,
+    pub name: &'static str,
+    pub health: f32,
+    pub speed: f32,
+    pub score_value: u64,
+    pub is_boss: bool,
+    pub liberation_value: u32,
+    pub weapon_override: Option<EnemyWeapon>,
+    pub spawner: Option<EnemySpawner>,
+    pub disintegrator: Option<DisintegratorRamp>,
+    pub remove_weapon: bool,
+}
+
+/// Predefined enemy variants
+pub enum EnemyVariant {
+    Kamikaze,
+    Weaver,
+    Sniper,
+    Spawner,
+    Tank,
+    Damavik,
+    StarvingDamavik,
+    Vedmak,
+    BlindingVedmak,
+    DrekavacBoss,
+}
+
+impl EnemyVariant {
+    /// Get the configuration for this variant
+    pub fn config(&self) -> EnemyVariantConfig {
+        match self {
+            Self::Kamikaze => EnemyVariantConfig {
+                type_id: 589, // Executioner
+                behavior: EnemyBehavior::Kamikaze,
+                name: "Kamikaze",
+                health: 15.0,
+                speed: 180.0,
+                score_value: 150,
+                is_boss: false,
+                liberation_value: 1,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: None,
+                remove_weapon: false,
+            },
+            Self::Weaver => EnemyVariantConfig {
+                type_id: 602, // Kestrel
+                behavior: EnemyBehavior::Weaver,
+                name: "Weaver",
+                health: 25.0,
+                speed: 140.0,
+                score_value: 120,
+                is_boss: false,
+                liberation_value: 1,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: None,
+                remove_weapon: false,
+            },
+            Self::Sniper => EnemyVariantConfig {
+                type_id: 603, // Merlin
+                behavior: EnemyBehavior::Sniper,
+                name: "Sniper",
+                health: 35.0,
+                speed: 50.0,
+                score_value: 130,
+                is_boss: false,
+                liberation_value: 1,
+                weapon_override: Some(EnemyWeapon {
+                    weapon_type: WeaponType::Railgun,
+                    fire_rate: 0.4,
+                    damage: 25.0,
+                    bullet_speed: 400.0,
+                    cooldown: 1.0,
+                    pattern: FiringPattern::Single,
+                }),
+                spawner: None,
+                disintegrator: None,
+                remove_weapon: false,
+            },
+            Self::Spawner => EnemyVariantConfig {
+                type_id: 593, // Tristan
+                behavior: EnemyBehavior::Spawner,
+                name: "Carrier",
+                health: 80.0,
+                speed: 40.0,
+                score_value: 200,
+                is_boss: false,
+                liberation_value: 3,
+                weapon_override: None,
+                spawner: Some(EnemySpawner {
+                    spawn_rate: 4.0,
+                    spawn_timer: 2.0,
+                    spawn_type_id: 589,
+                    max_spawned: 3,
+                    spawned_count: 0,
+                }),
+                disintegrator: None,
+                remove_weapon: false,
+            },
+            Self::Tank => EnemyVariantConfig {
+                type_id: 597, // Punisher
+                behavior: EnemyBehavior::Tank,
+                name: "Juggernaut",
+                health: 150.0,
+                speed: 35.0,
+                score_value: 250,
+                is_boss: false,
+                liberation_value: 2,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: None,
+                remove_weapon: false,
+            },
+            Self::Damavik => EnemyVariantConfig {
+                type_id: triglavian::DAMAVIK,
+                behavior: EnemyBehavior::Disintegrator,
+                name: "Raznaborg Damavik",
+                health: 120.0,
+                speed: 100.0,
+                score_value: 180,
+                is_boss: false,
+                liberation_value: 2,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: Some(DisintegratorRamp::new(5.0, 2.0, 6.0)),
+                remove_weapon: true,
+            },
+            Self::StarvingDamavik => EnemyVariantConfig {
+                type_id: triglavian::DAMAVIK,
+                behavior: EnemyBehavior::Disintegrator,
+                name: "Starving Damavik",
+                health: 80.0,
+                speed: 130.0,
+                score_value: 150,
+                is_boss: false,
+                liberation_value: 1,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: Some(DisintegratorRamp::new(4.0, 1.8, 4.0)),
+                remove_weapon: true,
+            },
+            Self::Vedmak => EnemyVariantConfig {
+                type_id: triglavian::VEDMAK,
+                behavior: EnemyBehavior::Disintegrator,
+                name: "Harrowing Vedmak",
+                health: 400.0,
+                speed: 60.0,
+                score_value: 350,
+                is_boss: false,
+                liberation_value: 5,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: Some(DisintegratorRamp::new(9.0, 2.0, 8.0)),
+                remove_weapon: true,
+            },
+            Self::BlindingVedmak => EnemyVariantConfig {
+                type_id: triglavian::VEDMAK,
+                behavior: EnemyBehavior::Disintegrator,
+                name: "Blinding Vedmak",
+                health: 350.0,
+                speed: 70.0,
+                score_value: 320,
+                is_boss: false,
+                liberation_value: 4,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: Some(DisintegratorRamp::new(7.0, 2.0, 6.0)),
+                remove_weapon: true,
+            },
+            Self::DrekavacBoss => EnemyVariantConfig {
+                type_id: triglavian::DREKAVAC,
+                behavior: EnemyBehavior::Disintegrator,
+                name: "Drekavac",
+                health: 800.0,
+                speed: 45.0,
+                score_value: 1000,
+                is_boss: true,
+                liberation_value: 10,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: Some(DisintegratorRamp::new(14.0, 2.5, 10.0)),
+                remove_weapon: true,
+            },
+        }
+    }
+}
+
+/// Spawn a specialized enemy variant using data-driven config
+pub fn spawn_variant(
     commands: &mut Commands,
+    variant: EnemyVariant,
     position: Vec2,
     sprite: Option<Handle<Image>>,
     model_cache: Option<&ShipModelCache>,
 ) -> Entity {
-    let type_id = 589; // Executioner - fast, aggressive
+    let config = variant.config();
+
     let entity = spawn_enemy(
         commands,
-        type_id,
+        config.type_id,
         position,
-        EnemyBehavior::Kamikaze,
+        config.behavior,
         sprite,
         model_cache,
     );
 
-    // Boost stats for kamikaze
     commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Kamikaze".into(),
-        health: 15.0, // Low health
-        max_health: 15.0,
-        speed: 180.0,     // Very fast
-        score_value: 150, // Worth more
-        is_boss: false,
-        liberation_value: 1,
+        type_id: config.type_id,
+        name: config.name.into(),
+        health: config.health,
+        max_health: config.health,
+        speed: config.speed,
+        score_value: config.score_value,
+        is_boss: config.is_boss,
+        liberation_value: config.liberation_value,
     });
+
+    if let Some(weapon) = config.weapon_override {
+        commands.entity(entity).insert(weapon);
+    }
+
+    if let Some(spawner) = config.spawner {
+        commands.entity(entity).insert(spawner);
+    }
+
+    if let Some(disintegrator) = config.disintegrator {
+        commands.entity(entity).insert(disintegrator);
+    }
+
+    if config.remove_weapon {
+        commands.entity(entity).remove::<EnemyWeapon>();
+    }
 
     entity
 }
 
-/// Spawn a Weaver enemy (fast sine-wave harasser)
-pub fn spawn_weaver(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = 602; // Kestrel - agile
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Weaver,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Weaver".into(),
-        health: 25.0,
-        max_health: 25.0,
-        speed: 140.0, // Fast
-        score_value: 120,
-        is_boss: false,
-        liberation_value: 1,
-    });
-
-    entity
+// Legacy convenience wrappers — delegate to spawn_variant
+pub fn spawn_kamikaze(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::Kamikaze, position, sprite, model_cache)
 }
-
-/// Spawn a Sniper enemy (long-range, stationary)
-pub fn spawn_sniper(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = 603; // Merlin - Caldari, railgun platform
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Sniper,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Sniper".into(),
-        health: 35.0,
-        max_health: 35.0,
-        speed: 50.0, // Slow
-        score_value: 130,
-        is_boss: false,
-        liberation_value: 1,
-    });
-
-    // Enhanced weapon for sniper
-    commands.entity(entity).insert(EnemyWeapon {
-        weapon_type: WeaponType::Railgun,
-        fire_rate: 0.4,      // Slow but powerful
-        damage: 25.0,        // High damage
-        bullet_speed: 400.0, // Fast projectiles
-        cooldown: 1.0,
-        pattern: FiringPattern::Single,
-    });
-
-    entity
+pub fn spawn_weaver(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::Weaver, position, sprite, model_cache)
 }
-
-/// Spawn a Spawner enemy (deploys fighters)
-pub fn spawn_spawner_enemy(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = 593; // Tristan - drone boat
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Spawner,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Carrier".into(),
-        health: 80.0, // Tanky
-        max_health: 80.0,
-        speed: 40.0, // Very slow
-        score_value: 200,
-        is_boss: false,
-        liberation_value: 3, // More crew
-    });
-
-    // Add spawner component
-    commands.entity(entity).insert(EnemySpawner {
-        spawn_rate: 4.0,
-        spawn_timer: 2.0,
-        spawn_type_id: 589, // Spawns Executioners
-        max_spawned: 3,
-        spawned_count: 0,
-    });
-
-    entity
+pub fn spawn_sniper(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::Sniper, position, sprite, model_cache)
 }
-
-/// Spawn a Tank enemy (heavy armor, slow)
-pub fn spawn_tank(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = 597; // Punisher - heavily armored
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Tank,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Juggernaut".into(),
-        health: 150.0, // Very tanky
-        max_health: 150.0,
-        speed: 35.0, // Very slow
-        score_value: 250,
-        is_boss: false,
-        liberation_value: 2,
-    });
-
-    entity
+pub fn spawn_spawner_enemy(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::Spawner, position, sprite, model_cache)
+}
+pub fn spawn_tank(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::Tank, position, sprite, model_cache)
 }
 
 // ============================================================================
@@ -421,204 +508,19 @@ pub mod triglavian {
     pub const KIKIMORA: u32 = 47273; // Destroyer
 }
 
-/// Spawn a Raznaborg Damavik (light Triglavian frigate)
-/// Fast, agile, moderate ramp (2.0x max)
-pub fn spawn_damavik(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = triglavian::DAMAVIK;
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Disintegrator,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Raznaborg Damavik".into(),
-        health: 120.0,
-        max_health: 120.0,
-        speed: 100.0, // Fast frigate
-        score_value: 180,
-        is_boss: false,
-        liberation_value: 2,
-    });
-
-    // Disintegrator beam weapon (tuned for survivability)
-    commands.entity(entity).insert(DisintegratorRamp::new(
-        5.0, // Base damage per second (reduced from 8)
-        2.0, // Max 2x multiplier
-        6.0, // 6 seconds to max ramp
-    ));
-
-    // No standard weapon - uses disintegrator beam instead
-    commands.entity(entity).remove::<EnemyWeapon>();
-
-    entity
+// Legacy Triglavian convenience wrappers — delegate to spawn_variant
+pub fn spawn_damavik(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::Damavik, position, sprite, model_cache)
 }
-
-/// Spawn a Starving Damavik (fast, fragile variant)
-/// Very fast, lower HP, quick ramp (1.8x max)
-pub fn spawn_starving_damavik(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = triglavian::DAMAVIK;
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Disintegrator,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Starving Damavik".into(),
-        health: 80.0, // Fragile
-        max_health: 80.0,
-        speed: 130.0, // Very fast
-        score_value: 150,
-        is_boss: false,
-        liberation_value: 1,
-    });
-
-    commands.entity(entity).insert(DisintegratorRamp::new(
-        4.0, // Lower base damage (reduced from 6)
-        1.8, // Lower max multiplier
-        4.0, // Faster ramp time
-    ));
-
-    commands.entity(entity).remove::<EnemyWeapon>();
-
-    entity
+pub fn spawn_starving_damavik(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::StarvingDamavik, position, sprite, model_cache)
 }
-
-/// Spawn a Harrowing Vedmak (heavy Triglavian cruiser)
-/// Slow, tanky, high ramp (2.5x max)
-pub fn spawn_vedmak(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = triglavian::VEDMAK;
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Disintegrator,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Harrowing Vedmak".into(),
-        health: 400.0, // Heavy cruiser
-        max_health: 400.0,
-        speed: 60.0, // Slower
-        score_value: 350,
-        is_boss: false,
-        liberation_value: 5,
-    });
-
-    commands.entity(entity).insert(DisintegratorRamp::new(
-        9.0, // High base damage (reduced from 15)
-        2.0, // Max multiplier (reduced from 2.5)
-        8.0, // Longer ramp time
-    ));
-
-    commands.entity(entity).remove::<EnemyWeapon>();
-
-    entity
+pub fn spawn_vedmak(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::Vedmak, position, sprite, model_cache)
 }
-
-/// Spawn a Blinding Vedmak (EWAR variant)
-/// Medium stats, moderate ramp with debuff effect
-pub fn spawn_blinding_vedmak(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = triglavian::VEDMAK;
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Disintegrator,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Blinding Vedmak".into(),
-        health: 350.0,
-        max_health: 350.0,
-        speed: 70.0,
-        score_value: 320,
-        is_boss: false,
-        liberation_value: 4,
-    });
-
-    commands.entity(entity).insert(DisintegratorRamp::new(
-        7.0, // Moderate damage (reduced from 12)
-        2.0, // Standard multiplier
-        6.0,
-    ));
-
-    commands.entity(entity).remove::<EnemyWeapon>();
-
-    entity
+pub fn spawn_blinding_vedmak(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::BlindingVedmak, position, sprite, model_cache)
 }
-
-/// Spawn a Drekavac (Triglavian battlecruiser boss)
-/// Very tanky, high damage, extreme ramp (3.0x max)
-pub fn spawn_drekavac_boss(
-    commands: &mut Commands,
-    position: Vec2,
-    sprite: Option<Handle<Image>>,
-    model_cache: Option<&ShipModelCache>,
-) -> Entity {
-    let type_id = triglavian::DREKAVAC;
-    let entity = spawn_enemy(
-        commands,
-        type_id,
-        position,
-        EnemyBehavior::Disintegrator,
-        sprite,
-        model_cache,
-    );
-
-    commands.entity(entity).insert(EnemyStats {
-        type_id,
-        name: "Drekavac".into(),
-        health: 800.0, // Boss-level HP
-        max_health: 800.0,
-        speed: 45.0, // Slow battlecruiser
-        score_value: 1000,
-        is_boss: true, // This is a boss!
-        liberation_value: 10,
-    });
-
-    commands.entity(entity).insert(DisintegratorRamp::new(
-        14.0, // High base damage (reduced from 25)
-        2.5,  // High max multiplier (reduced from 3.0)
-        10.0, // Long ramp time (counterplay: stay mobile)
-    ));
-
-    commands.entity(entity).remove::<EnemyWeapon>();
-
-    entity
+pub fn spawn_drekavac_boss(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
+    spawn_variant(commands, EnemyVariant::DrekavacBoss, position, sprite, model_cache)
 }
