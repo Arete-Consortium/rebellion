@@ -8,10 +8,6 @@
 use bevy::audio::{PlaybackMode, PlaybackSettings, Volume};
 use bevy::prelude::*;
 use std::f32::consts::PI;
-#[cfg(not(target_arch = "wasm32"))]
-use std::io::Cursor;
-#[cfg(not(target_arch = "wasm32"))]
-use std::sync::Arc;
 
 use crate::core::*;
 
@@ -23,8 +19,6 @@ impl Plugin for MusicPlugin {
         app.init_resource::<MusicAssets>()
             .init_resource::<MusicState>();
 
-        // Audio generation and playback only on native — WASM has no wav codec
-        #[cfg(not(target_arch = "wasm32"))]
         app.add_systems(Startup, generate_music)
             .add_systems(
                 Update,
@@ -519,47 +513,7 @@ fn handle_state_music_transitions(
 // AUDIO UTILS
 // =============================================================================
 
-/// Create AudioSource from samples
-#[cfg(not(target_arch = "wasm32"))]
+/// Create AudioSource from samples — works on both native and WASM
 fn create_audio_source(samples: &[f32], sample_rate: u32) -> Option<AudioSource> {
-    let spec = hound::WavSpec {
-        channels: 1,
-        sample_rate,
-        bits_per_sample: 16,
-        sample_format: hound::SampleFormat::Int,
-    };
-
-    let mut buffer = Cursor::new(Vec::new());
-
-    {
-        let mut writer = match hound::WavWriter::new(&mut buffer, spec) {
-            Ok(w) => w,
-            Err(e) => {
-                warn!("Failed to create WAV writer: {}", e);
-                return None;
-            }
-        };
-
-        for &sample in samples {
-            let s = (sample * 32767.0) as i16;
-            if writer.write_sample(s).is_err() {
-                return None;
-            }
-        }
-
-        if writer.finalize().is_err() {
-            return None;
-        }
-    }
-
-    let wav_data = buffer.into_inner();
-    Some(AudioSource {
-        bytes: Arc::from(wav_data.into_boxed_slice()),
-    })
-}
-
-/// WASM stub - no procedural audio generation
-#[cfg(target_arch = "wasm32")]
-fn create_audio_source(_samples: &[f32], _sample_rate: u32) -> Option<AudioSource> {
-    None
+    super::wav_encoder::create_audio_source(samples, sample_rate)
 }

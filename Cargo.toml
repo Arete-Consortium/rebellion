@@ -102,7 +102,7 @@ bevy = { version = "0.15", default-features = false, features = [
     "wav",
 ] }
 
-# Game Engine - WASM (no multi-threading, no audio codecs - audio is silent in WASM)
+# Game Engine - WASM (no multi-threading)
 [target.'cfg(target_arch = "wasm32")'.dependencies.bevy]
 version = "0.15"
 default-features = false
@@ -121,6 +121,7 @@ features = [
     "bevy_winit",
     "default_font",
     "png",
+    "wav",
     "webgl2",
 ]
 

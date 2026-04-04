@@ -15,6 +15,7 @@ pub mod music;
 pub mod scoring;
 pub mod scoring_v2;
 pub mod spawning;
+pub mod wav_encoder;
 
 pub use ability::*;
 pub use audio::*;

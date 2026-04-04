@@ -8,8 +8,6 @@
 use bevy::audio::{PlaybackMode, Volume};
 use bevy::prelude::*;
 use std::f32::consts::PI;
-#[cfg(not(target_arch = "wasm32"))]
-use std::io::Cursor;
 
 use crate::core::{BossSpawnEvent, WaveCompleteEvent, *};
 use crate::systems::ability::{AbilityActivatedEvent, AbilityType};
@@ -424,55 +422,9 @@ fn generate_hull_hit() -> Option<AudioSource> {
     create_audio_source(&samples, sample_rate)
 }
 
-/// Create AudioSource from f32 samples using hound for proper WAV encoding
-#[cfg(not(target_arch = "wasm32"))]
+/// Create AudioSource from f32 samples — works on both native and WASM
 fn create_audio_source(samples: &[f32], sample_rate: u32) -> Option<AudioSource> {
-    use std::sync::Arc;
-
-    let spec = hound::WavSpec {
-        channels: 1,
-        sample_rate,
-        bits_per_sample: 16,
-        sample_format: hound::SampleFormat::Int,
-    };
-
-    // Write to in-memory buffer
-    let mut buffer = Cursor::new(Vec::new());
-
-    {
-        let mut writer = match hound::WavWriter::new(&mut buffer, spec) {
-            Ok(w) => w,
-            Err(e) => {
-                warn!("Failed to create WAV writer: {}", e);
-                return None;
-            }
-        };
-
-        // Convert f32 samples to i16
-        for &sample in samples {
-            let s = (sample * 32767.0) as i16;
-            if writer.write_sample(s).is_err() {
-                warn!("Failed to write audio sample");
-                return None;
-            }
-        }
-
-        if writer.finalize().is_err() {
-            warn!("Failed to finalize WAV");
-            return None;
-        }
-    }
-
-    let wav_data = buffer.into_inner();
-    Some(AudioSource {
-        bytes: Arc::from(wav_data.into_boxed_slice()),
-    })
-}
-
-/// WASM stub - no procedural audio generation
-#[cfg(target_arch = "wasm32")]
-fn create_audio_source(_samples: &[f32], _sample_rate: u32) -> Option<AudioSource> {
-    None
+    super::wav_encoder::create_audio_source(samples, sample_rate)
 }
 
 /// Play weapon firing sounds with subtle variation

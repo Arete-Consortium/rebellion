@@ -8,8 +8,8 @@ Space arcade shooter suite built with Rust and Bevy
 
 - **Version**: 1.9.0
 - **Language**: Rust
-- **Files**: 276 across 6 languages
-- **Lines**: 53,098
+- **Files**: 279 across 6 languages
+- **Lines**: 55,623
 
 ## Architecture
 
@@ -63,7 +63,7 @@ rebellion/
 
 ## Tech Stack
 
-- **Language**: Rust, Python, Shell, TypeScript, JavaScript, HTML
+- **Language**: Rust, Python, TypeScript, Shell, JavaScript, HTML
 - **Framework**: bevy, rust
 - **Package Manager**: cargo
 - **Linters**: clippy
@@ -75,19 +75,41 @@ rebellion/
 - **Naming**: snake_case
 - **Line Length (p95)**: 74 characters
 
+## Common Commands
+
+```bash
+# Build native release
+cargo build --release
+
+# Build WASM
+bash build-wasm.sh
+
+# Run native
+cargo run --release
+
+# Run tests
+cargo test
+
+# Lint
+cargo clippy -- -D warnings
+
+# Format
+cargo fmt --check
+
+# Benchmarks
+cargo bench --bench game_systems
+
+# Serve WASM locally (after build)
+cd web && python3 -m http.server 8080
+```
+
 ## Anti-Patterns (Do NOT Do)
 
 - Do NOT commit secrets, API keys, or credentials
 - Do NOT skip writing tests for new code
-- Do NOT use `any` type — define proper type interfaces
-- Do NOT use `var` — use `const` or `let`
 - Do NOT use `.unwrap()` in production code — use proper error handling
 - Do NOT use `unsafe` without a safety comment
 - Do NOT clone when a reference will do
-- Do NOT use `os.path` — use `pathlib.Path` everywhere
-- Do NOT use bare `except:` — catch specific exceptions
-- Do NOT use mutable default arguments
-- Do NOT use `print()` for logging — use the `logging` module
 
 ## Dependencies
 
@@ -124,11 +146,11 @@ rebellion/
 - Activate Ship Ability
 - Active Buff Visuals
 - Arrow Keys
+- Authentic Visuals
 - Barrel Roll
 - Based Damage
 - Building Requires Rust
 - CCP
-- CI
 
 ### Enums/Constants
 - `Ability`
@@ -142,8 +164,6 @@ rebellion/
 - `BackButtonAction`
 - `BackgroundShipClass`
 
-### Outstanding Items
-- **TODO**: we could test for more things here, like `Set`s and `Map`s. (`web/rebellion.js`)
 
 ## AI Skills
 
