@@ -7,7 +7,7 @@ use crate::assets::ShipSpriteCache;
 use crate::core::{GameState, LAYER_ENEMIES};
 use crate::entities::boss::{Boss, BossAttack, BossData, BossMovement, BossState, MovementPattern};
 use crate::entities::Hitbox;
-use crate::entities::{spawn_damavik, spawn_enemy, spawn_vedmak, EnemyBehavior};
+use crate::entities::{spawn_enemy, spawn_variant, EnemyBehavior, EnemyVariant};
 use bevy::prelude::*;
 
 /// Campaign state resource
@@ -329,10 +329,10 @@ pub fn spawn_trig_wave(
             // Player is EDENCOM, enemies are Triglavian
             match selected_type_id {
                 triglavian::DAMAVIK => {
-                    spawn_damavik(&mut commands, pos, sprite, None);
+                    spawn_variant(&mut commands, EnemyVariant::Damavik, pos, sprite, None);
                 }
                 triglavian::VEDMAK => {
-                    spawn_vedmak(&mut commands, pos, sprite, None);
+                    spawn_variant(&mut commands, EnemyVariant::Vedmak, pos, sprite, None);
                 }
                 _ => {
                     // Generic enemy spawn for other Triglavian ships

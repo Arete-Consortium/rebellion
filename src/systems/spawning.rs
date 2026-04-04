@@ -6,10 +6,7 @@
 use super::dialogue::{DialogueEvent, DialogueSystem};
 use crate::assets::ShipModelCache;
 use crate::core::*;
-use crate::entities::{
-    spawn_enemy, spawn_kamikaze, spawn_sniper, spawn_spawner_enemy, spawn_tank, spawn_weaver,
-    EnemyBehavior,
-};
+use crate::entities::{spawn_enemy, spawn_variant, EnemyBehavior, EnemyVariant};
 use crate::games::caldari_gallente::LastStandState;
 use bevy::prelude::*;
 
@@ -485,19 +482,19 @@ fn wave_spawning(
             // Use specialized spawn functions for special enemy types
             match behavior {
                 EnemyBehavior::Kamikaze => {
-                    spawn_kamikaze(&mut commands, pos, sprite, Some(&model_cache));
+                    spawn_variant(&mut commands, EnemyVariant::Kamikaze, pos, sprite, Some(&model_cache));
                 }
                 EnemyBehavior::Weaver => {
-                    spawn_weaver(&mut commands, pos, sprite, Some(&model_cache));
+                    spawn_variant(&mut commands, EnemyVariant::Weaver, pos, sprite, Some(&model_cache));
                 }
                 EnemyBehavior::Sniper => {
-                    spawn_sniper(&mut commands, pos, sprite, Some(&model_cache));
+                    spawn_variant(&mut commands, EnemyVariant::Sniper, pos, sprite, Some(&model_cache));
                 }
                 EnemyBehavior::Spawner => {
-                    spawn_spawner_enemy(&mut commands, pos, sprite, Some(&model_cache));
+                    spawn_variant(&mut commands, EnemyVariant::Spawner, pos, sprite, Some(&model_cache));
                 }
                 EnemyBehavior::Tank => {
-                    spawn_tank(&mut commands, pos, sprite, Some(&model_cache));
+                    spawn_variant(&mut commands, EnemyVariant::Tank, pos, sprite, Some(&model_cache));
                 }
                 _ => {
                     spawn_enemy(

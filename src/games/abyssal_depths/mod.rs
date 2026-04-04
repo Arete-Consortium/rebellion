@@ -218,7 +218,7 @@ fn setup_abyssal(
 /// Room 2: Mixed fleet (Homing/Sniper + Triglavians) — pressure ramp
 /// Room 3: Full Triglavian force (Vedmak/Damavik + Drekavac boss) — survival test
 fn spawn_room_enemies(commands: &mut Commands, state: &AbyssalState, _session: &GameSession) {
-    use crate::entities::enemy::{spawn_enemy, EnemyBehavior};
+    use crate::entities::enemy::{spawn_enemy, spawn_variant, EnemyBehavior, EnemyVariant};
 
     let count = state.room.enemy_count();
     let spawn_y_base = SCREEN_HEIGHT / 2.0 - 50.0;
@@ -259,7 +259,7 @@ fn spawn_room_enemies(commands: &mut Commands, state: &AbyssalState, _session: &
 
                 if i % 4 == 0 {
                     // Every 4th enemy is a Triglavian Damavik
-                    crate::entities::enemy::spawn_damavik(commands, Vec2::new(x, y), None, None);
+                    spawn_variant(commands, EnemyVariant::Damavik, Vec2::new(x, y), None, None);
                 } else {
                     let behavior = behaviors[i as usize % behaviors.len()];
                     let type_id = ship_types[i as usize % ship_types.len()];
@@ -276,11 +276,12 @@ fn spawn_room_enemies(commands: &mut Commands, state: &AbyssalState, _session: &
 
                 if i % 3 == 0 {
                     // Heavy Vedmak cruisers
-                    crate::entities::enemy::spawn_vedmak(commands, Vec2::new(x, y), None, None);
+                    spawn_variant(commands, EnemyVariant::Vedmak, Vec2::new(x, y), None, None);
                 } else {
                     // Fast Starving Damaviks
-                    crate::entities::enemy::spawn_starving_damavik(
+                    spawn_variant(
                         commands,
+                        EnemyVariant::StarvingDamavik,
                         Vec2::new(x, y),
                         None,
                         None,
@@ -290,7 +291,7 @@ fn spawn_room_enemies(commands: &mut Commands, state: &AbyssalState, _session: &
 
             // Drekavac boss
             let boss_pos = Vec2::new(0.0, spawn_y_base + 50.0);
-            crate::entities::enemy::spawn_drekavac_boss(commands, boss_pos, None, None);
+            spawn_variant(commands, EnemyVariant::DrekavacBoss, boss_pos, None, None);
         }
     }
 

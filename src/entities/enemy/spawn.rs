@@ -478,23 +478,6 @@ pub fn spawn_variant(
     entity
 }
 
-// Legacy convenience wrappers — delegate to spawn_variant
-pub fn spawn_kamikaze(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::Kamikaze, position, sprite, model_cache)
-}
-pub fn spawn_weaver(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::Weaver, position, sprite, model_cache)
-}
-pub fn spawn_sniper(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::Sniper, position, sprite, model_cache)
-}
-pub fn spawn_spawner_enemy(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::Spawner, position, sprite, model_cache)
-}
-pub fn spawn_tank(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::Tank, position, sprite, model_cache)
-}
-
 // ============================================================================
 // Triglavian Ships (Disintegrator beam weapons with ramping damage)
 // ============================================================================
@@ -506,23 +489,6 @@ pub mod triglavian {
     pub const DREKAVAC: u32 = 47271; // Battlecruiser
     pub const LESHAK: u32 = 47272; // Battleship
     pub const KIKIMORA: u32 = 47273; // Destroyer
-}
-
-// Legacy Triglavian convenience wrappers — delegate to spawn_variant
-pub fn spawn_damavik(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::Damavik, position, sprite, model_cache)
-}
-pub fn spawn_starving_damavik(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::StarvingDamavik, position, sprite, model_cache)
-}
-pub fn spawn_vedmak(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::Vedmak, position, sprite, model_cache)
-}
-pub fn spawn_blinding_vedmak(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::BlindingVedmak, position, sprite, model_cache)
-}
-pub fn spawn_drekavac_boss(commands: &mut Commands, position: Vec2, sprite: Option<Handle<Image>>, model_cache: Option<&ShipModelCache>) -> Entity {
-    spawn_variant(commands, EnemyVariant::DrekavacBoss, position, sprite, model_cache)
 }
 
 #[cfg(test)]
