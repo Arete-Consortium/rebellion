@@ -121,6 +121,7 @@ fn player_projectile_enemy_collision(
     mut screen_shake: ResMut<super::effects::ScreenShake>,
     mut screen_flash: ResMut<super::effects::ScreenFlash>,
     mut camera_zoom: ResMut<super::effects::CameraZoom>,
+    mut hit_stop: ResMut<super::effects::HitStop>,
     icon_cache: Res<crate::assets::PowerupIconCache>,
     mut boss_callout_sent: Local<bool>,
 ) {
@@ -243,14 +244,16 @@ fn player_projectile_enemy_collision(
                         color: explosion_color,
                     });
 
-                    // Screen shake, flash, and zoom on kill
+                    // Screen shake, flash, zoom, and hitstop on kill
                     if enemy_stats.is_boss {
                         screen_shake.massive();
                         screen_flash.massive(); // Big white flash for boss kills
                         camera_zoom.boss_kill(); // Dramatic zoom pulse
+                        hit_stop.trigger(0.08); // Longer freeze frame for boss kills
                         *boss_callout_sent = false; // Reset for next boss
                     } else {
                         screen_shake.trigger(3.0, 0.1); // Small shake for regular enemies
+                        hit_stop.trigger(0.02); // Brief freeze frame on regular kills
                     }
 
                     // Spawn liberation pods

@@ -407,11 +407,19 @@ fn collectible_pickup(
     mut commands: Commands,
     player_query: Query<&Transform, With<super::Player>>,
     collectible_query: Query<
-        (Entity, &Transform, &CollectibleData, Option<&Sprite>),
+        (
+            Entity,
+            &Transform,
+            &CollectibleData,
+            Option<&Sprite>,
+            &CollectibleRarity,
+        ),
         With<Collectible>,
     >,
     mut pickup_events: EventWriter<CollectiblePickedUpEvent>,
     mut effect_events: EventWriter<PickupEffectEvent>,
+    mut screen_shake: ResMut<crate::systems::effects::ScreenShake>,
+    mut screen_flash: ResMut<crate::systems::effects::ScreenFlash>,
 ) {
     let Ok(player_transform) = player_query.get_single() else {
         return;
@@ -420,7 +428,7 @@ fn collectible_pickup(
     let player_pos = player_transform.translation.truncate();
     let pickup_radius = 30.0;
 
-    for (entity, transform, data, sprite) in collectible_query.iter() {
+    for (entity, transform, data, sprite, rarity_data) in collectible_query.iter() {
         let collectible_pos = transform.translation.truncate();
         let distance = (player_pos - collectible_pos).length();
 
@@ -441,6 +449,14 @@ fn collectible_pickup(
                 collectible_type: data.collectible_type,
                 color,
             });
+
+            // Screen shake on any pickup
+            screen_shake.trigger(2.0, 0.05);
+
+            // Screen flash with rarity border color for rare/epic pickups
+            if matches!(rarity_data.rarity, Rarity::Rare | Rarity::Epic) {
+                screen_flash.colored(rarity_data.rarity.border_color(), 0.3);
+            }
 
             // Despawn collectible
             commands.entity(entity).despawn_recursive();

@@ -244,6 +244,19 @@ impl Default for Weapon {
     }
 }
 
+/// Stores the ship's base rotation (sprite correction) so tilt can layer on top
+#[derive(Component, Debug, Clone, Copy)]
+pub struct BaseRotation(pub f32);
+
+impl Default for BaseRotation {
+    fn default() -> Self {
+        Self(0.0)
+    }
+}
+
+/// Respawn invincibility duration in seconds
+const RESPAWN_INVINCIBILITY_SECS: f32 = 3.0;
+
 /// Player hitbox for collision detection
 #[derive(Component, Debug)]
 pub struct Hitbox {
@@ -296,7 +309,12 @@ impl Plugin for PlayerPlugin {
         app.add_systems(OnEnter(GameState::Playing), spawn_player)
             .add_systems(
                 Update,
-                (player_movement, player_shooting, update_player_stats)
+                (
+                    player_movement,
+                    player_shooting,
+                    update_player_stats,
+                    iframes_flash,
+                )
                     .run_if(in_state(GameState::Playing))
                     .run_if(not_last_stand),
             )
@@ -410,6 +428,13 @@ fn spawn_player(
             faction.weapon_type().name(),
             player_size
         );
+        // Grant respawn invincibility
+        let maneuver = ManeuverState {
+            invincible: true,
+            invincibility_timer: RESPAWN_INVINCIBILITY_SECS,
+            ..Default::default()
+        };
+
         commands.spawn((
             Player,
             stats,
@@ -419,8 +444,9 @@ fn spawn_player(
             AbilityEffects::default(),
             Hitbox::default(),
             super::collectible::PowerupEffects::default(),
-            ManeuverState::default(),
+            maneuver,
             engine_trail,
+            BaseRotation(rotation),
             Sprite {
                 image: texture,
                 custom_size: Some(Vec2::splat(player_size)),
@@ -432,6 +458,13 @@ fn spawn_player(
     } else {
         // Fallback: simple colored sprite
         warn!("No sprite for type {}, using color fallback", type_id);
+        // Grant respawn invincibility
+        let maneuver_fb = ManeuverState {
+            invincible: true,
+            invincibility_timer: RESPAWN_INVINCIBILITY_SECS,
+            ..Default::default()
+        };
+
         commands.spawn((
             Player,
             stats,
@@ -441,8 +474,9 @@ fn spawn_player(
             AbilityEffects::default(),
             Hitbox::default(),
             super::collectible::PowerupEffects::default(),
-            ManeuverState::default(),
+            maneuver_fb,
             engine_trail,
+            BaseRotation(0.0),
             Sprite {
                 color: base_color,
                 custom_size: Some(Vec2::new(player_size * 0.85, player_size)),
@@ -484,15 +518,22 @@ fn darken_color(color: Color, amount: f32) -> Color {
     )
 }
 
+/// Max tilt angle in radians (~15 degrees)
+const MAX_TILT_RADIANS: f32 = 0.26;
+/// How much tilt per unit of horizontal velocity
+const TILT_FACTOR: f32 = 0.001;
+/// Smoothing speed for tilt interpolation (higher = snappier)
+const TILT_LERP_SPEED: f32 = 10.0;
+
 /// Player movement system
 fn player_movement(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<crate::systems::JoystickState>,
-    mut query: Query<(&mut Transform, &mut Movement), With<Player>>,
+    mut query: Query<(&mut Transform, &mut Movement, &BaseRotation, &ManeuverState), With<Player>>,
     salt_miner: Res<SaltMinerSystem>,
 ) {
-    let Ok((mut transform, mut movement)) = query.get_single_mut() else {
+    let Ok((mut transform, mut movement, base_rot, maneuver)) = query.get_single_mut() else {
         return;
     };
 
@@ -546,6 +587,18 @@ fn player_movement(
     let half_height = SCREEN_HEIGHT / 2.0 - PLAYER_SPRITE_SIZE / 2.0;
     transform.translation.x = transform.translation.x.clamp(-half_width, half_width);
     transform.translation.y = transform.translation.y.clamp(-half_height, half_height);
+
+    // Ship tilt into turns (skip during barrel roll — it has its own rotation)
+    if !maneuver.barrel_roll_active {
+        let target_tilt =
+            (movement.velocity.x * TILT_FACTOR).clamp(-MAX_TILT_RADIANS, MAX_TILT_RADIANS);
+        // Extract current tilt relative to base rotation
+        let (_, _, current_z) = transform.rotation.to_euler(EulerRot::XYZ);
+        let current_tilt = current_z - base_rot.0;
+        let new_tilt =
+            current_tilt + (target_tilt - current_tilt) * (TILT_LERP_SPEED * dt).min(1.0);
+        transform.rotation = Quat::from_rotation_z(base_rot.0 + new_tilt);
+    }
 }
 
 /// Player shooting system
@@ -558,6 +611,7 @@ fn player_shooting(
     mut fire_events: EventWriter<PlayerFireEvent>,
     salt_miner: Res<SaltMinerSystem>,
     mut heat_system: ResMut<crate::systems::ComboHeatSystem>,
+    mut screen_shake: ResMut<crate::systems::effects::ScreenShake>,
 ) {
     let Ok((transform, mut weapon, ability_effects)) = query.get_single_mut() else {
         return;
@@ -667,6 +721,9 @@ fn player_shooting(
             spread_angle,
             ammo_type: weapon.ammo_type,
         });
+
+        // Subtle recoil shake on fire
+        screen_shake.trigger(1.0, 0.03);
     }
 }
 
@@ -677,6 +734,23 @@ fn update_player_stats(time: Res<Time>, mut query: Query<&mut ShipStats, With<Pl
     };
 
     stats.update(time.delta_secs());
+}
+
+/// Visual feedback during any i-frames: flash sprite alpha
+fn iframes_flash(time: Res<Time>, mut query: Query<(&ManeuverState, &mut Sprite), With<Player>>) {
+    let Ok((maneuver, mut sprite)) = query.get_single_mut() else {
+        return;
+    };
+
+    if maneuver.invincible {
+        // Toggle alpha between 1.0 and 0.3 every 0.1 seconds
+        let t = time.elapsed_secs();
+        let alpha = if (t * 10.0) as i32 % 2 == 0 { 1.0 } else { 0.3 };
+        sprite.color = sprite.color.with_alpha(alpha);
+    } else {
+        // Ensure full opacity when not invincible
+        sprite.color = sprite.color.with_alpha(1.0);
+    }
 }
 
 /// Despawn player when leaving gameplay

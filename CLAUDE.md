@@ -8,8 +8,8 @@ Space arcade shooter suite built with Rust and Bevy
 
 - **Version**: 2.0.0
 - **Language**: Rust
-- **Files**: 327 across 6 languages
-- **Lines**: 56,791
+- **Files**: 333 across 6 languages
+- **Lines**: 57,056
 
 ## Architecture
 
