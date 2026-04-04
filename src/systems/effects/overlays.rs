@@ -140,7 +140,10 @@ pub fn update_disintegrator_beams(
             &mut Transform,
             &mut Sprite,
         ),
-        Without<crate::entities::Enemy>,
+        (
+            Without<crate::entities::Enemy>,
+            Without<crate::entities::Player>,
+        ),
     >,
 ) {
     let player_pos = player_query
