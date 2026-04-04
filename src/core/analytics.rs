@@ -150,11 +150,7 @@ fn record_stage_complete(session: Res<SessionAnalytics>, mut save_data: ResMut<S
         .or_insert(0) += 1;
 }
 
-fn record_session_common(
-    analytics: &mut AnalyticsData,
-    session: &SessionAnalytics,
-    duration: f64,
-) {
+fn record_session_common(analytics: &mut AnalyticsData, session: &SessionAnalytics, duration: f64) {
     if !session.ship_name.is_empty() {
         *analytics
             .ship_picks

@@ -3,27 +3,27 @@
 //! Complete menu flow: Title -> Difficulty -> Ship -> Playing
 //! Supports keyboard, mouse, and joystick input.
 
+pub mod boss_intro;
 pub mod common;
+pub mod death_screen;
+pub mod difficulty_select;
+pub mod endless_announcements;
+pub mod faction_select;
 pub mod loading;
 pub mod main_menu;
 pub mod module_select;
 pub mod options;
-pub mod faction_select;
-pub mod difficulty_select;
-pub mod stage_select;
-pub mod ship_select;
 pub mod pause;
-pub mod death_screen;
-pub mod boss_intro;
+pub mod ship_select;
 pub mod stage_complete;
-pub mod victory;
-pub mod endless_announcements;
+pub mod stage_select;
 pub mod upgrade_shop;
+pub mod victory;
 
 pub(crate) use common::*;
 
-use bevy::prelude::*;
 use crate::core::*;
+use bevy::prelude::*;
 
 /// Menu plugin
 pub struct MenuPlugin;
@@ -37,17 +37,29 @@ impl Plugin for MenuPlugin {
                 Update,
                 loading::loading_progress.run_if(in_state(GameState::Loading)),
             )
-            .add_systems(OnExit(GameState::Loading), despawn_menu::<loading::LoadingRoot>)
+            .add_systems(
+                OnExit(GameState::Loading),
+                despawn_menu::<loading::LoadingRoot>,
+            )
             // Main Menu
             .add_systems(OnEnter(GameState::MainMenu), main_menu::spawn_main_menu)
             .add_systems(
                 Update,
-                (main_menu::main_menu_input, update_menu_selection::<main_menu::MainMenuRoot>)
+                (
+                    main_menu::main_menu_input,
+                    update_menu_selection::<main_menu::MainMenuRoot>,
+                )
                     .run_if(in_state(GameState::MainMenu)),
             )
-            .add_systems(OnExit(GameState::MainMenu), despawn_menu::<main_menu::MainMenuRoot>)
+            .add_systems(
+                OnExit(GameState::MainMenu),
+                despawn_menu::<main_menu::MainMenuRoot>,
+            )
             // Module Select
-            .add_systems(OnEnter(GameState::ModuleSelect), module_select::spawn_module_select)
+            .add_systems(
+                OnEnter(GameState::ModuleSelect),
+                module_select::spawn_module_select,
+            )
             .add_systems(
                 Update,
                 (
@@ -66,7 +78,10 @@ impl Plugin for MenuPlugin {
                 Update,
                 options::options_menu_input.run_if(in_state(GameState::Options)),
             )
-            .add_systems(OnExit(GameState::Options), despawn_menu::<options::OptionsMenuRoot>)
+            .add_systems(
+                OnExit(GameState::Options),
+                despawn_menu::<options::OptionsMenuRoot>,
+            )
             // Faction Select (unified 4-faction) - only for Elder Fleet module
             .add_systems(
                 OnEnter(GameState::FactionSelect),
@@ -80,10 +95,14 @@ impl Plugin for MenuPlugin {
             )
             .add_systems(
                 OnExit(GameState::FactionSelect),
-                despawn_menu::<faction_select::FactionSelectRoot>.run_if(module_select::is_elder_fleet),
+                despawn_menu::<faction_select::FactionSelectRoot>
+                    .run_if(module_select::is_elder_fleet),
             )
             // Difficulty Select
-            .add_systems(OnEnter(GameState::DifficultySelect), difficulty_select::spawn_difficulty_menu)
+            .add_systems(
+                OnEnter(GameState::DifficultySelect),
+                difficulty_select::spawn_difficulty_menu,
+            )
             .add_systems(
                 Update,
                 (
@@ -97,10 +116,16 @@ impl Plugin for MenuPlugin {
                 despawn_menu::<difficulty_select::DifficultyMenuRoot>,
             )
             // Stage Select
-            .add_systems(OnEnter(GameState::StageSelect), stage_select::spawn_stage_select)
+            .add_systems(
+                OnEnter(GameState::StageSelect),
+                stage_select::spawn_stage_select,
+            )
             .add_systems(
                 Update,
-                (stage_select::stage_select_input, update_menu_selection::<stage_select::StageSelectRoot>)
+                (
+                    stage_select::stage_select_input,
+                    update_menu_selection::<stage_select::StageSelectRoot>,
+                )
                     .run_if(in_state(GameState::StageSelect)),
             )
             .add_systems(
@@ -118,12 +143,21 @@ impl Plugin for MenuPlugin {
                 )
                     .run_if(in_state(GameState::ShipSelect)),
             )
-            .add_systems(OnExit(GameState::ShipSelect), despawn_menu::<ship_select::ShipMenuRoot>)
+            .add_systems(
+                OnExit(GameState::ShipSelect),
+                despawn_menu::<ship_select::ShipMenuRoot>,
+            )
             // Upgrade Shop
-            .add_systems(OnEnter(GameState::UpgradeShop), upgrade_shop::spawn_upgrade_shop)
+            .add_systems(
+                OnEnter(GameState::UpgradeShop),
+                upgrade_shop::spawn_upgrade_shop,
+            )
             .add_systems(
                 Update,
-                (upgrade_shop::upgrade_shop_input, upgrade_shop::update_upgrade_shop_selection)
+                (
+                    upgrade_shop::upgrade_shop_input,
+                    upgrade_shop::update_upgrade_shop_selection,
+                )
                     .run_if(in_state(GameState::UpgradeShop)),
             )
             .add_systems(
@@ -132,16 +166,31 @@ impl Plugin for MenuPlugin {
             )
             // Pause Menu
             .add_systems(OnEnter(GameState::Paused), pause::spawn_pause_menu)
-            .add_systems(Update, pause::pause_menu_input.run_if(in_state(GameState::Paused)))
-            .add_systems(OnExit(GameState::Paused), despawn_menu::<pause::PauseMenuRoot>)
-            // Game Over (Death Screen with corpse and debris)
-            .add_systems(OnEnter(GameState::GameOver), death_screen::spawn_death_screen)
             .add_systems(
                 Update,
-                (death_screen::update_death_screen_animation, death_screen::death_screen_input)
+                pause::pause_menu_input.run_if(in_state(GameState::Paused)),
+            )
+            .add_systems(
+                OnExit(GameState::Paused),
+                despawn_menu::<pause::PauseMenuRoot>,
+            )
+            // Game Over (Death Screen with corpse and debris)
+            .add_systems(
+                OnEnter(GameState::GameOver),
+                death_screen::spawn_death_screen,
+            )
+            .add_systems(
+                Update,
+                (
+                    death_screen::update_death_screen_animation,
+                    death_screen::death_screen_input,
+                )
                     .run_if(in_state(GameState::GameOver)),
             )
-            .add_systems(OnExit(GameState::GameOver), death_screen::despawn_death_screen)
+            .add_systems(
+                OnExit(GameState::GameOver),
+                death_screen::despawn_death_screen,
+            )
             // Boss Intro (Elder Fleet only - CG has its own)
             .add_systems(
                 OnEnter(GameState::BossIntro),
@@ -153,7 +202,10 @@ impl Plugin for MenuPlugin {
                     .run_if(in_state(GameState::BossIntro))
                     .run_if(module_select::is_elder_fleet),
             )
-            .add_systems(OnExit(GameState::BossIntro), despawn_menu::<boss_intro::BossIntroRoot>)
+            .add_systems(
+                OnExit(GameState::BossIntro),
+                despawn_menu::<boss_intro::BossIntroRoot>,
+            )
             // Stage Complete (Elder Fleet only - CG has its own)
             .add_systems(
                 OnEnter(GameState::StageComplete),
@@ -167,7 +219,8 @@ impl Plugin for MenuPlugin {
             )
             .add_systems(
                 OnExit(GameState::StageComplete),
-                despawn_menu::<stage_complete::StageCompleteRoot>.run_if(module_select::is_elder_fleet),
+                despawn_menu::<stage_complete::StageCompleteRoot>
+                    .run_if(module_select::is_elder_fleet),
             )
             // Victory (Elder Fleet only - CG has its own)
             .add_systems(

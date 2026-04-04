@@ -90,11 +90,11 @@ pub struct SoundAssets {
     pub menu_select: Option<Handle<AudioSource>>,
     pub menu_confirm: Option<Handle<AudioSource>>,
     // Ability sounds
-    pub ability_speed: Option<Handle<AudioSource>>,  // Overdrive, Afterburner
+    pub ability_speed: Option<Handle<AudioSource>>, // Overdrive, Afterburner
     pub ability_shield: Option<Handle<AudioSource>>, // Shield Boost
-    pub ability_armor: Option<Handle<AudioSource>>,  // Armor Hardener, Armor Repair
+    pub ability_armor: Option<Handle<AudioSource>>, // Armor Hardener, Armor Repair
     pub ability_weapon: Option<Handle<AudioSource>>, // Salvo, Rocket Barrage, Scorch
-    pub ability_drone: Option<Handle<AudioSource>>,  // Deploy Drone, Drone Bay
+    pub ability_drone: Option<Handle<AudioSource>>, // Deploy Drone, Drone Bay
     pub ability_debuff: Option<Handle<AudioSource>>, // Warp Disruptor
     pub ability_damage: Option<Handle<AudioSource>>, // Close Range
 }

@@ -25,8 +25,8 @@ use assets::AssetsPlugin;
 use core::{
     AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, AudioSettings, BossSpawnEvent,
     CampaignState, CurrentStage, Difficulty, EndlessMode, GameEventsPlugin, GameProgress,
-    GameSession, GameState, InputConfig, MissionCompleteEvent, MissionStartEvent,
-    SaltMinerSystem, SavePlugin, ScoreSystem, SelectedShip, ShipUnlocks, WaveCompleteEvent,
+    GameSession, GameState, InputConfig, MissionCompleteEvent, MissionStartEvent, SaltMinerSystem,
+    SavePlugin, ScoreSystem, SelectedShip, ShipUnlocks, WaveCompleteEvent,
 };
 use entities::EntitiesPlugin;
 use games::GameModulesPlugin;

@@ -1,7 +1,7 @@
 //! Screen-level effects: shake, hit stop, screen flash, camera zoom
 
-use bevy::prelude::*;
 use crate::core::*;
+use bevy::prelude::*;
 
 // =============================================================================
 // SCREEN SHAKE

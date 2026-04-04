@@ -1,7 +1,7 @@
 //! Starfield background effect
 
-use bevy::prelude::*;
 use crate::core::*;
+use bevy::prelude::*;
 
 /// Marker for star entities
 #[derive(Component)]

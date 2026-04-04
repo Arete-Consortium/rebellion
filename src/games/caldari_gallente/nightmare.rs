@@ -2,7 +2,7 @@
 //!
 //! Endless wave survival with mini-boss encounters.
 
-use super::campaign::{NightmareBoss, ShiigeruNightmare, NightmareEvent};
+use super::campaign::{NightmareBoss, NightmareEvent, ShiigeruNightmare};
 use super::faction_select::COLOR_CALDARI_ACCENT;
 use crate::core::{Faction, GameSession};
 use bevy::prelude::*;

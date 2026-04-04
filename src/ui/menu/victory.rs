@@ -2,11 +2,11 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
+use super::common::*;
 use crate::core::*;
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
-use super::common::*;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub(crate) struct VictoryRoot;
@@ -428,7 +428,10 @@ pub(crate) fn update_victory_buttons(
     }
 }
 
-pub(crate) fn despawn_victory_screen(mut commands: Commands, query: Query<Entity, With<VictoryRoot>>) {
+pub(crate) fn despawn_victory_screen(
+    mut commands: Commands,
+    query: Query<Entity, With<VictoryRoot>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }

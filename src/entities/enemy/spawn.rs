@@ -592,8 +592,16 @@ mod tests {
         ];
         for variant in trig_variants {
             let config = variant.config();
-            assert!(config.disintegrator.is_some(), "{} should have disintegrator", config.name);
-            assert!(config.remove_weapon, "{} should remove standard weapon", config.name);
+            assert!(
+                config.disintegrator.is_some(),
+                "{} should have disintegrator",
+                config.name
+            );
+            assert!(
+                config.remove_weapon,
+                "{} should remove standard weapon",
+                config.name
+            );
             assert_eq!(config.behavior, EnemyBehavior::Disintegrator);
         }
     }
@@ -609,7 +617,11 @@ mod tests {
         ];
         for variant in standard {
             let config = variant.config();
-            assert!(config.disintegrator.is_none(), "{} should not have disintegrator", config.name);
+            assert!(
+                config.disintegrator.is_none(),
+                "{} should not have disintegrator",
+                config.name
+            );
             assert!(!config.remove_weapon);
         }
     }
@@ -619,7 +631,10 @@ mod tests {
         let boss = EnemyVariant::DrekavacBoss.config();
         for variant in all_variants() {
             let config = variant.config();
-            assert!(boss.health >= config.health, "Drekavac should have highest health");
+            assert!(
+                boss.health >= config.health,
+                "Drekavac should have highest health"
+            );
         }
     }
 
@@ -628,7 +643,10 @@ mod tests {
         let boss = EnemyVariant::DrekavacBoss.config();
         for variant in all_variants() {
             let config = variant.config();
-            assert!(boss.score_value >= config.score_value, "Drekavac should have highest score");
+            assert!(
+                boss.score_value >= config.score_value,
+                "Drekavac should have highest score"
+            );
         }
     }
 }

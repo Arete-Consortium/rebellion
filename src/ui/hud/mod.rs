@@ -21,11 +21,15 @@ use crate::core::GameState;
 
 use achievements::update_achievement_popup;
 use boss::update_boss_health_bar;
-use combat::{update_ability_indicator, update_ammo_display, update_drone_status, update_wingman_gauge};
+use combat::{
+    update_ability_indicator, update_ammo_display, update_drone_status, update_wingman_gauge,
+};
 use meters::{update_heat_display, update_salt_miner_meter};
 use mission::{update_dialogue_display, update_mission_display, update_wave_display};
 use powerups::{update_buff_expiration_warnings, update_powerup_indicators};
-use score::{update_combo_display, update_combo_kills, update_combo_timer_bar, update_score_display};
+use score::{
+    update_combo_display, update_combo_kills, update_combo_timer_bar, update_score_display,
+};
 use spawn::{despawn_hud, spawn_hud};
 
 /// HUD plugin

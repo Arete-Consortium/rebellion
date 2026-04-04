@@ -2,9 +2,9 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
 use crate::core::*;
 use crate::entities::boss::get_boss_for_stage;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub(crate) struct BossIntroRoot;

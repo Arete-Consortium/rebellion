@@ -28,8 +28,8 @@ pub use screen_effects::*;
 pub use starfield::*;
 pub use trails::*;
 
-use bevy::prelude::*;
 use crate::core::GameState;
+use bevy::prelude::*;
 
 /// Maximum particles to prevent slowdown during intense combat
 pub const MAX_EXPLOSION_PARTICLES: usize = 500;
@@ -113,7 +113,11 @@ impl Plugin for EffectsPlugin {
             )
             .add_systems(
                 OnExit(GameState::Playing),
-                (cleanup::cleanup_effects, cleanup::cleanup_effects_2, cleanup::cleanup_buff_visuals),
+                (
+                    cleanup::cleanup_effects,
+                    cleanup::cleanup_effects_2,
+                    cleanup::cleanup_buff_visuals,
+                ),
             );
     }
 }

@@ -1,9 +1,9 @@
 //! Ability visual effects
 
-use bevy::prelude::*;
+use super::screen_effects::ScreenFlash;
 use crate::core::*;
 use crate::systems::ability::{AbilityActivatedEvent, AbilityType};
-use super::screen_effects::ScreenFlash;
+use bevy::prelude::*;
 
 /// Visual effect type for abilities
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

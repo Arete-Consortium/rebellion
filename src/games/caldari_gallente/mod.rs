@@ -3,7 +3,7 @@
 //! Caldari vs Gallente faction warfare over Caldari Prime.
 
 use super::{ActiveModule, FactionInfo, GameModuleInfo, ModuleRegistry};
-use crate::core::{GameState};
+use crate::core::GameState;
 use bevy::ecs::schedule::common_conditions::not;
 use bevy::prelude::*;
 
@@ -57,12 +57,18 @@ impl Plugin for CaldariGallentePlugin {
         );
 
         // Mode select screen (Campaign vs Nightmare) - Caldari only
-        app.add_systems(OnEnter(CGModeSelect::Active), mode_select::spawn_mode_select)
-            .add_systems(
-                Update,
-                mode_select::mode_select_input.run_if(in_state(CGModeSelect::Active)),
-            )
-            .add_systems(OnExit(CGModeSelect::Active), mode_select::despawn_mode_select);
+        app.add_systems(
+            OnEnter(CGModeSelect::Active),
+            mode_select::spawn_mode_select,
+        )
+        .add_systems(
+            Update,
+            mode_select::mode_select_input.run_if(in_state(CGModeSelect::Active)),
+        )
+        .add_systems(
+            OnExit(CGModeSelect::Active),
+            mode_select::despawn_mode_select,
+        );
 
         // Initialize resources
         app.init_resource::<CaldariGallenteShips>();
@@ -81,7 +87,11 @@ impl Plugin for CaldariGallentePlugin {
         )
         .add_systems(
             Update,
-            (cg_campaign::update_cg_mission, cg_campaign::check_cg_wave_complete, cg_campaign::spawn_cg_wave)
+            (
+                cg_campaign::update_cg_mission,
+                cg_campaign::check_cg_wave_complete,
+                cg_campaign::spawn_cg_wave,
+            )
                 .chain()
                 .run_if(in_state(GameState::Playing))
                 .run_if(is_caldari_gallente)
@@ -90,11 +100,15 @@ impl Plugin for CaldariGallentePlugin {
         )
         .add_systems(
             OnEnter(GameState::BossIntro),
-            (cg_campaign::spawn_cg_boss, cg_campaign::spawn_cg_boss_intro).run_if(is_caldari_gallente),
+            (cg_campaign::spawn_cg_boss, cg_campaign::spawn_cg_boss_intro)
+                .run_if(is_caldari_gallente),
         )
         .add_systems(
             Update,
-            (cg_campaign::cg_boss_intro, cg_campaign::cg_boss_intro_update)
+            (
+                cg_campaign::cg_boss_intro,
+                cg_campaign::cg_boss_intro_update,
+            )
                 .run_if(in_state(GameState::BossIntro))
                 .run_if(is_caldari_gallente),
         )
@@ -104,7 +118,10 @@ impl Plugin for CaldariGallentePlugin {
         )
         .add_systems(
             Update,
-            (cg_campaign::update_cg_boss, cg_campaign::check_cg_boss_defeated)
+            (
+                cg_campaign::update_cg_boss,
+                cg_campaign::check_cg_boss_defeated,
+            )
                 .run_if(in_state(GameState::BossFight))
                 .run_if(is_caldari_gallente),
         );
@@ -176,7 +193,10 @@ impl Plugin for CaldariGallentePlugin {
         )
         .add_systems(
             Update,
-            (cg_screens::update_cg_victory_particles, cg_screens::cg_victory_input)
+            (
+                cg_screens::update_cg_victory_particles,
+                cg_screens::cg_victory_input,
+            )
                 .run_if(in_state(GameState::Victory))
                 .run_if(is_caldari_gallente),
         )

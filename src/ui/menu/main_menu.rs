@@ -2,12 +2,12 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
+use super::common::*;
 use crate::core::*;
 use crate::games::ActiveModule;
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
-use super::common::*;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub(crate) struct MainMenuRoot;

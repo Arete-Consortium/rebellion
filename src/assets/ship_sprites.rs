@@ -199,10 +199,7 @@ fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, mut images: ResMut<
 
 /// Start loading ship sprites (WASM - use Bevy AssetServer, not filesystem)
 #[cfg(target_arch = "wasm32")]
-fn start_loading_sprites(
-    mut cache: ResMut<ShipSpriteCache>,
-    asset_server: Res<AssetServer>,
-) {
+fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, asset_server: Res<AssetServer>) {
     info!(
         "Loading {} ship sprites (WASM mode via AssetServer)...",
         SHIPS_TO_LOAD.len()
@@ -215,7 +212,10 @@ fn start_loading_sprites(
         cache.loading.push(type_id);
     }
 
-    info!("Queued {} sprites for loading via AssetServer", SHIPS_TO_LOAD.len());
+    info!(
+        "Queued {} sprites for loading via AssetServer",
+        SHIPS_TO_LOAD.len()
+    );
 }
 
 /// Load an image file (JPEG or PNG) and convert to Bevy Image

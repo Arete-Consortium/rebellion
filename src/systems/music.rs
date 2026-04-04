@@ -19,15 +19,14 @@ impl Plugin for MusicPlugin {
         app.init_resource::<MusicAssets>()
             .init_resource::<MusicState>();
 
-        app.add_systems(Startup, generate_music)
-            .add_systems(
-                Update,
-                (
-                    manage_menu_music.run_if(in_state(GameState::MainMenu)),
-                    manage_gameplay_music.run_if(in_state(GameState::Playing)),
-                    handle_state_music_transitions,
-                ),
-            );
+        app.add_systems(Startup, generate_music).add_systems(
+            Update,
+            (
+                manage_menu_music.run_if(in_state(GameState::MainMenu)),
+                manage_gameplay_music.run_if(in_state(GameState::Playing)),
+                handle_state_music_transitions,
+            ),
+        );
     }
 }
 

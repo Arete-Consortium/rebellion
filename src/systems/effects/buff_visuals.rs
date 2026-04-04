@@ -1,8 +1,8 @@
 //! Active buff visual effects on player
 
-use bevy::prelude::*;
 use crate::core::*;
 use crate::entities::{Player, PowerupEffects};
+use bevy::prelude::*;
 
 /// Golden hexagonal shield bubble for invulnerability
 #[derive(Component)]

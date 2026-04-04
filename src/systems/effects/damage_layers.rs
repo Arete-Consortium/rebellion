@@ -1,8 +1,8 @@
 //! Damage layer visual effects: shield ripples, armor sparks, hull fire
 
-use bevy::prelude::*;
-use crate::core::*;
 use super::screen_effects::ScreenShake;
+use crate::core::*;
+use bevy::prelude::*;
 
 /// Maximum damage layer particles
 const MAX_DAMAGE_LAYER_PARTICLES: usize = 100;

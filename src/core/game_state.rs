@@ -455,8 +455,7 @@ mod tests {
     #[test]
     fn difficulty_player_shield_decreases_with_difficulty() {
         assert!(
-            Difficulty::Carebear.player_shield_mult()
-                > Difficulty::Triglavian.player_shield_mult()
+            Difficulty::Carebear.player_shield_mult() > Difficulty::Triglavian.player_shield_mult()
         );
     }
 

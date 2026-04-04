@@ -740,7 +740,12 @@ mod tests {
         for total in 2..=5 {
             for phase in 1..=total {
                 let threshold = get_phase_threshold(phase, total);
-                assert!(threshold > 0.0, "Phase {}/{} threshold should be positive", phase, total);
+                assert!(
+                    threshold > 0.0,
+                    "Phase {}/{} threshold should be positive",
+                    phase,
+                    total
+                );
             }
         }
     }

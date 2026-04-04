@@ -1,7 +1,7 @@
 //! Bullet trails and engine trails
 
-use bevy::prelude::*;
 use crate::core::*;
+use bevy::prelude::*;
 
 // =============================================================================
 // BULLET TRAILS

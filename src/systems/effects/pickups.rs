@@ -1,9 +1,9 @@
 //! Pickup visual effects
 
-use bevy::prelude::*;
+use super::screen_effects::{ScreenFlash, ScreenShake};
 use crate::core::*;
 use crate::entities::collectible::Rarity;
-use super::screen_effects::{ScreenShake, ScreenFlash};
+use bevy::prelude::*;
 
 /// Maximum pickup effect particles at once
 const MAX_PICKUP_PARTICLES: usize = 100;

@@ -1,8 +1,8 @@
 //! Explosion particle effects
 
-use bevy::prelude::*;
-use crate::core::*;
 use super::MAX_EXPLOSION_PARTICLES;
+use crate::core::*;
+use bevy::prelude::*;
 
 /// Explosion particle
 #[derive(Component)]

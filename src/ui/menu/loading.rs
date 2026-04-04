@@ -2,8 +2,8 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
 use crate::core::*;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub(crate) struct LoadingRoot;

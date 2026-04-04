@@ -585,10 +585,7 @@ pub fn update_titan_fighters(
     mut fighter_query: Query<(Entity, &mut TitanFighter, &mut Transform)>,
     enemy_query: Query<
         (Entity, &Transform, &crate::entities::EnemyStats),
-        (
-            With<crate::entities::Enemy>,
-            Without<TitanFighter>,
-        ),
+        (With<crate::entities::Enemy>, Without<TitanFighter>),
     >,
     mut last_stand: ResMut<LastStandState>,
     mut despawned_this_frame: Local<std::collections::HashSet<Entity>>,

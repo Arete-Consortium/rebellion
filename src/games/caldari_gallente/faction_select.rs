@@ -454,7 +454,10 @@ pub fn faction_select_input(
     }
 }
 
-pub fn despawn_faction_select(mut commands: Commands, query: Query<Entity, With<FactionSelectRoot>>) {
+pub fn despawn_faction_select(
+    mut commands: Commands,
+    query: Query<Entity, With<FactionSelectRoot>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }

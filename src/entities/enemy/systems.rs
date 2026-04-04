@@ -225,7 +225,10 @@ pub(super) fn disintegrator_update(
 }
 
 /// Remove enemies that go off screen
-pub(super) fn enemy_bounds_check(mut commands: Commands, query: Query<(Entity, &Transform), With<Enemy>>) {
+pub(super) fn enemy_bounds_check(
+    mut commands: Commands,
+    query: Query<(Entity, &Transform), With<Enemy>>,
+) {
     let margin = 100.0;
     for (entity, transform) in query.iter() {
         let pos = transform.translation;

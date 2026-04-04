@@ -2,11 +2,11 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
+use super::common::*;
 use crate::core::*;
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
-use super::common::*;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub(crate) struct GameOverRoot;
@@ -554,7 +554,10 @@ pub(crate) fn death_screen_input(
     }
 }
 
-pub(crate) fn despawn_death_screen(mut commands: Commands, query: Query<Entity, With<GameOverRoot>>) {
+pub(crate) fn despawn_death_screen(
+    mut commands: Commands,
+    query: Query<Entity, With<GameOverRoot>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }

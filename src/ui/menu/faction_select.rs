@@ -2,10 +2,10 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
+use super::common::*;
 use crate::core::*;
 use crate::systems::JoystickState;
-use super::common::*;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub(crate) struct FactionSelectRoot;

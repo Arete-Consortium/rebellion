@@ -484,19 +484,49 @@ fn wave_spawning(
             // Use specialized spawn functions for special enemy types
             match behavior {
                 EnemyBehavior::Kamikaze => {
-                    spawn_variant(&mut commands, EnemyVariant::Kamikaze, pos, sprite, Some(&model_cache));
+                    spawn_variant(
+                        &mut commands,
+                        EnemyVariant::Kamikaze,
+                        pos,
+                        sprite,
+                        Some(&model_cache),
+                    );
                 }
                 EnemyBehavior::Weaver => {
-                    spawn_variant(&mut commands, EnemyVariant::Weaver, pos, sprite, Some(&model_cache));
+                    spawn_variant(
+                        &mut commands,
+                        EnemyVariant::Weaver,
+                        pos,
+                        sprite,
+                        Some(&model_cache),
+                    );
                 }
                 EnemyBehavior::Sniper => {
-                    spawn_variant(&mut commands, EnemyVariant::Sniper, pos, sprite, Some(&model_cache));
+                    spawn_variant(
+                        &mut commands,
+                        EnemyVariant::Sniper,
+                        pos,
+                        sprite,
+                        Some(&model_cache),
+                    );
                 }
                 EnemyBehavior::Spawner => {
-                    spawn_variant(&mut commands, EnemyVariant::Spawner, pos, sprite, Some(&model_cache));
+                    spawn_variant(
+                        &mut commands,
+                        EnemyVariant::Spawner,
+                        pos,
+                        sprite,
+                        Some(&model_cache),
+                    );
                 }
                 EnemyBehavior::Tank => {
-                    spawn_variant(&mut commands, EnemyVariant::Tank, pos, sprite, Some(&model_cache));
+                    spawn_variant(
+                        &mut commands,
+                        EnemyVariant::Tank,
+                        pos,
+                        sprite,
+                        Some(&model_cache),
+                    );
                 }
                 _ => {
                     spawn_enemy(
@@ -621,8 +651,11 @@ fn get_wave_definition(stage: u32, wave: u32) -> WaveDefinition {
     // Load from config, fall back to stage 1 defaults
     let (enemy_types, behaviors) = if let Some(stage_cfg) = config.stages.get(&stage) {
         let types = stage_cfg.enemy_types.clone();
-        let behaviors: Vec<EnemyBehavior> =
-            stage_cfg.behaviors.iter().map(|b| parse_behavior(b)).collect();
+        let behaviors: Vec<EnemyBehavior> = stage_cfg
+            .behaviors
+            .iter()
+            .map(|b| parse_behavior(b))
+            .collect();
         (types, behaviors)
     } else {
         // Fallback for unconfigured stages

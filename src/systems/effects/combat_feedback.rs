@@ -1,8 +1,8 @@
 //! Combat feedback: damage numbers and hit flash
 
+use crate::core::*;
 use bevy::prelude::*;
 use bevy::text::{Text2d, TextColor, TextFont};
-use crate::core::*;
 
 // =============================================================================
 // DAMAGE NUMBERS

@@ -2,9 +2,9 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
 use crate::core::*;
 use crate::systems::JoystickState;
+use bevy::prelude::*;
 
 // ============================================================================
 // Menu Selection System (keyboard/joystick navigation)
@@ -116,7 +116,10 @@ pub(crate) fn get_nav_input(keyboard: &ButtonInput<KeyCode>, joystick: &Joystick
 }
 
 /// Get horizontal input (-1 left, 0 none, 1 right)
-pub(crate) fn get_horizontal_input(keyboard: &ButtonInput<KeyCode>, joystick: &JoystickState) -> i32 {
+pub(crate) fn get_horizontal_input(
+    keyboard: &ButtonInput<KeyCode>,
+    joystick: &JoystickState,
+) -> i32 {
     let mut h = 0;
 
     // Keyboard

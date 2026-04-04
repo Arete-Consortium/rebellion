@@ -1,8 +1,8 @@
 //! Overlay effects: salt miner tint, low health vignette, disintegrator beams
 
-use bevy::prelude::*;
 use crate::core::*;
 use crate::entities::{Player, ShipStats};
+use bevy::prelude::*;
 
 // =============================================================================
 // SALT MINER SCREEN TINT

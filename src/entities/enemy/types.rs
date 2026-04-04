@@ -330,7 +330,12 @@ mod tests {
         ];
         for b in &behaviors {
             let ds = b.dodge_sensitivity();
-            assert!((0.0..=1.0).contains(&ds), "{:?} dodge_sensitivity {} out of range", b, ds);
+            assert!(
+                (0.0..=1.0).contains(&ds),
+                "{:?} dodge_sensitivity {} out of range",
+                b,
+                ds
+            );
         }
     }
 
@@ -365,7 +370,12 @@ mod tests {
         ];
         for b in &behaviors {
             let aa = b.aim_accuracy();
-            assert!((0.0..=1.0).contains(&aa), "{:?} aim_accuracy {} out of range", b, aa);
+            assert!(
+                (0.0..=1.0).contains(&aa),
+                "{:?} aim_accuracy {} out of range",
+                b,
+                aa
+            );
         }
     }
 
