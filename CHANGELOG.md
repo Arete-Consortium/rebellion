@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-04-04
+
+### Added
+- WASM audio: Full procedural SFX and music now works in browser (was completely silent)
+- Universal WAV encoder replacing hound crate (works on both native and WASM)
+- Gameplay analytics system tracking deaths by stage, ship popularity, difficulty distribution
+- Data-driven enemy spawn factory (EnemyVariant enum + spawn_variant function)
+- 106 new tests across wav_encoder, game_state, enemy types, spawn factory, collectibles, bosses, analytics (163 → 269 total)
+
+### Changed
+- Major codebase modularization (7 files split into 56 focused submodules):
+  - menu.rs (5,167 lines) → 17 submodules
+  - effects.rs (2,904 lines) → 12 submodules
+  - caldari_gallente/mod.rs (3,159 lines) → 6 submodules
+  - hud.rs (1,783 lines) → 9 submodules
+  - enemy.rs (1,501 lines) → 5 submodules
+  - audio.rs (1,355 lines) → 3 submodules
+  - factions.rs (1,180 lines) → 4 submodules
+- All spawn callsites migrated to spawn_variant() — 10 legacy wrappers removed
+- Menu text contrast improved to WCAG AA compliance (4.5:1+ ratio)
+- Minimum font size raised to 12px across all menus
+- Bench profile panic setting fixed (was producing Cargo warning)
+
+### Removed
+- hound crate dependency (replaced by built-in WAV encoder)
+- 10 redundant spawn_* wrapper functions (replaced by spawn_variant)
+
 ## [1.9.0] - 2025-01-26
 
 ### Added

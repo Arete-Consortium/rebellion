@@ -1,0 +1,66 @@
+{
+  "description": "Elder Fleet campaign wave definitions — enemy compositions per stage",
+  "enemy_ids": {
+    "punisher": 597,
+    "executioner": 589,
+    "tormentor": 591,
+    "coercer": 16236,
+    "maller": 624,
+    "omen": 625,
+    "harbinger": 24690
+  },
+  "stages": {
+    "1": {
+      "enemy_types": [597],
+      "behaviors": ["Linear"]
+    },
+    "2": {
+      "enemy_types": [597, 589],
+      "behaviors": ["Linear"]
+    },
+    "3": {
+      "enemy_types": [597, 589, 591],
+      "behaviors": ["Linear", "Zigzag", "Weaver"]
+    },
+    "4": {
+      "enemy_types": [597, 589, 591],
+      "behaviors": ["Linear", "Zigzag", "Weaver"]
+    },
+    "5": {
+      "enemy_types": [597, 589, 16236],
+      "behaviors": ["Linear", "Zigzag", "Homing", "Sniper"]
+    },
+    "6": {
+      "enemy_types": [597, 589, 16236],
+      "behaviors": ["Linear", "Zigzag", "Homing", "Sniper"]
+    },
+    "7": {
+      "enemy_types": [589, 16236, 624],
+      "behaviors": ["Zigzag", "Homing", "Weaver", "Sniper"]
+    },
+    "8": {
+      "enemy_types": [589, 16236, 624],
+      "behaviors": ["Zigzag", "Homing", "Weaver", "Sniper"]
+    },
+    "9": {
+      "enemy_types": [16236, 624, 625],
+      "behaviors": ["Homing", "Orbital", "Tank", "Spawner"]
+    },
+    "10": {
+      "enemy_types": [624, 625, 16236, 589],
+      "behaviors": ["Homing", "Orbital", "Tank", "Spawner"]
+    },
+    "11": {
+      "enemy_types": [624, 625, 16236, 591],
+      "behaviors": ["Homing", "Kamikaze", "Tank", "Spawner", "Weaver"]
+    },
+    "12": {
+      "enemy_types": [624, 625, 24690, 16236],
+      "behaviors": ["Homing", "Kamikaze", "Tank", "Sniper", "Orbital"]
+    },
+    "13": {
+      "enemy_types": [24690, 625, 624, 589],
+      "behaviors": ["Kamikaze", "Tank", "Spawner", "Sniper", "Weaver", "Orbital"]
+    }
+  }
+}

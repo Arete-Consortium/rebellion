@@ -9,6 +9,8 @@ use crate::core::*;
 use crate::entities::{spawn_enemy, spawn_variant, EnemyBehavior, EnemyVariant};
 use crate::games::caldari_gallente::LastStandState;
 use bevy::prelude::*;
+use serde::Deserialize;
+use std::collections::HashMap;
 
 /// Spawning plugin
 pub struct SpawningPlugin;
@@ -549,92 +551,82 @@ fn handle_spawn_events(
     }
 }
 
+// ============================================================================
+// Data-driven wave configuration (loaded from config/waves_elder_fleet.json)
+// ============================================================================
+
+/// JSON schema for wave config file
+#[derive(Deserialize)]
+struct WaveConfigFile {
+    stages: HashMap<String, StageConfig>,
+}
+
+#[derive(Deserialize, Clone)]
+struct StageConfig {
+    enemy_types: Vec<u32>,
+    behaviors: Vec<String>,
+}
+
+/// Parsed wave config — loaded once from embedded JSON
+struct WaveConfig {
+    stages: HashMap<u32, StageConfig>,
+}
+
+fn load_wave_config() -> WaveConfig {
+    let json = include_str!("../../config/waves_elder_fleet.json");
+    match serde_json::from_str::<WaveConfigFile>(json) {
+        Ok(file) => {
+            let stages = file
+                .stages
+                .into_iter()
+                .filter_map(|(k, v)| k.parse::<u32>().ok().map(|num| (num, v)))
+                .collect();
+            WaveConfig { stages }
+        }
+        Err(_) => WaveConfig {
+            stages: HashMap::new(),
+        },
+    }
+}
+
+/// Thread-local cached wave config (loaded once on first use)
+fn wave_config() -> &'static WaveConfig {
+    use std::sync::OnceLock;
+    static CONFIG: OnceLock<WaveConfig> = OnceLock::new();
+    CONFIG.get_or_init(load_wave_config)
+}
+
+fn parse_behavior(name: &str) -> EnemyBehavior {
+    match name {
+        "Linear" => EnemyBehavior::Linear,
+        "Zigzag" => EnemyBehavior::Zigzag,
+        "Homing" => EnemyBehavior::Homing,
+        "Orbital" => EnemyBehavior::Orbital,
+        "Sniper" => EnemyBehavior::Sniper,
+        "Kamikaze" => EnemyBehavior::Kamikaze,
+        "Weaver" => EnemyBehavior::Weaver,
+        "Spawner" => EnemyBehavior::Spawner,
+        "Tank" => EnemyBehavior::Tank,
+        "Disintegrator" => EnemyBehavior::Disintegrator,
+        _ => EnemyBehavior::Linear,
+    }
+}
+
 /// Get wave definition based on stage and wave number
 fn get_wave_definition(stage: u32, wave: u32) -> WaveDefinition {
-    // Amarr enemy type IDs
-    const PUNISHER: u32 = 597;
-    const EXECUTIONER: u32 = 589;
-    const TORMENTOR: u32 = 591;
-    const COERCER: u32 = 16236;
-    const MALLER: u32 = 624;
-    const OMEN: u32 = 625;
-    // Amarr heavy
-    const HARBINGER: u32 = 24690;
-
+    let config = wave_config();
     // Base enemy count scales with stage and wave
     let base_count = 3 + wave + (stage / 2);
 
-    // Enemy types based on stage (Acts 1, 2, 3)
-    let enemy_types = match stage {
-        // Act 1: Stages 1-4 - Frigates
-        1 => vec![PUNISHER],
-        2 => vec![PUNISHER, EXECUTIONER],
-        3 => vec![PUNISHER, EXECUTIONER, TORMENTOR],
-        4 => vec![PUNISHER, EXECUTIONER, TORMENTOR],
-
-        // Act 2: Stages 5-9 - Destroyers and Cruisers
-        5..=6 => vec![PUNISHER, EXECUTIONER, COERCER],
-        7..=8 => vec![EXECUTIONER, COERCER, MALLER],
-        9 => vec![COERCER, MALLER, OMEN],
-
-        // Act 3: Stages 10-13 - Full fleet composition (heavy + light support)
-        10 => vec![MALLER, OMEN, COERCER, EXECUTIONER],
-        11 => vec![MALLER, OMEN, COERCER, TORMENTOR],
-        12 => vec![MALLER, OMEN, HARBINGER, COERCER],
-        13 => vec![HARBINGER, OMEN, MALLER, EXECUTIONER],
-        _ => vec![PUNISHER],
-    };
-
-    // Behaviors get more aggressive and varied with stage.
-    // Late stages use the full behavior roster for maximum variety.
-    let behaviors = match stage {
-        1..=2 => vec![EnemyBehavior::Linear],
-        3..=4 => vec![
-            EnemyBehavior::Linear,
-            EnemyBehavior::Zigzag,
-            EnemyBehavior::Weaver,
-        ],
-        5..=6 => vec![
-            EnemyBehavior::Linear,
-            EnemyBehavior::Zigzag,
-            EnemyBehavior::Homing,
-            EnemyBehavior::Sniper,
-        ],
-        7..=8 => vec![
-            EnemyBehavior::Zigzag,
-            EnemyBehavior::Homing,
-            EnemyBehavior::Weaver,
-            EnemyBehavior::Sniper,
-        ],
-        9..=10 => vec![
-            EnemyBehavior::Homing,
-            EnemyBehavior::Orbital,
-            EnemyBehavior::Tank,
-            EnemyBehavior::Spawner,
-        ],
-        11 => vec![
-            EnemyBehavior::Homing,
-            EnemyBehavior::Kamikaze,
-            EnemyBehavior::Tank,
-            EnemyBehavior::Spawner,
-            EnemyBehavior::Weaver,
-        ],
-        12 => vec![
-            EnemyBehavior::Homing,
-            EnemyBehavior::Kamikaze,
-            EnemyBehavior::Tank,
-            EnemyBehavior::Sniper,
-            EnemyBehavior::Orbital,
-        ],
-        // Stage 13 (final): all non-trivial behaviors for maximum challenge
-        _ => vec![
-            EnemyBehavior::Kamikaze,
-            EnemyBehavior::Tank,
-            EnemyBehavior::Spawner,
-            EnemyBehavior::Sniper,
-            EnemyBehavior::Weaver,
-            EnemyBehavior::Orbital,
-        ],
+    // Load from config, fall back to stage 1 defaults
+    let (enemy_types, behaviors) = if let Some(stage_cfg) = config.stages.get(&stage) {
+        let types = stage_cfg.enemy_types.clone();
+        let behaviors: Vec<EnemyBehavior> =
+            stage_cfg.behaviors.iter().map(|b| parse_behavior(b)).collect();
+        (types, behaviors)
+    } else {
+        // Fallback for unconfigured stages
+        (vec![597], vec![EnemyBehavior::Linear])
     };
 
     // Spawn patterns cycle with wave
@@ -648,7 +640,7 @@ fn get_wave_definition(stage: u32, wave: u32) -> WaveDefinition {
     };
 
     WaveDefinition {
-        enemy_count: base_count.min(12 + stage / 2), // Max scales with stage
+        enemy_count: base_count.min(12 + stage / 2),
         enemy_types,
         behaviors,
         spawn_pattern,
