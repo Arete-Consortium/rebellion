@@ -97,7 +97,7 @@ pub(crate) fn spawn_ship_menu(
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
+                TextColor(Color::srgb(0.65, 0.65, 0.65)),
             ));
 
             // Main content: Detail panel (left) + Ship list (right)
@@ -149,7 +149,7 @@ pub(crate) fn spawn_ship_menu(
                     font_size: 12.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
             ));
         });
 }
@@ -212,7 +212,7 @@ fn spawn_ship_detail_panel(
                             font_size: 14.0,
                             ..default()
                         },
-                        TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                        TextColor(Color::srgb(0.6, 0.6, 0.6)),
                     ));
                     row.spawn((
                         ShipDetailRole,
@@ -300,7 +300,7 @@ fn spawn_ship_detail_panel(
                     special.spawn((
                         Text::new("SPECIAL ABILITY"),
                         TextFont {
-                            font_size: 10.0,
+                            font_size: 12.0,
                             ..default()
                         },
                         TextColor(Color::srgb(0.5, 0.5, 0.5)),
@@ -347,7 +347,7 @@ fn spawn_stat_bar(
                 row.spawn((
                     Text::new(label),
                     TextFont {
-                        font_size: 11.0,
+                        font_size: 12.0,
                         ..default()
                     },
                     TextColor(color),
@@ -355,7 +355,7 @@ fn spawn_stat_bar(
                 row.spawn((
                     Text::new(format!("{:.0}", value)),
                     TextFont {
-                        font_size: 11.0,
+                        font_size: 12.0,
                         ..default()
                     },
                     TextColor(Color::srgb(0.7, 0.7, 0.7)),
@@ -455,7 +455,7 @@ fn spawn_ship_list_item(
                         font_size: 10.0,
                         ..default()
                     },
-                    TextColor(Color::srgb(0.45, 0.45, 0.45)),
+                    TextColor(Color::srgb(0.6, 0.6, 0.6)),
                 ));
             });
 
@@ -470,7 +470,7 @@ fn spawn_ship_list_item(
                     right.spawn((
                         Text::new(format!("DMG {:.0}", ship.damage)),
                         TextFont {
-                            font_size: 10.0,
+                            font_size: 12.0,
                             ..default()
                         },
                         TextColor(Color::srgb(0.7, 0.4, 0.4)),
@@ -478,7 +478,7 @@ fn spawn_ship_list_item(
                     right.spawn((
                         Text::new(format!("SPD {:.0}", ship.speed)),
                         TextFont {
-                            font_size: 10.0,
+                            font_size: 12.0,
                             ..default()
                         },
                         TextColor(Color::srgb(0.4, 0.6, 0.4)),

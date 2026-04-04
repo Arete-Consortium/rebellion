@@ -97,7 +97,7 @@ pub(crate) fn spawn_faction_select(
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
             ));
         });
 }
@@ -277,10 +277,10 @@ fn spawn_faction_card(parent: &mut ChildBuilder, faction: Faction, index: usize)
                 enemy_row.spawn((
                     Text::new("ENEMY:"),
                     TextFont {
-                        font_size: 10.0,
+                        font_size: 12.0,
                         ..default()
                     },
-                    TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                    TextColor(Color::srgb(0.6, 0.6, 0.6)),
                 ));
 
                 enemy_row.spawn((

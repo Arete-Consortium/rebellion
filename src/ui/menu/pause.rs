@@ -206,7 +206,7 @@ pub(crate) fn spawn_pause_menu(
                     font_size: 11.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.35, 0.35, 0.35)),
+                TextColor(Color::srgb(0.55, 0.55, 0.55)),
             ));
         });
 }

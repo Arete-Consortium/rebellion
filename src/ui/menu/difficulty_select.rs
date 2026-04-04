@@ -59,7 +59,7 @@ pub(crate) fn spawn_difficulty_menu(mut commands: Commands, mut selection: ResMu
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
             ));
         });
 }

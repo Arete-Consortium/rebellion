@@ -130,7 +130,7 @@ pub(crate) fn spawn_main_menu(
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
             ));
 
             parent.spawn((
@@ -139,7 +139,7 @@ pub(crate) fn spawn_main_menu(
                     font_size: 12.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.3, 0.3, 0.3)),
+                TextColor(Color::srgb(0.5, 0.5, 0.5)),
             ));
         });
 }

@@ -1,7 +1,7 @@
 //! Audio System
 //!
 //! Procedural sound effects for Rebellion.
-//! Uses hound crate for proper WAV generation.
+//! Uses procedural WAV generation (wav_encoder module).
 
 #![allow(dead_code)]
 

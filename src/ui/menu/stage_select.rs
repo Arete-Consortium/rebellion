@@ -197,7 +197,7 @@ pub(crate) fn spawn_stage_select(
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
             ));
         });
 }

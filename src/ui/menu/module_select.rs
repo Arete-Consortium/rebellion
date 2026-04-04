@@ -116,7 +116,7 @@ pub(crate) fn spawn_module_select(mut commands: Commands, mut selection: ResMut<
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
             ));
         });
 }
