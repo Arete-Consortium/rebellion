@@ -1,14 +1,20 @@
 //! Gameplay Analytics
 //!
-//! Tracks gameplay events for balancing insights: deaths by stage,
+//! Passively tracks gameplay events for balancing insights: deaths by stage,
 //! ship popularity, difficulty distribution, session duration.
 //! Data stored locally in save data — no external services.
+//!
+//! Bridge pattern: listens to existing game events (EnemyDestroyedEvent,
+//! PlayerDamagedEvent) rather than requiring callers to emit new events.
 
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::{GameState, SaveData};
+use super::{
+    CampaignState, Difficulty, EnemyDestroyedEvent, GameSession, GameState, PlayerDamagedEvent,
+    SaveData,
+};
 
 /// Analytics plugin — passively records gameplay events
 pub struct AnalyticsPlugin;
@@ -16,11 +22,11 @@ pub struct AnalyticsPlugin;
 impl Plugin for AnalyticsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SessionAnalytics>()
-            .add_event::<AnalyticsEvent>()
             .add_systems(OnEnter(GameState::Playing), start_session)
             .add_systems(
                 Update,
-                record_events.run_if(on_event::<AnalyticsEvent>),
+                (bridge_enemy_destroyed, bridge_player_damaged)
+                    .run_if(in_state(GameState::Playing)),
             )
             .add_systems(OnEnter(GameState::GameOver), end_session_death)
             .add_systems(OnEnter(GameState::Victory), end_session_victory)
@@ -31,41 +37,14 @@ impl Plugin for AnalyticsPlugin {
 /// Current session tracking
 #[derive(Resource, Default)]
 pub struct SessionAnalytics {
-    /// Which ship the player chose
     pub ship_name: String,
-    /// Which faction
     pub faction: String,
-    /// Which difficulty
     pub difficulty: String,
-    /// Starting stage
     pub stage: u32,
-    /// Session start time (seconds since app start)
     pub start_time: f64,
-    /// Kills this session
     pub kills: u32,
-    /// Damage taken this session
     pub damage_taken: f32,
-    /// Bosses defeated this session
     pub bosses_defeated: u32,
-}
-
-/// Analytics events that systems can fire
-#[derive(Event)]
-#[allow(dead_code)]
-pub enum AnalyticsEvent {
-    /// Player started a mission
-    MissionStarted {
-        ship: String,
-        faction: String,
-        difficulty: String,
-        stage: u32,
-    },
-    /// Enemy killed
-    EnemyKilled,
-    /// Boss defeated
-    BossDefeated { stage: u32 },
-    /// Player took damage
-    DamageTaken { amount: f32 },
 }
 
 /// Persistent analytics data stored in save file
@@ -85,42 +64,61 @@ pub struct AnalyticsData {
     pub total_play_time_secs: f64,
 }
 
-fn start_session(mut session: ResMut<SessionAnalytics>, time: Res<Time>) {
+// ============================================================================
+// Session lifecycle
+// ============================================================================
+
+fn start_session(
+    mut session: ResMut<SessionAnalytics>,
+    time: Res<Time>,
+    game_session: Res<GameSession>,
+    difficulty: Res<Difficulty>,
+    campaign: Res<CampaignState>,
+) {
+    let ships = game_session.player_ships();
+    let ship_name = ships
+        .get(game_session.selected_ship_index)
+        .map(|s| s.name)
+        .unwrap_or("Unknown");
+
+    session.ship_name = ship_name.to_string();
+    session.faction = game_session.player_faction.short_name().to_string();
+    session.difficulty = difficulty.name().to_string();
+    session.stage = campaign.stage_number();
     session.start_time = time.elapsed_secs_f64();
     session.kills = 0;
     session.damage_taken = 0.0;
     session.bosses_defeated = 0;
 }
 
-fn record_events(
-    mut events: EventReader<AnalyticsEvent>,
+// ============================================================================
+// Bridge systems — listen to existing game events
+// ============================================================================
+
+fn bridge_enemy_destroyed(
+    mut events: EventReader<EnemyDestroyedEvent>,
     mut session: ResMut<SessionAnalytics>,
 ) {
     for event in events.read() {
-        match event {
-            AnalyticsEvent::MissionStarted {
-                ship,
-                faction,
-                difficulty,
-                stage,
-            } => {
-                session.ship_name = ship.clone();
-                session.faction = faction.clone();
-                session.difficulty = difficulty.clone();
-                session.stage = *stage;
-            }
-            AnalyticsEvent::EnemyKilled => {
-                session.kills += 1;
-            }
-            AnalyticsEvent::BossDefeated { .. } => {
-                session.bosses_defeated += 1;
-            }
-            AnalyticsEvent::DamageTaken { amount } => {
-                session.damage_taken += amount;
-            }
+        session.kills += 1;
+        if event.was_boss {
+            session.bosses_defeated += 1;
         }
     }
 }
+
+fn bridge_player_damaged(
+    mut events: EventReader<PlayerDamagedEvent>,
+    mut session: ResMut<SessionAnalytics>,
+) {
+    for event in events.read() {
+        session.damage_taken += event.damage;
+    }
+}
+
+// ============================================================================
+// Session end — persist to save data
+// ============================================================================
 
 fn end_session_death(
     session: Res<SessionAnalytics>,
@@ -130,10 +128,8 @@ fn end_session_death(
     let duration = time.elapsed_secs_f64() - session.start_time;
     let analytics = &mut save_data.analytics;
 
-    // Record death location
     *analytics.deaths_by_stage.entry(session.stage).or_insert(0) += 1;
 
-    // Record session stats
     record_session_common(analytics, &session, duration);
 }
 
@@ -146,10 +142,7 @@ fn end_session_victory(
     record_session_common(&mut save_data.analytics, &session, duration);
 }
 
-fn record_stage_complete(
-    session: Res<SessionAnalytics>,
-    mut save_data: ResMut<SaveData>,
-) {
+fn record_stage_complete(session: Res<SessionAnalytics>, mut save_data: ResMut<SaveData>) {
     *save_data
         .analytics
         .stages_completed
@@ -162,7 +155,6 @@ fn record_session_common(
     session: &SessionAnalytics,
     duration: f64,
 ) {
-    // Ship popularity
     if !session.ship_name.is_empty() {
         *analytics
             .ship_picks
@@ -170,7 +162,6 @@ fn record_session_common(
             .or_insert(0) += 1;
     }
 
-    // Difficulty distribution
     if !session.difficulty.is_empty() {
         *analytics
             .difficulty_picks
@@ -237,5 +228,23 @@ mod tests {
         assert_eq!(session.kills, 0);
         assert_eq!(session.damage_taken, 0.0);
         assert_eq!(session.bosses_defeated, 0);
+    }
+
+    #[test]
+    fn death_records_stage() {
+        let mut analytics = AnalyticsData::default();
+        *analytics.deaths_by_stage.entry(5).or_insert(0) += 1;
+        *analytics.deaths_by_stage.entry(5).or_insert(0) += 1;
+        *analytics.deaths_by_stage.entry(3).or_insert(0) += 1;
+        assert_eq!(analytics.deaths_by_stage.get(&5), Some(&2));
+        assert_eq!(analytics.deaths_by_stage.get(&3), Some(&1));
+    }
+
+    #[test]
+    fn stage_completion_records() {
+        let mut analytics = AnalyticsData::default();
+        *analytics.stages_completed.entry(1).or_insert(0) += 1;
+        *analytics.stages_completed.entry(1).or_insert(0) += 1;
+        assert_eq!(analytics.stages_completed.get(&1), Some(&2));
     }
 }
