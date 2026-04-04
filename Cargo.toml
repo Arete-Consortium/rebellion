@@ -1,6 +1,6 @@
 [package]
 name = "rebellion"
-version = "1.9.0"
+version = "2.0.0"
 edition = "2021"
 authors = ["ARETE"]
 description = "Space arcade shooter suite built with Rust and Bevy"
@@ -148,9 +148,9 @@ codegen-units = 1
 strip = "symbols"
 panic = "abort"
 
-# Bench profile: override panic=abort from release so bevy dynamic_linking works
+# Bench profile inherits release settings
 [profile.bench]
-panic = "unwind"
+# Note: panic setting cannot differ from release profile, using abort
 
 # WASM release profile - optimize for size
 [profile.wasm-release]

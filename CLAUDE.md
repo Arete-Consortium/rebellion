@@ -6,10 +6,10 @@ Space arcade shooter suite built with Rust and Bevy
 
 ## Current State
 
-- **Version**: 1.9.0
+- **Version**: 2.0.0
 - **Language**: Rust
-- **Files**: 279 across 6 languages
-- **Lines**: 55,623
+- **Files**: 327 across 6 languages
+- **Lines**: 56,791
 
 ## Architecture
 
@@ -73,7 +73,7 @@ rebellion/
 ## Coding Standards
 
 - **Naming**: snake_case
-- **Line Length (p95)**: 74 characters
+- **Line Length (p95)**: 72 characters
 
 ## Common Commands
 
@@ -153,17 +153,20 @@ cd web && python3 -m http.server 8080
 - CCP
 
 ### Enums/Constants
-- `Ability`
 - `AbilityEffectType`
 - `AbilityType`
 - `AbyssalRoom`
 - `Achievement`
 - `Act`
 - `AmmoType`
-- `Armor`
 - `BackButtonAction`
 - `BackgroundShipClass`
+- `BackgroundShipFaction`
+- `BossProjectileStyle`
 
+### Outstanding Items
+- **TODO**: we could test for more things here, like `Set`s and `Map`s. (`web/eve_rebellion.js`)
+- **TODO**: we could test for more things here, like `Set`s and `Map`s. (`web/rebellion.js`)
 
 ## AI Skills
 
