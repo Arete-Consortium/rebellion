@@ -1,0 +1,578 @@
+//! CG Campaign Systems
+//!
+//! Boss encounters, mission flow, and boss intro UI for the campaign.
+
+use super::campaign::{CGBossType, CGCampaignState, ShiigeruNightmare};
+use crate::core::{DamageType, Difficulty, Faction, GameSession, GameState};
+use crate::entities::projectile::ProjectilePhysics;
+use bevy::prelude::*;
+
+/// Component for CG boss entities
+#[derive(Component)]
+pub struct CGBoss {
+    pub boss_type: CGBossType,
+    pub health: f32,
+    pub max_health: f32,
+    pub current_phase: u32,
+    pub total_phases: u32,
+}
+
+/// Component for CG boss movement
+#[derive(Component)]
+pub struct CGBossMovement {
+    pub timer: f32,
+    pub speed: f32,
+}
+
+/// Component for CG boss attacks
+#[derive(Component)]
+pub struct CGBossAttack {
+    pub fire_timer: f32,
+    pub fire_rate: f32,
+}
+
+// ============================================================================
+// CG Boss Intro UI Components
+// ============================================================================
+
+/// Root marker for CG boss intro overlay
+#[derive(Component)]
+pub struct CGBossIntroRoot;
+
+/// Warning text that pulses
+#[derive(Component)]
+pub struct CGBossIntroWarning {
+    timer: f32,
+}
+
+/// Boss name that fades in
+#[derive(Component)]
+pub struct CGBossIntroName {
+    timer: f32,
+}
+
+/// Boss dialogue that types in
+#[derive(Component)]
+pub struct CGBossIntroDialogue {
+    full_text: String,
+    timer: f32,
+}
+
+/// Start a CG mission when entering Playing state
+pub fn start_cg_mission(mut cg_campaign: ResMut<CGCampaignState>) {
+    cg_campaign.start_mission();
+
+    if let Some(mission) = cg_campaign.current_mission() {
+        info!(
+            "Starting CG Mission {}: {} - {}",
+            cg_campaign.mission_number(),
+            mission.name,
+            mission.description
+        );
+    }
+}
+
+/// Update CG mission timer
+pub fn update_cg_mission(
+    _time: Res<Time>,
+    cg_campaign: Res<CGCampaignState>,
+    nightmare: Res<ShiigeruNightmare>,
+) {
+    // Don't update if nightmare mode is active
+    if nightmare.active {
+        return;
+    }
+
+    if cg_campaign.in_mission {
+        // Timer tracking could be added here if needed
+    }
+}
+
+/// Check if current wave is complete in CG campaign
+pub fn check_cg_wave_complete(
+    cg_campaign: Res<CGCampaignState>,
+    enemy_query: Query<Entity, With<crate::entities::Enemy>>,
+    boss_query: Query<Entity, With<CGBoss>>,
+) {
+    // Don't check if we're in boss wave
+    if cg_campaign.is_boss_wave() {
+        return;
+    }
+
+    // Don't check if boss exists
+    if boss_query.iter().count() > 0 {
+        return;
+    }
+
+    // Wave complete when no enemies remain
+    let enemy_count = enemy_query.iter().count();
+    if enemy_count == 0 && cg_campaign.current_wave > 0 && cg_campaign.in_mission {
+        if let Some(mission) = cg_campaign.current_mission() {
+            if cg_campaign.current_wave <= mission.waves {
+                info!("CG Wave {} complete!", cg_campaign.current_wave);
+            }
+        }
+    }
+}
+
+/// Spawn next wave of enemies for CG campaign
+pub fn spawn_cg_wave(
+    mut commands: Commands,
+    mut cg_campaign: ResMut<CGCampaignState>,
+    session: Res<GameSession>,
+    difficulty: Res<crate::core::Difficulty>,
+    sprite_cache: Res<crate::assets::ShipSpriteCache>,
+    enemy_query: Query<Entity, With<crate::entities::Enemy>>,
+    boss_query: Query<Entity, With<CGBoss>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    use crate::entities::enemy::{spawn_enemy, EnemyBehavior};
+
+    // Only spawn if no enemies remain
+    if enemy_query.iter().count() > 0 || boss_query.iter().count() > 0 {
+        return;
+    }
+
+    let Some(mission) = cg_campaign.current_mission() else {
+        return;
+    };
+
+    // Check if it's boss time
+    if cg_campaign.current_wave > mission.waves {
+        if !cg_campaign.boss_spawned && mission.boss.is_some() {
+            // Transition to boss intro
+            next_state.set(GameState::BossIntro);
+        } else if mission.boss.is_none() {
+            // No boss mission - complete immediately
+            next_state.set(GameState::StageComplete);
+        }
+        return;
+    }
+
+    // Spawn wave enemies
+    let wave = cg_campaign.current_wave;
+    let base_count = 3 + wave as usize;
+    let spawn_mult = difficulty.spawn_rate_mult();
+    let count = (base_count as f32 * spawn_mult) as usize;
+
+    info!("CG: Spawning wave {} with {} enemies", wave, count);
+
+    // Get enemy type IDs based on enemy faction
+    let enemy_types: Vec<u32> = match session.enemy_faction {
+        Faction::Caldari => vec![583, 602, 603], // Condor, Kestrel, Merlin
+        Faction::Gallente => vec![608, 594, 593], // Atron, Incursus, Tristan
+        Faction::Amarr => vec![597, 589, 591],   // Punisher, Executioner, Tormentor
+        Faction::Minmatar => vec![587, 585, 598], // Rifter, Slasher, Breacher
+    };
+
+    for i in 0..count {
+        let type_id = enemy_types[fastrand::usize(..enemy_types.len())];
+        let sprite = sprite_cache.get(type_id);
+        let x = (i as f32 - count as f32 / 2.0) * 80.0;
+        let y = 300.0 + 50.0 + (i as f32 * 20.0);
+
+        let behavior = match fastrand::u32(0..4) {
+            0 => EnemyBehavior::Linear,
+            1 => EnemyBehavior::Zigzag,
+            2 => EnemyBehavior::Homing,
+            _ => EnemyBehavior::Weaver,
+        };
+
+        spawn_enemy(
+            &mut commands,
+            type_id,
+            Vec2::new(x, y),
+            behavior,
+            sprite,
+            None,
+        );
+    }
+
+    cg_campaign.current_wave += 1;
+}
+
+/// Spawn CG boss for current mission
+pub fn spawn_cg_boss(
+    mut commands: Commands,
+    mut cg_campaign: ResMut<CGCampaignState>,
+    session: Res<GameSession>,
+    difficulty: Res<Difficulty>,
+    sprite_cache: Res<crate::assets::ShipSpriteCache>,
+) {
+    let Some(mission) = cg_campaign.current_mission() else {
+        return;
+    };
+
+    let Some(boss_type) = mission.boss else {
+        return;
+    };
+
+    info!(
+        "Spawning CG Boss: {} (difficulty: {:?})",
+        boss_type.name(),
+        *difficulty
+    );
+
+    // Scale health by difficulty
+    let base_health = boss_type.health();
+    let health = base_health * difficulty.enemy_health_mult();
+    let phases = boss_type.phases();
+
+    // Scale fire rate by difficulty (lower = faster attacks)
+    let fire_rate = 1.2 / difficulty.enemy_fire_rate_mult();
+
+    // Get boss type_id based on enemy faction
+    let type_id = boss_type.type_id(session.enemy_faction);
+    let size = 100.0; // Boss size
+
+    // Get sprite from cache or fallback to colored square
+    let sprite = if type_id > 0 {
+        if let Some(texture) = sprite_cache.get(type_id) {
+            Sprite {
+                image: texture,
+                custom_size: Some(Vec2::splat(size)),
+                ..default()
+            }
+        } else {
+            // Fallback color based on enemy faction
+            let boss_color = match session.enemy_faction {
+                Faction::Caldari => Color::srgb(0.4, 0.6, 0.9),
+                Faction::Gallente => Color::srgb(0.4, 0.9, 0.5),
+                _ => Color::srgb(1.0, 0.5, 0.5),
+            };
+            Sprite {
+                color: boss_color,
+                custom_size: Some(Vec2::splat(size)),
+                ..default()
+            }
+        }
+    } else {
+        let boss_color = match session.enemy_faction {
+            Faction::Caldari => Color::srgb(0.4, 0.6, 0.9),
+            Faction::Gallente => Color::srgb(0.4, 0.9, 0.5),
+            _ => Color::srgb(1.0, 0.5, 0.5),
+        };
+        Sprite {
+            color: boss_color,
+            custom_size: Some(Vec2::splat(size)),
+            ..default()
+        }
+    };
+
+    // Spawn the boss entity with Enemy + EnemyStats for collision system compatibility
+    commands.spawn((
+        crate::entities::Enemy,
+        crate::entities::EnemyStats {
+            type_id,
+            name: boss_type.name().to_string(),
+            health,
+            max_health: health,
+            speed: 80.0,
+            score_value: (health as u64) * 10,
+            is_boss: true,
+            liberation_value: 50,
+        },
+        CGBoss {
+            boss_type,
+            health,
+            max_health: health,
+            current_phase: 1,
+            total_phases: phases,
+        },
+        CGBossMovement {
+            timer: 0.0,
+            speed: 80.0,
+        },
+        CGBossAttack {
+            fire_timer: 0.0,
+            fire_rate, // Scaled by difficulty
+        },
+        sprite,
+        // Rotate 180° to face down (ships face up by default)
+        Transform::from_xyz(0.0, 400.0, 10.0)
+            .with_rotation(Quat::from_rotation_z(std::f32::consts::PI)),
+    ));
+
+    cg_campaign.boss_spawned = true;
+}
+
+/// CG Boss intro sequence
+pub fn cg_boss_intro(
+    time: Res<Time>,
+    mut boss_query: Query<(&mut Transform, &CGBoss)>,
+    mut next_state: ResMut<NextState<GameState>>,
+    mut timer: Local<f32>,
+) {
+    *timer += time.delta_secs();
+
+    for (mut transform, boss) in boss_query.iter_mut() {
+        // Descend boss to battle position
+        let target_y = 200.0;
+        if transform.translation.y > target_y {
+            transform.translation.y -= 100.0 * time.delta_secs();
+        }
+
+        // After 2 seconds, start fight
+        if *timer > 2.0 {
+            *timer = 0.0;
+            next_state.set(GameState::BossFight);
+            info!("CG Boss battle started: {}", boss.boss_type.name());
+        }
+    }
+}
+
+/// Spawn CG boss intro UI overlay
+pub fn spawn_cg_boss_intro(mut commands: Commands, cg_campaign: Res<CGCampaignState>) {
+    let Some(mission) = cg_campaign.current_mission() else {
+        return;
+    };
+
+    let Some(boss_type) = mission.boss else {
+        return;
+    };
+
+    let boss_name = boss_type.name();
+    let boss_title = boss_type.title();
+    let dialogue = boss_type.dialogue_intro();
+    let phases = boss_type.phases();
+
+    // Phase difficulty indicator
+    let phase_text = match phases {
+        1 => "Single Phase",
+        2 => "Two Phases",
+        3 => "Three Phases • Challenging",
+        4 => "Four Phases • Dangerous",
+        _ => "Multi-Phase",
+    };
+
+    commands
+        .spawn((
+            CGBossIntroRoot,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(12.0),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.9)),
+        ))
+        .with_children(|parent| {
+            // Warning text (pulses)
+            parent.spawn((
+                Text::new("⚠ WARNING ⚠"),
+                TextFont {
+                    font_size: 28.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(1.0, 0.2, 0.2)),
+                CGBossIntroWarning { timer: 0.0 },
+            ));
+
+            parent.spawn(Node {
+                height: Val::Px(15.0),
+                ..default()
+            });
+
+            // Boss name (fades in) - Caldari blue instead of Amarr gold
+            parent.spawn((
+                Text::new(boss_name),
+                TextFont {
+                    font_size: 72.0,
+                    ..default()
+                },
+                TextColor(Color::srgba(0.2, 0.6, 1.0, 0.0)), // Start transparent, Caldari blue
+                CGBossIntroName { timer: 0.0 },
+            ));
+
+            // Boss title
+            parent.spawn((
+                Text::new(boss_title),
+                TextFont {
+                    font_size: 22.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.4, 0.7, 0.9)), // Lighter blue
+            ));
+
+            // Phase indicator
+            parent.spawn((
+                Text::new(phase_text),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(if phases >= 4 {
+                    Color::srgb(1.0, 0.4, 0.4) // Red for dangerous
+                } else if phases >= 3 {
+                    Color::srgb(1.0, 0.7, 0.3) // Orange for challenging
+                } else {
+                    Color::srgb(0.6, 0.6, 0.6) // Gray for normal
+                }),
+            ));
+
+            parent.spawn(Node {
+                height: Val::Px(30.0),
+                ..default()
+            });
+
+            // Boss dialogue (types in)
+            parent.spawn((
+                Text::new(""),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                CGBossIntroDialogue {
+                    full_text: format!("\"{}\"", dialogue),
+                    timer: 0.0,
+                },
+            ));
+        });
+}
+
+/// Update CG boss intro animations
+pub fn cg_boss_intro_update(
+    time: Res<Time>,
+    mut warning_query: Query<(&mut TextColor, &mut CGBossIntroWarning)>,
+    mut name_query: Query<(&mut TextColor, &mut CGBossIntroName), Without<CGBossIntroWarning>>,
+    mut dialogue_query: Query<(&mut Text, &mut CGBossIntroDialogue)>,
+) {
+    let dt = time.delta_secs();
+
+    // Pulse warning text
+    for (mut color, mut warning) in warning_query.iter_mut() {
+        warning.timer += dt * 4.0;
+        let pulse = (warning.timer.sin() * 0.3 + 0.7).clamp(0.4, 1.0);
+        *color = TextColor(Color::srgb(1.0, 0.2 * pulse, 0.2 * pulse));
+    }
+
+    // Fade in boss name (Caldari blue)
+    for (mut color, mut name) in name_query.iter_mut() {
+        name.timer += dt * 2.0;
+        let alpha = (name.timer - 0.3).clamp(0.0, 1.0); // Delay 0.3s then fade in
+        *color = TextColor(Color::srgba(0.2, 0.6, 1.0, alpha));
+    }
+
+    // Type in dialogue
+    for (mut text, mut dialogue) in dialogue_query.iter_mut() {
+        dialogue.timer += dt;
+        let chars_to_show = ((dialogue.timer - 0.5) * 30.0) as usize; // 30 chars/sec, 0.5s delay
+        let chars_to_show = chars_to_show.min(dialogue.full_text.len());
+        if chars_to_show > 0 {
+            **text = dialogue.full_text[..chars_to_show].to_string();
+        }
+    }
+}
+
+/// Despawn CG boss intro UI
+pub fn despawn_cg_boss_intro(mut commands: Commands, query: Query<Entity, With<CGBossIntroRoot>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+/// Update CG boss behavior during fight
+pub fn update_cg_boss(
+    time: Res<Time>,
+    mut boss_query: Query<(
+        &mut Transform,
+        &mut CGBoss,
+        &mut CGBossMovement,
+        &mut CGBossAttack,
+        &crate::entities::EnemyStats,
+    )>,
+    player_query: Query<&Transform, (With<crate::entities::Player>, Without<CGBoss>)>,
+    mut commands: Commands,
+    difficulty: Res<Difficulty>,
+) {
+    let player_pos = player_query
+        .get_single()
+        .map(|t| t.translation.truncate())
+        .unwrap_or(Vec2::ZERO);
+
+    for (mut transform, mut boss, mut movement, mut attack, enemy_stats) in boss_query.iter_mut() {
+        let pos = transform.translation.truncate();
+        let dt = time.delta_secs();
+
+        // Sync health from EnemyStats (collision system updates this)
+        boss.health = enemy_stats.health;
+
+        // Movement - sweep pattern
+        movement.timer += dt;
+        let offset = (movement.timer * 0.5).sin() * 200.0;
+        transform.translation.x = offset;
+
+        // Phase transitions
+        let health_percent = boss.health / boss.max_health;
+        let phase_threshold = 1.0 - (boss.current_phase as f32 / boss.total_phases as f32);
+
+        if health_percent <= phase_threshold && boss.current_phase < boss.total_phases {
+            boss.current_phase += 1;
+            movement.speed *= 1.2;
+            attack.fire_rate *= 0.8;
+            info!("CG Boss entering phase {}!", boss.current_phase);
+        }
+
+        // Attack
+        attack.fire_timer += dt;
+        if attack.fire_timer >= attack.fire_rate {
+            attack.fire_timer = 0.0;
+
+            let dir = (player_pos - pos).normalize_or_zero();
+            let projectile_speed = 250.0 + (boss.current_phase as f32 * 50.0);
+
+            // Scale damage by difficulty
+            let base_damage = 20.0 + (boss.current_phase as f32 * 5.0);
+            let scaled_damage = base_damage * difficulty.enemy_damage_mult();
+
+            commands.spawn((
+                crate::entities::EnemyProjectile,
+                crate::entities::ProjectileDamage {
+                    damage: scaled_damage,
+                    damage_type: DamageType::EM,
+                    crit_chance: 0.08,
+                    crit_multiplier: 1.5,
+                    ammo_type: crate::core::AmmoType::default(),
+                },
+                ProjectilePhysics {
+                    velocity: dir * projectile_speed,
+                    lifetime: 4.0,
+                },
+                Sprite {
+                    color: Color::srgb(1.0, 0.8, 0.2),
+                    custom_size: Some(Vec2::new(8.0, 16.0)),
+                    ..default()
+                },
+                Transform::from_xyz(pos.x, pos.y - 30.0, 9.0),
+            ));
+        }
+    }
+}
+
+/// Check if CG boss is defeated
+pub fn check_cg_boss_defeated(
+    mut commands: Commands,
+    mut cg_campaign: ResMut<CGCampaignState>,
+    boss_query: Query<(Entity, &CGBoss, &crate::entities::EnemyStats)>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    for (entity, boss, enemy_stats) in boss_query.iter() {
+        // Check EnemyStats health (collision system updates this)
+        if enemy_stats.health <= 0.0 {
+            info!("CG Boss defeated: {}", boss.boss_type.name());
+
+            // Mark boss defeated
+            cg_campaign.boss_defeated = true;
+
+            // Despawn boss
+            commands.entity(entity).despawn_recursive();
+
+            // Go to stage complete (mission advancement happens when player confirms)
+            next_state.set(GameState::StageComplete);
+        }
+    }
+}
