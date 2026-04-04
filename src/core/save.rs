@@ -54,6 +54,9 @@ pub struct SaveData {
     /// Gameplay analytics (deaths, ship picks, difficulty distribution)
     #[serde(default)]
     pub analytics: super::AnalyticsData,
+    /// Top-10 leaderboard across all runs
+    #[serde(default)]
+    pub leaderboard: Vec<LeaderboardEntry>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -70,6 +73,25 @@ pub struct HighScore {
     pub enemy_faction: String,
     pub score: u64,
     pub stage: u32,
+}
+
+/// A single leaderboard entry recording a completed run
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LeaderboardEntry {
+    /// Player faction for this run
+    pub faction: String,
+    /// Enemy faction for this run
+    pub enemy: String,
+    /// Final score
+    pub score: u64,
+    /// Stage reached
+    pub stage: u32,
+    /// Difficulty setting (e.g. "Normal", "Hard")
+    pub difficulty: String,
+    /// Ship name used
+    pub ship_name: String,
+    /// Session counter (monotonically increasing per save)
+    pub session: u32,
 }
 
 /// Lifetime statistics for tracking total progress
@@ -317,6 +339,45 @@ impl SaveData {
                 stage,
             });
         }
+    }
+
+    /// Record a leaderboard entry. Keeps only the top 10 scores (descending).
+    /// Returns the position (0-based) if the entry made the leaderboard, or None.
+    pub fn record_leaderboard_entry(
+        &mut self,
+        faction: &str,
+        enemy: &str,
+        score: u64,
+        stage: u32,
+        difficulty: &str,
+        ship_name: &str,
+    ) -> Option<usize> {
+        let session = self.next_session();
+        let entry = LeaderboardEntry {
+            faction: faction.to_string(),
+            enemy: enemy.to_string(),
+            score,
+            stage,
+            difficulty: difficulty.to_string(),
+            ship_name: ship_name.to_string(),
+            session,
+        };
+        self.leaderboard.push(entry);
+        self.leaderboard.sort_by(|a, b| b.score.cmp(&a.score));
+        self.leaderboard.truncate(10);
+
+        // Find position of this session entry (it has a unique session id)
+        self.leaderboard.iter().position(|e| e.session == session)
+    }
+
+    /// Get the next session counter value
+    fn next_session(&self) -> u32 {
+        self.leaderboard
+            .iter()
+            .map(|e| e.session)
+            .max()
+            .unwrap_or(0)
+            + 1
     }
 
     /// Add credits
@@ -711,5 +772,82 @@ mod tests {
         assert_eq!(loaded.get_high_score("Minmatar", "Amarr"), 50000);
         assert!(loaded.unlocked_ships.contains(&587));
         assert_eq!(loaded.lifetime_credits, 10000);
+    }
+
+    // ==================== Leaderboard Tests ====================
+
+    #[test]
+    fn leaderboard_insert_and_retrieve() {
+        let mut save = SaveData::default();
+        let pos = save.record_leaderboard_entry("Minmatar", "Amarr", 50000, 5, "Normal", "Wolf");
+        assert_eq!(pos, Some(0));
+        assert_eq!(save.leaderboard.len(), 1);
+        assert_eq!(save.leaderboard[0].score, 50000);
+        assert_eq!(save.leaderboard[0].ship_name, "Wolf");
+    }
+
+    #[test]
+    fn leaderboard_sorted_descending() {
+        let mut save = SaveData::default();
+        save.record_leaderboard_entry("Minmatar", "Amarr", 10000, 2, "Normal", "Rifter");
+        save.record_leaderboard_entry("Minmatar", "Amarr", 50000, 5, "Hard", "Wolf");
+        save.record_leaderboard_entry("Caldari", "Gallente", 30000, 4, "Normal", "Merlin");
+
+        assert_eq!(save.leaderboard.len(), 3);
+        assert_eq!(save.leaderboard[0].score, 50000);
+        assert_eq!(save.leaderboard[1].score, 30000);
+        assert_eq!(save.leaderboard[2].score, 10000);
+    }
+
+    #[test]
+    fn leaderboard_caps_at_ten() {
+        let mut save = SaveData::default();
+        // Insert 12 entries with ascending scores
+        for i in 0..12 {
+            save.record_leaderboard_entry(
+                "Minmatar",
+                "Amarr",
+                (i + 1) * 1000,
+                i as u32,
+                "Normal",
+                "Rifter",
+            );
+        }
+        assert_eq!(save.leaderboard.len(), 10);
+        // Highest score should be first
+        assert_eq!(save.leaderboard[0].score, 12000);
+        // Lowest kept score should be 3000 (entries 1000 and 2000 dropped)
+        assert_eq!(save.leaderboard[9].score, 3000);
+    }
+
+    #[test]
+    fn leaderboard_low_score_returns_none() {
+        let mut save = SaveData::default();
+        // Fill with 10 high scores
+        for i in 0..10 {
+            save.record_leaderboard_entry("Minmatar", "Amarr", (i + 10) * 10000, 5, "Hard", "Wolf");
+        }
+        assert_eq!(save.leaderboard.len(), 10);
+        let lowest = save.leaderboard[9].score;
+
+        // Insert a score lower than the lowest on the board
+        let pos =
+            save.record_leaderboard_entry("Minmatar", "Amarr", lowest - 1, 1, "Easy", "Rifter");
+        assert_eq!(pos, None);
+        assert_eq!(save.leaderboard.len(), 10);
+    }
+
+    #[test]
+    fn leaderboard_serialization_roundtrip() {
+        let mut save = SaveData::default();
+        save.record_leaderboard_entry("Minmatar", "Amarr", 50000, 5, "Normal", "Wolf");
+        save.record_leaderboard_entry("Caldari", "Gallente", 30000, 3, "Hard", "Merlin");
+
+        let json = serde_json::to_string(&save).expect("serialize");
+        let loaded: SaveData = serde_json::from_str(&json).expect("deserialize");
+
+        assert_eq!(loaded.leaderboard.len(), 2);
+        assert_eq!(loaded.leaderboard[0].score, 50000);
+        assert_eq!(loaded.leaderboard[1].score, 30000);
     }
 }

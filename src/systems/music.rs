@@ -5,7 +5,7 @@
 
 #![allow(dead_code)]
 
-use bevy::audio::{PlaybackMode, PlaybackSettings, Volume};
+use bevy::audio::{AudioSink, PlaybackMode, PlaybackSettings, Volume};
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
@@ -24,6 +24,7 @@ impl Plugin for MusicPlugin {
             (
                 manage_menu_music.run_if(in_state(GameState::MainMenu)),
                 manage_gameplay_music.run_if(in_state(GameState::Playing)),
+                update_music_intensity.run_if(in_state(GameState::Playing)),
                 handle_state_music_transitions,
             ),
         );
@@ -41,13 +42,26 @@ pub struct MusicAssets {
 }
 
 /// Current music state
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct MusicState {
     pub current_track: Option<Entity>,
     pub current_type: MusicType,
+    /// Current reactive volume scale (0.25 = idle, 1.0 = max intensity)
     pub volume: f32,
     pub fade_timer: f32,
     pub fading_out: bool,
+}
+
+impl Default for MusicState {
+    fn default() -> Self {
+        Self {
+            current_track: None,
+            current_type: MusicType::None,
+            volume: 0.25, // Start at idle baseline
+            fade_timer: 0.0,
+            fading_out: false,
+        }
+    }
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
@@ -505,6 +519,49 @@ fn handle_state_music_transitions(
                 ));
             }
         }
+    }
+}
+
+// =============================================================================
+// MUSIC REACTIVITY
+// =============================================================================
+
+/// Adjust music volume based on gameplay intensity (combo multiplier).
+///
+/// Maps the ScoreSystem multiplier to a volume range:
+/// - Multiplier 1.0 (idle): base volume (0.25)
+/// - Multiplier 5.0+: full volume (1.0)
+///
+/// Volume changes are smoothed over time to avoid jarring transitions.
+fn update_music_intensity(
+    time: Res<Time>,
+    score: Res<ScoreSystem>,
+    mut music_state: ResMut<MusicState>,
+    settings: Res<crate::systems::audio::SoundSettings>,
+    music_query: Query<&AudioSink, With<MusicTrack>>,
+) {
+    // Map combo multiplier to a 0.0..1.0 intensity range
+    // multiplier 1.0 -> 0.0, multiplier 5.0+ -> 1.0
+    let intensity = ((score.multiplier - 1.0) / 4.0).clamp(0.0, 1.0);
+
+    // Lerp between quiet ambient (0.25) and full presence (1.0)
+    let target_scale = 0.25 + 0.75 * intensity;
+
+    // Smooth toward target — ramp up faster than decay for punch
+    let lerp_speed = if target_scale > music_state.volume {
+        4.0 // quick ramp up on kills
+    } else {
+        1.5 // slower fade back to ambient
+    };
+    let dt = time.delta_secs();
+    music_state.volume += (target_scale - music_state.volume) * (lerp_speed * dt).min(1.0);
+
+    // Apply to the active music track via AudioSink
+    let base_volume = settings.music_volume * settings.master_volume * 0.35;
+    let final_volume = base_volume * music_state.volume;
+
+    for sink in &music_query {
+        sink.set_volume(final_volume);
     }
 }
 

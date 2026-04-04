@@ -223,6 +223,16 @@ fn player_projectile_enemy_collision(
                         was_boss: enemy_stats.is_boss,
                     });
 
+                    // Faction-colored explosions based on enemy type
+                    let explosion_color = match enemy_stats.type_id {
+                        // Amarr enemies — golden
+                        597 | 589 | 591 | 16236 | 624 | 625 | 24690 => Color::srgb(1.0, 0.85, 0.3),
+                        // Triglavian enemies — red
+                        47269..=47273 => Color::srgb(0.9, 0.2, 0.3),
+                        // Default — orange
+                        _ => Color::srgb(1.0, 0.5, 0.2),
+                    };
+
                     explosion_events.send(ExplosionEvent {
                         position: enemy_pos,
                         size: if enemy_stats.is_boss {
@@ -230,7 +240,7 @@ fn player_projectile_enemy_collision(
                         } else {
                             ExplosionSize::Small
                         },
-                        color: Color::srgb(1.0, 0.5, 0.2),
+                        color: explosion_color,
                     });
 
                     // Screen shake, flash, and zoom on kill
@@ -289,6 +299,8 @@ fn enemy_projectile_player_collision(
     mut dialogue_events: EventWriter<super::DialogueEvent>,
     mut rumble_events: EventWriter<super::RumbleRequest>,
     mut screen_shake: ResMut<super::effects::ScreenShake>,
+    mut screen_flash: ResMut<super::effects::ScreenFlash>,
+    mut explosion_events: EventWriter<ExplosionEvent>,
     mut next_state: ResMut<NextState<GameState>>,
     mut last_callout: Local<f32>,
     time: Res<Time>,
@@ -397,6 +409,16 @@ fn enemy_projectile_player_collision(
 
             if damage_result.destroyed {
                 info!("Player destroyed!");
+
+                // Dramatic death effects
+                screen_shake.massive();
+                screen_flash.colored(Color::srgb(1.0, 0.2, 0.2), 0.9);
+                explosion_events.send(ExplosionEvent {
+                    position: player_pos,
+                    size: ExplosionSize::Massive,
+                    color: Color::srgb(1.0, 0.4, 0.2),
+                });
+
                 next_state.set(GameState::GameOver);
             }
         }

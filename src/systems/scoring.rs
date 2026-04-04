@@ -30,6 +30,7 @@ fn update_salt_miner_system(
     mut salt_miner: ResMut<SaltMinerSystem>,
     mut end_events: EventWriter<SaltMinerEndedEvent>,
     mut screen_flash: ResMut<crate::systems::ScreenFlash>,
+    mut screen_shake: ResMut<crate::systems::ScreenShake>,
     mut dialogue_events: EventWriter<super::DialogueEvent>,
     mut rumble_events: EventWriter<super::RumbleRequest>,
 ) {
@@ -47,7 +48,9 @@ fn update_salt_miner_system(
 
     if activate_pressed && salt_miner.can_activate() && salt_miner.try_activate() {
         info!("SALT MINER MODE ACTIVATED! 5x score for 8 seconds!");
-        screen_flash.salt_miner(); // Red flash on activation
+        screen_shake.medium(); // Screen shake on activation
+        screen_flash.colored(Color::srgba(1.0, 0.85, 0.2, 0.7), 0.6); // Gold flash on activation
+        screen_flash.fade_speed = 3.0;
         rumble_events.send(super::RumbleRequest::salt_miner()); // Controller rumble
         dialogue_events.send(super::DialogueEvent::combat_callout(
             super::CombatCalloutType::SaltMinerActive,

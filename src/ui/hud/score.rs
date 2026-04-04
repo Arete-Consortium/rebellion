@@ -13,11 +13,20 @@ pub fn update_score_display(score: Res<ScoreSystem>, mut query: Query<&mut Text,
 
 pub fn update_combo_display(
     score: Res<ScoreSystem>,
-    mut combo_query: Query<(&mut Text, &mut TextColor), (With<ComboText>, Without<GradeText>)>,
+    mut combo_query: Query<
+        (&mut Text, &mut TextColor, &mut TextFont),
+        (With<ComboText>, Without<GradeText>),
+    >,
     mut grade_query: Query<(&mut Text, &mut TextColor), (With<GradeText>, Without<ComboText>)>,
 ) {
-    for (mut text, mut color) in combo_query.iter_mut() {
+    for (mut text, mut color, mut font) in combo_query.iter_mut() {
         **text = format!("x{:.1}", score.multiplier);
+
+        // Scale font size with multiplier (base 20, max 40)
+        let base_size = 20.0_f32;
+        let scale_factor = 2.5_f32;
+        font.font_size = (base_size + score.multiplier * scale_factor).min(40.0);
+
         // Color based on multiplier
         color.0 = if score.multiplier >= 10.0 {
             Color::srgb(1.0, 0.3, 0.3)
