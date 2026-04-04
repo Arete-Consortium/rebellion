@@ -9,6 +9,7 @@
 //! - Achievement system
 
 pub mod achievements;
+pub mod analytics;
 pub mod campaign;
 pub mod constants;
 pub mod events;
@@ -18,6 +19,7 @@ pub mod resources;
 pub mod save;
 
 pub use achievements::*;
+pub use analytics::{AnalyticsData, AnalyticsPlugin};
 pub use campaign::*;
 pub use constants::*;
 pub use events::*;

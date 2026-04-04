@@ -599,3 +599,171 @@ pub fn get_phase_threshold(phase: u32, total_phases: u32) -> f32 {
         _ => 0.0,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_13_stages_have_bosses() {
+        for stage in 1..=13 {
+            assert!(
+                get_boss_for_stage(stage).is_some(),
+                "Stage {} missing boss",
+                stage
+            );
+        }
+    }
+
+    #[test]
+    fn stage_0_has_no_boss() {
+        assert!(get_boss_for_stage(0).is_none());
+    }
+
+    #[test]
+    fn stage_14_has_no_boss() {
+        assert!(get_boss_for_stage(14).is_none());
+    }
+
+    #[test]
+    fn boss_ids_match_stages() {
+        for stage in 1..=13 {
+            let boss = get_boss_for_stage(stage).unwrap();
+            assert_eq!(boss.id, stage);
+            assert_eq!(boss.stage, stage);
+        }
+    }
+
+    #[test]
+    fn boss_health_increases_through_campaign() {
+        let first = get_boss_for_stage(1).unwrap();
+        let last = get_boss_for_stage(13).unwrap();
+        assert!(last.max_health > first.max_health);
+    }
+
+    #[test]
+    fn boss_score_increases_through_campaign() {
+        let first = get_boss_for_stage(1).unwrap();
+        let last = get_boss_for_stage(13).unwrap();
+        assert!(last.score_value > first.score_value);
+    }
+
+    #[test]
+    fn boss_health_equals_max_on_spawn() {
+        for stage in 1..=13 {
+            let boss = get_boss_for_stage(stage).unwrap();
+            assert_eq!(boss.health, boss.max_health);
+        }
+    }
+
+    #[test]
+    fn boss_names_not_empty() {
+        for stage in 1..=13 {
+            let boss = get_boss_for_stage(stage).unwrap();
+            assert!(!boss.name.is_empty(), "Stage {} boss has no name", stage);
+            assert!(!boss.title.is_empty(), "Stage {} boss has no title", stage);
+        }
+    }
+
+    #[test]
+    fn boss_dialogue_not_empty() {
+        for stage in 1..=13 {
+            let boss = get_boss_for_stage(stage).unwrap();
+            assert!(
+                !boss.dialogue_intro.is_empty(),
+                "Stage {} boss has no intro dialogue",
+                stage
+            );
+            assert!(
+                !boss.dialogue_defeat.is_empty(),
+                "Stage {} boss has no defeat dialogue",
+                stage
+            );
+        }
+    }
+
+    #[test]
+    fn boss_starts_not_enraged() {
+        for stage in 1..=13 {
+            let boss = get_boss_for_stage(stage).unwrap();
+            assert!(!boss.is_enraged);
+        }
+    }
+
+    #[test]
+    fn boss_enrage_threshold_valid() {
+        for stage in 1..=13 {
+            let boss = get_boss_for_stage(stage).unwrap();
+            assert!(
+                boss.enrage_threshold > 0.0 && boss.enrage_threshold < 1.0,
+                "Stage {} enrage threshold out of range",
+                stage
+            );
+        }
+    }
+
+    #[test]
+    fn final_boss_is_avatar_titan() {
+        let boss = get_boss_for_stage(13).unwrap();
+        assert!(
+            boss.name.contains("Avatar"),
+            "Final boss should be Avatar Titan"
+        );
+    }
+
+    #[test]
+    fn final_boss_has_most_phases() {
+        let final_boss = get_boss_for_stage(13).unwrap();
+        for stage in 1..13 {
+            let boss = get_boss_for_stage(stage).unwrap();
+            assert!(final_boss.total_phases >= boss.total_phases);
+        }
+    }
+
+    // Phase threshold tests
+    #[test]
+    fn phase_1_always_100_percent() {
+        for total in 2..=5 {
+            assert_eq!(get_phase_threshold(1, total), 1.0);
+        }
+    }
+
+    #[test]
+    fn phase_thresholds_decrease() {
+        // For a 3-phase boss: phase 1 > phase 2 > phase 3
+        assert!(get_phase_threshold(1, 3) > get_phase_threshold(2, 3));
+        assert!(get_phase_threshold(2, 3) > get_phase_threshold(3, 3));
+    }
+
+    #[test]
+    fn phase_thresholds_positive() {
+        for total in 2..=5 {
+            for phase in 1..=total {
+                let threshold = get_phase_threshold(phase, total);
+                assert!(threshold > 0.0, "Phase {}/{} threshold should be positive", phase, total);
+            }
+        }
+    }
+
+    // BossState tests
+    #[test]
+    fn boss_state_default_is_intro() {
+        assert_eq!(BossState::default(), BossState::Intro);
+    }
+
+    // BossMovement tests
+    #[test]
+    fn boss_movement_default_sweep() {
+        let movement = BossMovement::default();
+        assert_eq!(movement.pattern, MovementPattern::Sweep);
+        assert!(movement.speed > 0.0);
+    }
+
+    // BossAttack tests
+    #[test]
+    fn boss_attack_default_values() {
+        let attack = BossAttack::default();
+        assert!(attack.fire_rate > 0.0);
+        assert!(attack.burst_count > 0);
+    }
+}

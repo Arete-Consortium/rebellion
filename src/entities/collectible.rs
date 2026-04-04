@@ -790,3 +790,143 @@ pub fn spawn_smart_powerup(
 
     spawn_collectible(commands, position, powerup, icon_cache);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Rarity system tests
+    #[test]
+    fn rarity_default_is_common() {
+        assert_eq!(Rarity::default(), Rarity::Common);
+    }
+
+    #[test]
+    fn rarity_glow_increases_with_tier() {
+        assert!(Rarity::Common.glow_mult() < Rarity::Uncommon.glow_mult());
+        assert!(Rarity::Uncommon.glow_mult() < Rarity::Rare.glow_mult());
+        assert!(Rarity::Rare.glow_mult() < Rarity::Epic.glow_mult());
+    }
+
+    #[test]
+    fn rarity_orbitals_increase_with_tier() {
+        assert!(Rarity::Common.orbital_count() < Rarity::Uncommon.orbital_count());
+        assert!(Rarity::Uncommon.orbital_count() < Rarity::Rare.orbital_count());
+        assert!(Rarity::Rare.orbital_count() < Rarity::Epic.orbital_count());
+    }
+
+    #[test]
+    fn rarity_epic_max_orbitals_within_cap() {
+        assert!(Rarity::Epic.orbital_count() as usize <= MAX_ORBITALS_PER_COLLECTIBLE);
+    }
+
+    #[test]
+    fn rarity_pulse_speed_increases_with_tier() {
+        assert!(Rarity::Common.pulse_speed() < Rarity::Epic.pulse_speed());
+    }
+
+    #[test]
+    fn rarity_size_increases_with_tier() {
+        assert!(Rarity::Common.size_mult() <= Rarity::Uncommon.size_mult());
+        assert!(Rarity::Uncommon.size_mult() <= Rarity::Rare.size_mult());
+        assert!(Rarity::Rare.size_mult() <= Rarity::Epic.size_mult());
+    }
+
+    #[test]
+    fn rarity_all_collectible_types_have_rarity() {
+        let types = [
+            CollectibleType::Credits,
+            CollectibleType::ShieldBoost,
+            CollectibleType::ArmorRepair,
+            CollectibleType::HullRepair,
+            CollectibleType::CapacitorCharge,
+            CollectibleType::Nanite,
+            CollectibleType::LiberationPod,
+            CollectibleType::SkillPointDrop,
+            CollectibleType::Overdrive,
+            CollectibleType::DamageBoost,
+            CollectibleType::Invulnerability,
+            CollectibleType::ExtraLife,
+        ];
+        for ct in &types {
+            let _rarity = Rarity::for_collectible(*ct); // Should not panic
+        }
+    }
+
+    #[test]
+    fn rarity_extra_life_is_epic() {
+        assert_eq!(
+            Rarity::for_collectible(CollectibleType::ExtraLife),
+            Rarity::Epic
+        );
+    }
+
+    #[test]
+    fn rarity_credits_is_common() {
+        assert_eq!(
+            Rarity::for_collectible(CollectibleType::Credits),
+            Rarity::Common
+        );
+    }
+
+    #[test]
+    fn rarity_invulnerability_is_epic() {
+        assert_eq!(
+            Rarity::for_collectible(CollectibleType::Invulnerability),
+            Rarity::Epic
+        );
+    }
+
+    // PowerupEffects tests
+    #[test]
+    fn powerup_effects_default_inactive() {
+        let effects = PowerupEffects::default();
+        assert!(!effects.is_overdrive());
+        assert!(!effects.is_damage_boosted());
+        assert!(!effects.is_invulnerable());
+    }
+
+    #[test]
+    fn powerup_effects_default_no_multipliers() {
+        let effects = PowerupEffects::default();
+        assert_eq!(effects.speed_mult(), 1.0);
+        assert_eq!(effects.damage_mult(), 1.0);
+    }
+
+    #[test]
+    fn powerup_effects_overdrive_active() {
+        let effects = PowerupEffects {
+            overdrive_timer: 5.0,
+            ..default()
+        };
+        assert!(effects.is_overdrive());
+        assert_eq!(effects.speed_mult(), 1.5);
+    }
+
+    #[test]
+    fn powerup_effects_damage_boost_active() {
+        let effects = PowerupEffects {
+            damage_boost_timer: 5.0,
+            ..default()
+        };
+        assert!(effects.is_damage_boosted());
+        assert_eq!(effects.damage_mult(), 2.0);
+    }
+
+    #[test]
+    fn powerup_effects_invuln_active() {
+        let effects = PowerupEffects {
+            invuln_timer: 5.0,
+            ..default()
+        };
+        assert!(effects.is_invulnerable());
+    }
+
+    // CollectiblePhysics tests
+    #[test]
+    fn collectible_physics_defaults() {
+        let physics = CollectiblePhysics::default();
+        assert!(physics.velocity.y < 0.0, "Collectibles should drift down");
+        assert!(physics.lifetime > 0.0);
+    }
+}

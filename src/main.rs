@@ -23,10 +23,10 @@ mod ui;
 
 use assets::AssetsPlugin;
 use core::{
-    AchievementPlugin, ActCompleteEvent, AudioSettings, BossSpawnEvent, CampaignState,
-    CurrentStage, Difficulty, EndlessMode, GameEventsPlugin, GameProgress, GameSession, GameState,
-    InputConfig, MissionCompleteEvent, MissionStartEvent, SaltMinerSystem, SavePlugin, ScoreSystem,
-    SelectedShip, ShipUnlocks, WaveCompleteEvent,
+    AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, AudioSettings, BossSpawnEvent,
+    CampaignState, CurrentStage, Difficulty, EndlessMode, GameEventsPlugin, GameProgress,
+    GameSession, GameState, InputConfig, MissionCompleteEvent, MissionStartEvent,
+    SaltMinerSystem, SavePlugin, ScoreSystem, SelectedShip, ShipUnlocks, WaveCompleteEvent,
 };
 use entities::EntitiesPlugin;
 use games::GameModulesPlugin;
@@ -74,6 +74,7 @@ fn main() {
         // Game plugins
         .add_plugins((
             SavePlugin,
+            AnalyticsPlugin,
             AchievementPlugin,
             AssetsPlugin,
             GameEventsPlugin,

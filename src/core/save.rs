@@ -51,6 +51,9 @@ pub struct SaveData {
     /// Purchased upgrades
     #[serde(default)]
     pub purchased_upgrades: HashSet<super::Upgrade>,
+    /// Gameplay analytics (deaths, ship picks, difficulty distribution)
+    #[serde(default)]
+    pub analytics: super::AnalyticsData,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
