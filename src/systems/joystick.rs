@@ -256,10 +256,10 @@ impl JoystickState {
     }
 
     pub fn dpad_just_up(&self) -> bool {
-        self.dpad_y < 0 && self.prev_dpad_y >= 0
+        self.dpad_y > 0 && self.prev_dpad_y <= 0 // Bevy: up = positive
     }
     pub fn dpad_just_down(&self) -> bool {
-        self.dpad_y > 0 && self.prev_dpad_y <= 0
+        self.dpad_y < 0 && self.prev_dpad_y >= 0 // Bevy: down = negative
     }
     pub fn dpad_just_left(&self) -> bool {
         self.dpad_x < 0 && self.prev_dpad_x >= 0
@@ -291,7 +291,7 @@ impl JoystickState {
             x = self.dpad_x as f32;
         }
         if self.dpad_y != 0 {
-            y = -self.dpad_y as f32; // D-pad: up = -1 in our convention
+            y = self.dpad_y as f32; // Bevy: up = +1, matches game coords
         }
         Vec2::new(x, y)
     }
@@ -457,10 +457,10 @@ fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
         state.dpad_x = 1;
     }
     if gamepad.pressed(GamepadButton::DPadUp) {
-        state.dpad_y = -1;
+        state.dpad_y = 1; // Bevy: up = positive
     }
     if gamepad.pressed(GamepadButton::DPadDown) {
-        state.dpad_y = 1;
+        state.dpad_y = -1; // Bevy: down = negative
     }
 
     // Buttons — mapped to our index convention:

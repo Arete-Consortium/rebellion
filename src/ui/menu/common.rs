@@ -104,12 +104,12 @@ pub(crate) fn get_nav_input(keyboard: &ButtonInput<KeyCode>, joystick: &Joystick
     }
 
     // Analog stick (held state - menu cooldown prevents rapid repeat)
-    // This is more reliable than edge detection for gradual analog input
-    if joystick.left_y < -0.5 || joystick.left_x < -0.5 {
-        nav = -1;
+    // Bevy convention: stick up = +Y, but menu nav up = -1 (lower index)
+    if joystick.left_y > 0.5 || joystick.left_x < -0.5 {
+        nav = -1; // Up / Left = previous item
     }
-    if joystick.left_y > 0.5 || joystick.left_x > 0.5 {
-        nav = 1;
+    if joystick.left_y < -0.5 || joystick.left_x > 0.5 {
+        nav = 1; // Down / Right = next item
     }
 
     nav
