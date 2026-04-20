@@ -442,7 +442,7 @@ pub(crate) fn spawn_death_screen(
 
             // Controller hint
             parent.spawn((
-                Text::new("← → Navigate • A/ENTER Select • B/ESC Quit"),
+                Text::new("D-PAD Navigate  •  A Select  •  B Quit"),
                 TextFont {
                     font_size: 12.0,
                     ..default()

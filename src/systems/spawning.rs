@@ -27,7 +27,13 @@ impl Plugin for SpawningPlugin {
             .add_systems(OnExit(GameState::Playing), cleanup_carrier)
             .add_systems(
                 Update,
-                (wave_spawning, handle_spawn_events, animate_carrier)
+                (
+                    wave_spawning,
+                    handle_spawn_events,
+                    animate_carrier,
+                    carrier_launch_fighters,
+                    tick_carrier_flash,
+                )
                     .run_if(in_state(GameState::Playing))
                     .run_if(not_last_stand)
                     .run_if(not_abyssal),
@@ -54,6 +60,15 @@ pub struct EnemyCarrier {
     pub timer: f32,
     /// Warp-in progress (0.0 = warping, 1.0 = arrived)
     pub warp_progress: f32,
+    /// Cooldown before next fighter launch
+    pub launch_cooldown: Timer,
+}
+
+/// Brief flash/glow effect spawned at each fighter launch point.
+#[derive(Component)]
+pub struct CarrierLaunchFlash {
+    pub life: f32,
+    pub max: f32,
 }
 
 /// Spawn the enemy faction's carrier in the background
@@ -76,6 +91,7 @@ fn spawn_enemy_carrier(
             base_y: carrier_y,
             timer: 0.0,
             warp_progress: 0.0, // Start warping in
+            launch_cooldown: Timer::from_seconds(4.5, TimerMode::Once),
         },
         Transform::from_xyz(0.0, carrier_y + 200.0, -50.0), // Start above screen, z=-50 for background
         Visibility::Visible,
@@ -107,38 +123,48 @@ fn spawn_enemy_carrier(
     );
 }
 
-/// Animate the carrier - warp-in effect and gentle bobbing
+/// Animate the carrier — warp-in, then slow vertical scroll so the hull
+/// treadmills past the player, selling "we're flying across the deck."
 fn animate_carrier(
     time: Res<Time>,
     mut carrier_query: Query<(&mut EnemyCarrier, &mut Transform, &mut Sprite)>,
 ) {
     let dt = time.delta_secs();
+    // Screen is 700 tall + carrier is 1800 tall — reset point keeps carrier
+    // always covering the screen vertically.
+    let carrier_half = crate::core::SIZE_CARRIER / 2.0;
+    let screen_half = crate::core::SCREEN_HEIGHT / 2.0;
+    // Scroll speed: slow and steady. Tuned so a full hull pass ≈ 45s.
+    const HULL_SCROLL_SPEED: f32 = 40.0;
 
     for (mut carrier, mut transform, mut sprite) in carrier_query.iter_mut() {
         carrier.timer += dt;
 
-        // Warp-in animation (first 2 seconds)
+        // Warp-in animation (first 2 seconds) — hull materializes into place,
+        // centered so it covers the screen before the scroll begins.
         if carrier.warp_progress < 1.0 {
             carrier.warp_progress = (carrier.warp_progress + dt * 0.5).min(1.0);
 
-            // Slide in from above
-            let target_y = carrier.base_y;
-            let start_y = carrier.base_y + 200.0;
+            // Target = carrier centered so bow is above screen, mid-hull
+            // visible. Bias up 0.25×half so the bow enters first.
+            let target_y = carrier_half * 0.25;
+            let start_y = target_y + 200.0;
             transform.translation.y =
                 start_y + (target_y - start_y) * ease_out_cubic(carrier.warp_progress);
+            carrier.base_y = target_y;
 
-            // Fade in with slight blue tint during warp
-            let alpha = carrier.warp_progress * 0.6; // Max 60% opacity
+            let alpha = carrier.warp_progress * 0.9;
             let warp_tint = 1.0 - (1.0 - carrier.warp_progress) * 0.3;
             sprite.color = Color::srgba(warp_tint, warp_tint, 1.0, alpha);
         } else {
-            // Gentle bobbing motion after warp-in
-            let bob = (carrier.timer * 0.3).sin() * 8.0;
-            transform.translation.y = carrier.base_y + bob;
-
-            // Subtle fade pulse
-            let pulse = 0.55 + (carrier.timer * 0.5).sin() * 0.05;
-            sprite.color = Color::srgba(1.0, 1.0, 1.0, pulse);
+            // Continuous scroll downward so the hull treadmills past.
+            transform.translation.y -= HULL_SCROLL_SPEED * dt;
+            // Wrap: when carrier's top edge drops below screen bottom, loop
+            // back up with bottom edge just above screen top.
+            if transform.translation.y + carrier_half < -screen_half {
+                transform.translation.y = screen_half + carrier_half;
+            }
+            sprite.color = Color::srgba(1.0, 1.0, 1.0, 0.9);
         }
     }
 }
@@ -146,6 +172,115 @@ fn animate_carrier(
 /// Ease out cubic for smooth deceleration
 fn ease_out_cubic(t: f32) -> f32 {
     1.0 - (1.0 - t).powi(3)
+}
+
+/// Pick the appropriate fighter frigate type_id for the enemy faction.
+fn fighter_type_for(faction: Faction) -> u32 {
+    match faction {
+        Faction::Caldari => 603,  // Merlin
+        Faction::Gallente => 594, // Incursus
+        Faction::Amarr => 597,    // Punisher
+        Faction::Minmatar => 587, // Rifter
+    }
+}
+
+/// Periodically launch a WING of fighters from the background carrier —
+/// multiple ships at once with staggered hangar-bay flashes.
+fn carrier_launch_fighters(
+    time: Res<Time>,
+    mut commands: Commands,
+    session: Res<GameSession>,
+    sprite_cache: Res<crate::assets::ShipSpriteCache>,
+    mut carriers: Query<(&Transform, &mut EnemyCarrier)>,
+) {
+    let delta = time.delta();
+    for (carrier_t, mut carrier) in carriers.iter_mut() {
+        // Wait until carrier has fully warped in
+        if carrier.warp_progress < 1.0 {
+            continue;
+        }
+        carrier.launch_cooldown.tick(delta);
+        if !carrier.launch_cooldown.finished() {
+            continue;
+        }
+        // Reset cooldown — 2.5-4.5 seconds between wings (was 5-8s for single).
+        let next = 2.5 + fastrand::f32() * 2.0;
+        carrier.launch_cooldown = Timer::from_seconds(next, TimerMode::Once);
+
+        let fighter_type = fighter_type_for(session.enemy_faction);
+        let sprite = sprite_cache.get(fighter_type);
+
+        // Wing size: 2-4 fighters. Spread them across the carrier's hangar
+        // footprint so it reads as simultaneous fleet deployment.
+        let wing_size = 2 + fastrand::u32(0..3);
+        let carrier_half = crate::core::SIZE_CARRIER * 0.35;
+        for i in 0..wing_size {
+            let t = if wing_size > 1 {
+                i as f32 / (wing_size - 1) as f32
+            } else {
+                0.5
+            };
+            let offset_x = carrier_half * (t - 0.5);
+            let jitter_x = (fastrand::f32() - 0.5) * 40.0;
+            let jitter_y = fastrand::f32() * 30.0;
+            // Hull is now the full-screen backdrop — launch fighters from
+            // just above the screen top regardless of carrier scroll phase so
+            // every wave stays visible to the player.
+            let launch_y = crate::core::SCREEN_HEIGHT / 2.0 + 40.0 - jitter_y;
+            let launch_pos = Vec2::new(
+                carrier_t.translation.x + offset_x + jitter_x,
+                launch_y,
+            );
+
+            let _fighter_entity = crate::entities::enemy::spawn_enemy(
+                &mut commands,
+                fighter_type,
+                launch_pos,
+                crate::entities::enemy::EnemyBehavior::Homing,
+                sprite.clone(),
+                None,
+            );
+
+            // Hangar-bay flash at each launch point — big and warm
+            commands.spawn((
+                CarrierLaunchFlash {
+                    life: 0.6,
+                    max: 0.6,
+                },
+                Sprite {
+                    color: Color::srgba(1.0, 0.85, 0.45, 1.0),
+                    custom_size: Some(Vec2::splat(120.0)),
+                    ..default()
+                },
+                Transform::from_xyz(launch_pos.x, launch_pos.y, -40.0),
+            ));
+        }
+
+        info!(
+            "Carrier launched wing of {} {} fighters",
+            wing_size,
+            session.enemy_faction.short_name()
+        );
+    }
+}
+
+/// Fade and expand the launch-flash sprite, then despawn.
+fn tick_carrier_flash(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut q: Query<(Entity, &mut CarrierLaunchFlash, &mut Sprite, &mut Transform)>,
+) {
+    let dt = time.delta_secs();
+    for (e, mut f, mut s, mut t) in q.iter_mut() {
+        f.life -= dt;
+        if f.life <= 0.0 {
+            commands.entity(e).despawn();
+            continue;
+        }
+        let k = f.life / f.max; // 1.0 → 0.0
+        s.color.set_alpha(k);
+        t.scale = Vec3::splat(0.6 + (1.0 - k) * 1.4);
+    }
 }
 
 /// Cleanup carrier when leaving playing state
@@ -393,10 +528,13 @@ fn wave_spawning(
                 return;
             }
 
-            // Setup new wave
+            // Setup new wave — arcade density (inspired by classic shmups).
+            // Raise enemy_count 1.7× and halve spawn interval so the screen
+            // stays busy and the pacing feels frantic instead of trickled.
             let wave_def = get_wave_definition(manager.current_stage, manager.wave);
-            manager.enemies_remaining = wave_def.enemy_count;
-            manager.spawn_interval = 0.5 + 0.3 / (manager.wave as f32).sqrt();
+            manager.enemies_remaining =
+                ((wave_def.enemy_count as f32 * 1.7).ceil() as u32).max(wave_def.enemy_count);
+            manager.spawn_interval = 0.22 + 0.18 / (manager.wave as f32).sqrt();
 
             wave_events.send(SpawnWaveEvent {
                 wave_number: manager.wave,
@@ -482,63 +620,71 @@ fn wave_spawning(
             let sprite = sprite_cache.get(type_id);
 
             // Use specialized spawn functions for special enemy types
-            match behavior {
-                EnemyBehavior::Kamikaze => {
-                    spawn_variant(
-                        &mut commands,
-                        EnemyVariant::Kamikaze,
-                        pos,
-                        sprite,
-                        Some(&model_cache),
-                    );
-                }
-                EnemyBehavior::Weaver => {
-                    spawn_variant(
-                        &mut commands,
-                        EnemyVariant::Weaver,
-                        pos,
-                        sprite,
-                        Some(&model_cache),
-                    );
-                }
-                EnemyBehavior::Sniper => {
-                    spawn_variant(
-                        &mut commands,
-                        EnemyVariant::Sniper,
-                        pos,
-                        sprite,
-                        Some(&model_cache),
-                    );
-                }
-                EnemyBehavior::Spawner => {
-                    spawn_variant(
-                        &mut commands,
-                        EnemyVariant::Spawner,
-                        pos,
-                        sprite,
-                        Some(&model_cache),
-                    );
-                }
-                EnemyBehavior::Tank => {
-                    spawn_variant(
-                        &mut commands,
-                        EnemyVariant::Tank,
-                        pos,
-                        sprite,
-                        Some(&model_cache),
-                    );
-                }
-                _ => {
-                    spawn_enemy(
-                        &mut commands,
-                        type_id,
-                        pos,
-                        behavior,
-                        sprite,
-                        Some(&model_cache),
-                    );
-                }
+            let entity = match behavior {
+                EnemyBehavior::Kamikaze => spawn_variant(
+                    &mut commands,
+                    EnemyVariant::Kamikaze,
+                    pos,
+                    sprite,
+                    Some(&model_cache),
+                ),
+                EnemyBehavior::Weaver => spawn_variant(
+                    &mut commands,
+                    EnemyVariant::Weaver,
+                    pos,
+                    sprite,
+                    Some(&model_cache),
+                ),
+                EnemyBehavior::Sniper => spawn_variant(
+                    &mut commands,
+                    EnemyVariant::Sniper,
+                    pos,
+                    sprite,
+                    Some(&model_cache),
+                ),
+                EnemyBehavior::Spawner => spawn_variant(
+                    &mut commands,
+                    EnemyVariant::Spawner,
+                    pos,
+                    sprite,
+                    Some(&model_cache),
+                ),
+                EnemyBehavior::Tank => spawn_variant(
+                    &mut commands,
+                    EnemyVariant::Tank,
+                    pos,
+                    sprite,
+                    Some(&model_cache),
+                ),
+                _ => spawn_enemy(
+                    &mut commands,
+                    type_id,
+                    pos,
+                    behavior,
+                    sprite,
+                    Some(&model_cache),
+                ),
+            };
+
+            // Formation-pattern waves cycle back across the battlefield so
+            // patrols keep pressure on the player instead of vanishing once.
+            if matches!(
+                wave_def.spawn_pattern,
+                SpawnPattern::Line | SpawnPattern::VFormation | SpawnPattern::Circle
+            ) {
+                commands
+                    .entity(entity)
+                    .insert(crate::entities::enemy::CycleOnExit);
             }
+
+            // Endless difficulty scaling — boost HP + damage by current
+            // escalation so later waves actually hurt, not just arrive faster.
+            if endless.active && endless.escalation > 1.0 {
+                commands
+                    .entity(entity)
+                    .insert(crate::entities::enemy::EndlessScale(endless.escalation));
+            }
+
             manager.enemies_remaining -= 1;
         }
     }

@@ -787,7 +787,7 @@ pub fn spawn_ability_indicator(parent: &mut ChildBuilder) {
                     // Key hint
                     row.spawn((
                         AbilityKeyHint,
-                        Text::new("[SHIFT/RT]"),
+                        Text::new("[RT]"),
                         TextFont {
                             font_size: 9.0,
                             ..default()
@@ -857,7 +857,7 @@ pub fn spawn_ammo_indicator(parent: &mut ChildBuilder) {
             ));
             // Key hint
             row.spawn((
-                Text::new("[1-5/Q/E]"),
+                Text::new("[D-PAD]"),
                 TextFont {
                     font_size: 9.0,
                     ..default()

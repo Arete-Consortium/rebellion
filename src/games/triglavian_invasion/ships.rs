@@ -15,27 +15,27 @@ pub struct TriglavianShips {
 // Ship type IDs
 // =============================================================================
 
-/// Triglavian ship type IDs
+/// Triglavian ship type IDs — verified via CCP ESI /universe/ids 2026-04.
 pub mod triglavian {
     // Frigates
-    pub const DAMAVIK: u32 = 47269; // T1 Frigate
-    pub const NERGAL: u32 = 48427; // Assault Frigate
+    pub const DAMAVIK: u32 = 47269;  // T1 Frigate
+    pub const NERGAL: u32 = 52250;   // Assault Frigate
 
     // Destroyers
     pub const KIKIMORA: u32 = 49710; // T1 Destroyer
+    pub const DRAUGUR: u32 = 52254;  // Command Destroyer
 
     // Cruisers
-    pub const VEDMAK: u32 = 47271; // T1 Cruiser
-    pub const IKITURSA: u32 = 49711; // Heavy Assault Cruiser
-    pub const RODIVA: u32 = 52249; // Logistics Cruiser
-    pub const ZARMAZD: u32 = 52250; // Logistics Cruiser (remote armor)
+    pub const VEDMAK: u32 = 47270;   // T1 Cruiser
+    pub const IKITURSA: u32 = 52252; // Heavy Assault Cruiser
+    pub const RODIVA: u32 = 52253;   // Logistics Cruiser
 
     // Battlecruisers
-    pub const DREKAVAC: u32 = 47273; // T1 Battlecruiser
+    pub const DREKAVAC: u32 = 49711; // T1 Battlecruiser
 
     // Battleships
-    pub const LESHAK: u32 = 47466; // T1 Battleship
-    pub const XORDAZH: u32 = 56756; // World Ark (capital)
+    pub const LESHAK: u32 = 47271;   // T1 Battleship
+    pub const XORDAZH: u32 = 56756;  // World Ark (capital; unverified)
 
     // Special
     pub const ZIRNITRA: u32 = 52907; // Dreadnought
@@ -49,16 +49,16 @@ pub mod triglavian {
 // Ship type IDs
 // =============================================================================
 
-/// EDENCOM ship type IDs
+/// EDENCOM ship type IDs — verified via CCP ESI /universe/ids 2026-04.
 pub mod edencom {
     // Frigates
-    pub const SKYBREAKER: u32 = 56757; // Frigate
+    pub const SKYBREAKER: u32 = 54731; // Frigate
 
     // Cruisers
-    pub const THUNDERCHILD: u32 = 56759; // Cruiser
+    pub const THUNDERCHILD: u32 = 54733; // Cruiser
 
     // Battleships
-    pub const STORMBRINGER: u32 = 56760; // Battleship
+    pub const STORMBRINGER: u32 = 54732; // Battleship
 
     // Empire ships commonly used with EDENCOM
     // Amarr

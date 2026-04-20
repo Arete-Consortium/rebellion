@@ -117,7 +117,7 @@ pub(crate) fn spawn_options_menu(
 
             // Back instruction
             parent.spawn((
-                Text::new("[ESC] Back   [←/→] Adjust   [↑/↓] Select"),
+                Text::new("D-PAD Select  •  LS Adjust  •  B Back"),
                 TextFont {
                     font_size: 16.0,
                     ..default()

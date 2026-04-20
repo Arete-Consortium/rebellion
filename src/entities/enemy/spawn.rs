@@ -60,19 +60,20 @@ pub fn spawn_enemy(
         585 => ("Slasher", 25.0, 130.0, 75, ShipClass::Frigate),
         598 => ("Breacher", 40.0, 90.0, 100, ShipClass::Frigate),
 
-        // === TRIGLAVIAN ===
-        47269 => ("Damavik", 80.0, 100.0, 150, ShipClass::Frigate), // Disintegrator frigate
-        49710 => ("Kikimora", 100.0, 90.0, 200, ShipClass::Destroyer), // Disintegrator destroyer
-        47271 => ("Vedmak", 200.0, 70.0, 350, ShipClass::Cruiser),  // Disintegrator cruiser
-        49711 => ("Ikitursa", 280.0, 60.0, 450, ShipClass::Cruiser), // HAC
-        47273 => ("Drekavac", 350.0, 50.0, 600, ShipClass::Battlecruiser), // BC
-        47466 => ("Leshak", 600.0, 40.0, 1000, ShipClass::Battleship), // BS
-        56756 => ("Xordazh", 2000.0, 20.0, 5000, ShipClass::Battleship), // World Ark (capital)
+        // === TRIGLAVIAN === (verified CCP inventory_type IDs 2026-04)
+        47269 => ("Damavik", 80.0, 100.0, 150, ShipClass::Frigate),
+        47270 => ("Vedmak", 200.0, 70.0, 350, ShipClass::Cruiser),
+        47271 => ("Leshak", 600.0, 40.0, 1000, ShipClass::Battleship),
+        49710 => ("Kikimora", 100.0, 90.0, 200, ShipClass::Destroyer),
+        49711 => ("Drekavac", 350.0, 50.0, 600, ShipClass::Battlecruiser),
+        52250 => ("Nergal", 130.0, 110.0, 220, ShipClass::Frigate), // Assault frigate
+        52252 => ("Ikitursa", 280.0, 60.0, 450, ShipClass::Cruiser), // HAC
+        52254 => ("Draugur", 140.0, 95.0, 240, ShipClass::Destroyer), // Command destroyer
 
-        // === EDENCOM ===
-        56757 => ("Skybreaker", 90.0, 95.0, 180, ShipClass::Frigate), // Vorton frigate
-        56759 => ("Thunderchild", 220.0, 65.0, 400, ShipClass::Cruiser), // Vorton cruiser
-        56760 => ("Stormbringer", 550.0, 45.0, 900, ShipClass::Battleship), // Vorton BS
+        // === EDENCOM === (verified CCP inventory_type IDs 2026-04)
+        54731 => ("Skybreaker", 90.0, 95.0, 180, ShipClass::Frigate),
+        54732 => ("Stormbringer", 550.0, 45.0, 900, ShipClass::Battleship),
+        54733 => ("Thunderchild", 220.0, 65.0, 400, ShipClass::Cruiser),
 
         // Unknown - default to frigate size
         _ => ("Unknown", 30.0, 100.0, 50, ShipClass::Frigate),
@@ -482,13 +483,23 @@ pub fn spawn_variant(
 // Triglavian Ships (Disintegrator beam weapons with ramping damage)
 // ============================================================================
 
-/// Triglavian ship type IDs
+/// Triglavian ship type IDs — verified CCP inventory_type IDs 2026-04.
 pub mod triglavian {
-    pub const DAMAVIK: u32 = 47269; // Light frigate
-    pub const VEDMAK: u32 = 47270; // Cruiser
-    pub const DREKAVAC: u32 = 47271; // Battlecruiser
-    pub const LESHAK: u32 = 47272; // Battleship
-    pub const KIKIMORA: u32 = 47273; // Destroyer
+    pub const DAMAVIK: u32 = 47269;  // Light frigate
+    pub const VEDMAK: u32 = 47270;   // Cruiser
+    pub const LESHAK: u32 = 47271;   // Battleship
+    pub const KIKIMORA: u32 = 49710; // Destroyer
+    pub const DREKAVAC: u32 = 49711; // Battlecruiser
+    pub const NERGAL: u32 = 52250;   // Assault frigate
+    pub const IKITURSA: u32 = 52252; // HAC
+    pub const DRAUGUR: u32 = 52254;  // Command destroyer
+}
+
+/// EDENCOM ship type IDs — verified CCP inventory_type IDs 2026-04.
+pub mod edencom {
+    pub const SKYBREAKER: u32 = 54731;   // Frigate
+    pub const STORMBRINGER: u32 = 54732; // Battleship
+    pub const THUNDERCHILD: u32 = 54733; // Cruiser
 }
 
 #[cfg(test)]

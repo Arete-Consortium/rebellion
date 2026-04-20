@@ -177,6 +177,11 @@ pub struct GameSession {
     pub player_faction: Faction,
     pub enemy_faction: Faction,
     pub selected_ship_index: usize,
+    /// Chapter-specific player ship pool override.
+    /// When Some, ship_select uses this instead of `player_faction.player_ships()`.
+    /// Used by the Triglavian-Invasion chapter to offer a cross-empire roster
+    /// (EDENCOM Skybreaker + empire invasion hulls).
+    pub chapter_ship_override: Option<&'static [ShipDef]>,
 }
 
 impl GameSession {
@@ -185,11 +190,13 @@ impl GameSession {
             player_faction: player,
             enemy_faction: enemy,
             selected_ship_index: 0,
+            chapter_ship_override: None,
         }
     }
 
     pub fn player_ships(&self) -> &'static [ShipDef] {
-        self.player_faction.player_ships()
+        self.chapter_ship_override
+            .unwrap_or_else(|| self.player_faction.player_ships())
     }
 
     pub fn enemy_ships(&self) -> &'static [EnemyShipDef] {

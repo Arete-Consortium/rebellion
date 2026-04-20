@@ -318,7 +318,7 @@ pub(crate) fn spawn_victory_screen(
 
             // Controller hint
             parent.spawn((
-                Text::new("← → Navigate • A/ENTER Select"),
+                Text::new("D-PAD Navigate  •  A Select"),
                 TextFont {
                     font_size: 12.0,
                     ..default()

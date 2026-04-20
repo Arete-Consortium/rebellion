@@ -25,6 +25,7 @@ pub(crate) fn spawn_upgrade_shop(
     mut commands: Commands,
     mut selection: ResMut<MenuSelection>,
     save_data: Res<SaveData>,
+    asset_server: Res<AssetServer>,
 ) {
     use crate::core::Upgrade;
 
@@ -158,8 +159,30 @@ pub(crate) fn spawn_upgrade_shop(
                             BorderColor(Color::srgb(0.2, 0.2, 0.3)),
                         ))
                         .with_children(|row| {
-                            // Upgrade name
+                            // Icon (EVE module) on the left
+                            let icon_path = format!(
+                                "powerups/{}",
+                                upgrade_icon_filename(upgrade)
+                            );
                             row.spawn((
+                                Node {
+                                    width: Val::Px(34.0),
+                                    height: Val::Px(34.0),
+                                    margin: UiRect::right(Val::Px(12.0)),
+                                    ..default()
+                                },
+                                ImageNode {
+                                    image: asset_server.load(icon_path),
+                                    ..default()
+                                },
+                            ));
+
+                            // Upgrade name — takes remaining left-side space
+                            row.spawn((
+                                Node {
+                                    flex_grow: 1.0,
+                                    ..default()
+                                },
                                 Text::new(upgrade.name()),
                                 TextFont {
                                     font_size: 20.0,
@@ -212,7 +235,7 @@ pub(crate) fn spawn_upgrade_shop(
 
             // Controls hint
             parent.spawn((
-                Text::new("↑/↓ Navigate  •  Enter/Space Purchase  •  Esc Back"),
+                Text::new("D-PAD Navigate  •  A Purchase  •  B Back"),
                 TextFont {
                     font_size: 16.0,
                     ..default()
@@ -294,5 +317,19 @@ pub(crate) fn upgrade_shop_input(
     // Back
     if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
         next_state.set(GameState::MainMenu);
+    }
+}
+
+/// Map each Upgrade variant to an EVE-module PNG (reuses powerup icons).
+fn upgrade_icon_filename(upgrade: crate::core::Upgrade) -> &'static str {
+    use crate::core::Upgrade::*;
+    match upgrade {
+        ShieldBoost1 | ShieldBoost2 | ShieldBooster => "shield_hardener.png",
+        ArmorPlate1 | ArmorPlate2 => "armor_hardener.png",
+        Gyrostabilizer1 | Gyrostabilizer2 => "republic_fleet_barrage.png",
+        ExpandedRocketBay => "scourge_rage_missile.png",
+        DamageAmplifier1 | DamageAmplifier2 => "combat_booster.png",
+        Afterburner => "microwarpdrive.png",
+        CapacitorBattery => "capacitor_battery.png",
     }
 }

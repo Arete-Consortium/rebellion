@@ -201,7 +201,7 @@ pub(crate) fn spawn_pause_menu(
 
             // Controls hint
             parent.spawn((
-                Text::new("↑↓ Navigate • ←→ Adjust • A/ENTER Select"),
+                Text::new("D-PAD Navigate  •  A Select  •  START Resume"),
                 TextFont {
                     font_size: 11.0,
                     ..default()

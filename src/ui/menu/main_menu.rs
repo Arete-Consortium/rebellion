@@ -125,7 +125,7 @@ pub(crate) fn spawn_main_menu(
             });
 
             parent.spawn((
-                Text::new("↑↓ Navigate • A/ENTER Select • ESC Quit"),
+                Text::new("D-PAD Navigate  •  A Select  •  START Quit"),
                 TextFont {
                     font_size: 14.0,
                     ..default()

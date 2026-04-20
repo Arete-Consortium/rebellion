@@ -92,7 +92,7 @@ pub(crate) fn spawn_faction_select(
 
             // Instructions
             parent.spawn((
-                Text::new("← → Navigate • A/ENTER Select • B/ESC Back"),
+                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
                 TextFont {
                     font_size: 14.0,
                     ..default()

@@ -79,7 +79,7 @@ pub fn spawn_mode_select(mut commands: Commands) {
 
             // Instructions
             parent.spawn((
-                Text::new("[↑/↓] Select   [SPACE/ENTER] Confirm   [ESC] Back"),
+                Text::new("D-PAD Select  •  A Confirm  •  B Back"),
                 TextFont {
                     font_size: 18.0,
                     ..default()

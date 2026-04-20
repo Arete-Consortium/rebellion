@@ -2,10 +2,12 @@
 //!
 //! Handles loading ship sprites, 3D models, and powerup icons.
 
+pub mod faction_icons;
 pub mod powerup_icons;
 pub mod ship_models;
 pub mod ship_sprites;
 
+pub use faction_icons::*;
 pub use powerup_icons::*;
 pub use ship_models::*;
 pub use ship_sprites::*;
@@ -17,6 +19,11 @@ pub struct AssetsPlugin;
 
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((ShipSpritesPlugin, ShipModelsPlugin, PowerupIconsPlugin));
+        app.add_plugins((
+            ShipSpritesPlugin,
+            ShipModelsPlugin,
+            PowerupIconsPlugin,
+            FactionIconsPlugin,
+        ));
     }
 }

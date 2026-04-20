@@ -11,6 +11,7 @@ pub mod endless_announcements;
 pub mod faction_select;
 pub mod loading;
 pub mod main_menu;
+pub mod mission_briefing;
 pub mod module_select;
 pub mod options;
 pub mod pause;
@@ -146,6 +147,20 @@ impl Plugin for MenuPlugin {
             .add_systems(
                 OnExit(GameState::ShipSelect),
                 despawn_menu::<ship_select::ShipMenuRoot>,
+            )
+            // Mission Briefing — pre-gameplay lore + objectives
+            .add_systems(
+                OnEnter(GameState::MissionBriefing),
+                mission_briefing::spawn_mission_briefing,
+            )
+            .add_systems(
+                Update,
+                mission_briefing::mission_briefing_input
+                    .run_if(in_state(GameState::MissionBriefing)),
+            )
+            .add_systems(
+                OnExit(GameState::MissionBriefing),
+                despawn_menu::<mission_briefing::MissionBriefingRoot>,
             )
             // Upgrade Shop
             .add_systems(

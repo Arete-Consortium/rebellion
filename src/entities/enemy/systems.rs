@@ -143,15 +143,31 @@ pub(super) fn enemy_shooting(
 
             let dir = (predicted_pos - pos).normalize_or_zero();
 
-            // Spawn enemy projectile with correct weapon type
-            crate::entities::projectile::spawn_enemy_projectile_typed(
-                &mut commands,
-                pos,
-                dir,
-                weapon.damage,
-                weapon.bullet_speed,
-                weapon.weapon_type,
-            );
+            // Per-hull fire pattern: autocannon twin-tracer, drone tri-spread,
+            // everything else stays single-shot so the weapon family reads.
+            let (shots, spread_rad) = match weapon.weapon_type {
+                WeaponType::Autocannon => (2, 6_f32.to_radians()),
+                WeaponType::Drone => (3, 18_f32.to_radians()),
+                _ => (1, 0.0),
+            };
+            let base_angle = dir.y.atan2(dir.x);
+            for i in 0..shots {
+                let offset = if shots > 1 {
+                    -spread_rad / 2.0 + spread_rad * (i as f32 / (shots - 1) as f32)
+                } else {
+                    0.0
+                };
+                let angle = base_angle + offset;
+                let shot_dir = Vec2::new(angle.cos(), angle.sin());
+                crate::entities::projectile::spawn_enemy_projectile_typed(
+                    &mut commands,
+                    pos,
+                    shot_dir,
+                    weapon.damage,
+                    weapon.bullet_speed,
+                    weapon.weapon_type,
+                );
+            }
         }
     }
 }
@@ -224,18 +240,40 @@ pub(super) fn disintegrator_update(
     }
 }
 
-/// Remove enemies that go off screen
+/// Remove enemies that go off screen, OR wrap them back in if they carry
+/// the `CycleOnExit` marker — used by formation patrols so they loop across
+/// the battlefield instead of one-shot vanishing.
 pub(super) fn enemy_bounds_check(
     mut commands: Commands,
-    query: Query<(Entity, &Transform), With<Enemy>>,
+    mut query: Query<
+        (Entity, &mut Transform, Option<&super::CycleOnExit>),
+        With<Enemy>,
+    >,
 ) {
     let margin = 100.0;
-    for (entity, transform) in query.iter() {
+    let half_w = SCREEN_WIDTH / 2.0 + margin;
+    let half_h = SCREEN_HEIGHT / 2.0 + margin;
+    for (entity, mut transform, cycle) in query.iter_mut() {
         let pos = transform.translation;
-        if pos.y < -SCREEN_HEIGHT / 2.0 - margin
-            || pos.y > SCREEN_HEIGHT / 2.0 + margin
-            || pos.x.abs() > SCREEN_WIDTH / 2.0 + margin
-        {
+        let out_bottom = pos.y < -half_h;
+        let out_top = pos.y > half_h;
+        let out_x = pos.x.abs() > half_w;
+        if !(out_bottom || out_top || out_x) {
+            continue;
+        }
+        if cycle.is_some() {
+            // Wrap to the opposite side so patrols reappear and keep pressure
+            if out_bottom {
+                transform.translation.y = half_h - margin;
+                // randomise X a bit so they don't all loop on the same column
+                transform.translation.x =
+                    (fastrand::f32() - 0.5) * (SCREEN_WIDTH - 120.0);
+            } else if out_top {
+                transform.translation.y = -half_h + margin;
+            } else if out_x {
+                transform.translation.x = -transform.translation.x.signum() * (half_w - margin);
+            }
+        } else {
             commands.entity(entity).despawn_recursive();
         }
     }

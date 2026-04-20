@@ -11,6 +11,8 @@ pub mod cleanup;
 pub mod combat_feedback;
 pub mod damage_layers;
 pub mod explosions;
+pub mod impact_sparks;
+pub mod muzzle_flash;
 pub mod overlays;
 pub mod pickups;
 pub mod screen_effects;
@@ -22,6 +24,8 @@ pub use buff_visuals::*;
 pub use combat_feedback::*;
 pub use damage_layers::*;
 pub use explosions::*;
+pub use impact_sparks::*;
+pub use muzzle_flash::*;
 pub use overlays::*;
 pub use pickups::*;
 pub use screen_effects::*;
@@ -73,6 +77,8 @@ impl Plugin for EffectsPlugin {
                     trails::update_bullet_trails,
                     combat_feedback::update_hit_flash,
                     combat_feedback::update_damage_numbers,
+                    muzzle_flash::tick_muzzle_flash,
+                    impact_sparks::tick_impact_sparks,
                     abilities::spawn_ability_effects,
                     abilities::update_ability_effects,
                 )

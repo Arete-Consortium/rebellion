@@ -18,6 +18,7 @@ pub enum GameState {
     StageSelect,   // Choose which stage (1-13) to play
     DifficultySelect,
     ShipSelect,
+    MissionBriefing, // Pre-mission lore + objectives panel
     Playing,
     UpgradeShop,
     BossIntro,

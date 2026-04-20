@@ -47,6 +47,13 @@ impl Rarity {
             // Epic - game-changing effects
             CollectibleType::Invulnerability => Rarity::Epic,
             CollectibleType::ExtraLife => Rarity::Epic,
+
+            // Persistent weapon mods
+            CollectibleType::ScatterLauncher => Rarity::Uncommon,
+            CollectibleType::HomingSwarm => Rarity::Uncommon,
+            CollectibleType::RailSpike => Rarity::Rare,
+            CollectibleType::PlasmaLance => Rarity::Rare,
+            CollectibleType::VortonProjector => Rarity::Epic,
         }
     }
 
@@ -228,6 +235,7 @@ impl Plugin for CollectiblePlugin {
                 update_orbital_particles,
                 collectible_pickup,
                 handle_pickup_effects,
+                super::items::recompute_stats,
                 update_powerup_timers,
             )
                 .run_if(in_state(GameState::Playing)),
@@ -468,7 +476,11 @@ fn collectible_pickup(
 fn handle_pickup_effects(
     mut pickup_events: EventReader<CollectiblePickedUpEvent>,
     mut player_query: Query<
-        (&mut super::player::ShipStats, &mut PowerupEffects),
+        (
+            &mut super::player::ShipStats,
+            &mut PowerupEffects,
+            Option<&mut super::items::Inventory>,
+        ),
         With<super::Player>,
     >,
     mut score: ResMut<ScoreSystem>,
@@ -478,7 +490,7 @@ fn handle_pickup_effects(
     mut dialogue_events: EventWriter<DialogueEvent>,
     mut rumble_events: EventWriter<crate::systems::RumbleRequest>,
 ) {
-    let Ok((mut stats, mut effects)) = player_query.get_single_mut() else {
+    let Ok((mut stats, mut effects, mut inventory)) = player_query.get_single_mut() else {
         return;
     };
 
@@ -549,6 +561,24 @@ fn handle_pickup_effects(
                 stats.hull = stats.max_hull;
                 info!("EXTRA LIFE! Full HP restored!");
             }
+            // Persistent weapon mods — push onto inventory, mark dirty
+            CollectibleType::ScatterLauncher
+            | CollectibleType::RailSpike
+            | CollectibleType::PlasmaLance
+            | CollectibleType::HomingSwarm
+            | CollectibleType::VortonProjector => {
+                if let Some(inv) = inventory.as_mut() {
+                    inv.add(event.collectible_type);
+                    let count = inv
+                        .stacks
+                        .iter()
+                        .find(|s| s.id == event.collectible_type)
+                        .map(|s| s.count)
+                        .unwrap_or(0);
+                    info!("{:?} stack {}", event.collectible_type, count);
+                    rumble_events.send(crate::systems::RumbleRequest::powerup());
+                }
+            }
         }
     }
 }
@@ -589,6 +619,11 @@ pub fn spawn_collectible(
         CollectibleType::Nanite => (Color::srgb(0.0, 0.8, 0.6), 28.0, 1),
         CollectibleType::ExtraLife => (Color::srgb(0.0, 1.0, 0.5), 28.0, 1),
         CollectibleType::SkillPointDrop => (Color::srgb(0.9, 0.7, 1.0), 18.0, 5), // Purple glow, 5 SP
+        CollectibleType::ScatterLauncher => (Color::srgb(0.30, 0.70, 1.00), 24.0, 1),
+        CollectibleType::RailSpike       => (Color::srgb(0.80, 0.85, 0.90), 24.0, 1),
+        CollectibleType::PlasmaLance     => (Color::srgb(1.00, 0.35, 0.80), 24.0, 1),
+        CollectibleType::HomingSwarm     => (Color::srgb(1.00, 0.40, 0.40), 24.0, 1),
+        CollectibleType::VortonProjector       => (Color::srgb(0.55, 0.90, 1.00), 24.0, 1),
     };
 
     // Determine rarity and scale size accordingly
@@ -774,34 +809,48 @@ pub fn spawn_smart_powerup(
 ) {
     let roll = fastrand::f32();
 
-    // 30% credits, 40% health (smart), 30% special powerups
-    let powerup = if roll < 0.25 {
+    // 20% credits, 30% health, 25% temp powerups, 5% epic temp,
+    // 20% persistent weapon mods (rarity-weighted inside)
+    let powerup = if roll < 0.20 {
         CollectibleType::Credits
-    } else if roll < 0.65 {
+    } else if roll < 0.50 {
         // Health drop - be smart about what type
         if let Some(health) = player_health {
             health.most_needed_health()
         } else {
-            // Fallback to random health type
-            let health_roll = fastrand::f32();
-            if health_roll < 0.4 {
+            let h = fastrand::f32();
+            if h < 0.4 {
                 CollectibleType::ShieldBoost
-            } else if health_roll < 0.75 {
+            } else if h < 0.75 {
                 CollectibleType::ArmorRepair
             } else {
                 CollectibleType::HullRepair
             }
         }
-    } else if roll < 0.75 {
+    } else if roll < 0.60 {
         CollectibleType::Overdrive
-    } else if roll < 0.85 {
+    } else if roll < 0.68 {
         CollectibleType::DamageBoost
-    } else if roll < 0.92 {
+    } else if roll < 0.74 {
         CollectibleType::Nanite
-    } else if roll < 0.97 {
+    } else if roll < 0.78 {
         CollectibleType::Invulnerability
-    } else {
+    } else if roll < 0.80 {
         CollectibleType::ExtraLife
+    } else {
+        // Weapon mod bucket: 20% of drops, weighted by rarity
+        let m = fastrand::f32();
+        if m < 0.35 {
+            CollectibleType::ScatterLauncher // Uncommon
+        } else if m < 0.70 {
+            CollectibleType::HomingSwarm // Uncommon
+        } else if m < 0.84 {
+            CollectibleType::RailSpike // Rare
+        } else if m < 0.96 {
+            CollectibleType::PlasmaLance // Rare
+        } else {
+            CollectibleType::VortonProjector // Epic
+        }
     };
 
     spawn_collectible(commands, position, powerup, icon_cache);

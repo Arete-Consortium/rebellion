@@ -9,6 +9,7 @@ mod achievements;
 mod boss;
 mod combat;
 mod common;
+mod inventory;
 mod meters;
 mod mission;
 mod powerups;
@@ -24,6 +25,7 @@ use boss::update_boss_health_bar;
 use combat::{
     update_ability_indicator, update_ammo_display, update_drone_status, update_wingman_gauge,
 };
+use inventory::{spawn_inventory_hud, update_inventory_hud};
 use meters::{update_heat_display, update_salt_miner_meter};
 use mission::{update_dialogue_display, update_mission_display, update_wave_display};
 use powerups::{update_buff_expiration_warnings, update_powerup_indicators};
@@ -39,7 +41,7 @@ impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(GameState::Playing),
-            spawn_hud.run_if(not_last_stand),
+            (spawn_hud, spawn_inventory_hud).run_if(not_last_stand),
         )
         .add_systems(
             Update,
@@ -61,6 +63,7 @@ impl Plugin for HudPlugin {
                 update_ability_indicator,
                 update_ammo_display,
                 update_achievement_popup,
+                update_inventory_hud,
             )
                 .run_if(in_state(GameState::Playing))
                 .run_if(not_last_stand),

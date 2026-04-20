@@ -16,6 +16,10 @@ pub struct BulletTrail {
     pub spawn_rate: f32,
     /// Timer for spawning
     pub spawn_timer: f32,
+    /// Particle lifetime (seconds); higher = longer visible trail.
+    pub lifetime: f32,
+    /// Particle size in pixels (square).
+    pub size: f32,
 }
 
 impl BulletTrail {
@@ -24,6 +28,20 @@ impl BulletTrail {
             color,
             spawn_rate: 40.0,
             spawn_timer: 0.0,
+            lifetime: 0.15,
+            size: 3.0,
+        }
+    }
+
+    /// Beam-style trail — denser, longer, bigger particles so lasers and
+    /// disintegrator fire read as glowing beam-lines instead of bullets.
+    pub fn beam(color: Color) -> Self {
+        Self {
+            color,
+            spawn_rate: 80.0,
+            spawn_timer: 0.0,
+            lifetime: 0.28,
+            size: 5.0,
         }
     }
 }
@@ -58,7 +76,8 @@ pub fn spawn_bullet_trails(
             trail.spawn_timer -= spawn_interval;
 
             let pos = transform.translation.truncate();
-            let lifetime = 0.15;
+            let lifetime = trail.lifetime;
+            let size = trail.size;
 
             // Spawn fading particle
             commands.spawn((
@@ -68,7 +87,7 @@ pub fn spawn_bullet_trails(
                 },
                 Sprite {
                     color: trail.color.with_alpha(0.6),
-                    custom_size: Some(Vec2::new(3.0, 3.0)),
+                    custom_size: Some(Vec2::new(size, size)),
                     ..default()
                 },
                 Transform::from_xyz(pos.x, pos.y, LAYER_EFFECTS - 2.0),
@@ -166,11 +185,49 @@ impl EngineTrail {
         }
     }
 
+    /// EDENCOM cyan-white arc trail (matches Vorton projector aesthetic).
+    pub fn edencom() -> Self {
+        Self {
+            color: Color::srgba(0.55, 0.85, 1.0, 0.95),
+            ..default()
+        }
+    }
+
+    /// Triglavian crimson entropic trail.
+    pub fn triglavian() -> Self {
+        Self {
+            color: Color::srgba(1.0, 0.35, 0.2, 0.95),
+            ..default()
+        }
+    }
+
+    /// Guristas pirate violet plume.
+    pub fn pirate() -> Self {
+        Self {
+            color: Color::srgba(0.85, 0.4, 1.0, 0.9),
+            ..default()
+        }
+    }
+
     /// Create engine trail from faction
     pub fn from_faction(faction: crate::core::Faction) -> Self {
         Self {
             color: faction.engine_color(),
             ..default()
+        }
+    }
+
+    /// Pick the right trail for a specific hull type_id. Falls back to the
+    /// player's faction trail for any hull not in the special roster.
+    pub fn for_hull(type_id: u32, faction: crate::core::Faction) -> Self {
+        match type_id {
+            // EDENCOM
+            54731 | 54732 | 54733 => Self::edencom(),
+            // Triglavian (incl. Nergal, Ikitursa, Draugur)
+            47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => Self::triglavian(),
+            // Guristas pirate (Gila)
+            17713 => Self::pirate(),
+            _ => Self::from_faction(faction),
         }
     }
 }

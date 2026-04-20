@@ -1,7 +1,8 @@
 //! Abyssal Depths Mode
 //!
-//! Roguelike extraction mode inspired by Abyssal Deadspace.
-//! Navigate through 3 rooms, defeat enemies, and extract before time runs out.
+//! Triglavian Invasion response — EDENCOM and empire forces counter the
+//! Collective in Abyssal Deadspace. Three rooms, pure Triglavian enemies,
+//! cross-empire player roster including EDENCOM's Skybreaker.
 
 use bevy::prelude::*;
 
@@ -9,6 +10,156 @@ use crate::core::*;
 use crate::entities::{Enemy, Player};
 use crate::games::{GameModuleInfo, ModuleRegistry};
 use crate::systems::JoystickState;
+
+/// Aggregated Endless-mode roster — every player ship in the game.
+/// Built once lazily from all 4 empire pools + the Invasion cross-faction set.
+pub static ENDLESS_SHIPS: std::sync::LazyLock<Vec<ShipDef>> =
+    std::sync::LazyLock::new(|| {
+        let mut v: Vec<ShipDef> = Vec::new();
+        v.extend_from_slice(crate::core::factions::MINMATAR_SHIPS);
+        v.extend_from_slice(crate::core::factions::AMARR_SHIPS);
+        v.extend_from_slice(crate::core::factions::CALDARI_SHIPS);
+        v.extend_from_slice(crate::core::factions::GALLENTE_SHIPS);
+        v.extend_from_slice(TRIGLAVIAN_INVASION_SHIPS);
+        v
+    });
+
+/// Cross-faction player roster used while the Triglavian Invasion chapter is
+/// active. Historically-accurate EVE ships that fought in Invasion-era combat.
+pub const TRIGLAVIAN_INVASION_SHIPS: &[ShipDef] = &[
+    ShipDef {
+        type_id: 54731,
+        name: "Skybreaker",
+        class: ShipClass::Frigate,
+        role: "EDENCOM Vorton Platform",
+        health: 90.0,
+        speed: 330.0,
+        fire_rate: 6.5,
+        damage: 12.0,
+        special: "Vorton Projector: Chain lightning",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 11400,
+        name: "Jaguar",
+        class: ShipClass::Frigate,
+        role: "Republic Assault Frigate",
+        health: 120.0,
+        speed: 360.0,
+        fire_rate: 9.0,
+        damage: 11.0,
+        special: "Afterburner: Speed burst",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 11381,
+        name: "Hawk",
+        class: ShipClass::Frigate,
+        role: "Caldari Assault Frigate",
+        health: 120.0,
+        speed: 320.0,
+        fire_rate: 7.0,
+        damage: 13.0,
+        special: "Rocket Salvo: Quad missile",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 11393,
+        name: "Retribution",
+        class: ShipClass::Frigate,
+        role: "Imperial Assault Frigate",
+        health: 130.0,
+        speed: 310.0,
+        fire_rate: 6.0,
+        damage: 15.0,
+        special: "Scorch: Range extender",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 52250,
+        name: "Nergal",
+        class: ShipClass::Frigate,
+        role: "Triglavian-Derived AF",
+        health: 125.0,
+        speed: 340.0,
+        fire_rate: 7.5,
+        damage: 14.0,
+        special: "Entropic: Ramping damage",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 35683,
+        name: "Jackdaw",
+        class: ShipClass::Destroyer,
+        role: "Caldari T3 Tactical",
+        health: 180.0,
+        speed: 290.0,
+        fire_rate: 6.0,
+        damage: 17.0,
+        special: "Mode-Switch: 3 stances",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 34317,
+        name: "Confessor",
+        class: ShipClass::Destroyer,
+        role: "Amarr T3 Tactical",
+        health: 175.0,
+        speed: 300.0,
+        fire_rate: 5.5,
+        damage: 19.0,
+        special: "Mode-Switch: Laser stances",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 621,
+        name: "Caracal",
+        class: ShipClass::Cruiser,
+        role: "Caldari Missile Cruiser",
+        health: 260.0,
+        speed: 240.0,
+        fire_rate: 5.0,
+        damage: 22.0,
+        special: "Heavy Missiles",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 11993,
+        name: "Muninn",
+        class: ShipClass::Cruiser,
+        role: "Minmatar HAC",
+        health: 300.0,
+        speed: 230.0,
+        fire_rate: 4.5,
+        damage: 26.0,
+        special: "Artillery Alpha",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 12019,
+        name: "Sacrilege",
+        class: ShipClass::Cruiser,
+        role: "Amarr HAC",
+        health: 320.0,
+        speed: 210.0,
+        fire_rate: 4.0,
+        damage: 28.0,
+        special: "Heavy Assault Missiles",
+        unlock_stage: 0,
+    },
+    ShipDef {
+        type_id: 17713,
+        name: "Gila",
+        class: ShipClass::Cruiser,
+        role: "Guristas Drone Cruiser",
+        health: 290.0,
+        speed: 250.0,
+        fire_rate: 5.5,
+        damage: 24.0,
+        special: "Drone Swarm: Rapid Missiles",
+        unlock_stage: 0,
+    },
+];
 
 /// Abyssal Depths game module plugin
 pub struct AbyssalDepthsPlugin;
@@ -201,13 +352,14 @@ fn setup_abyssal(
     mut state: ResMut<AbyssalState>,
     mut commands: Commands,
     session: Res<GameSession>,
+    sprite_cache: Res<crate::assets::ShipSpriteCache>,
 ) {
     // Only setup if we're in abyssal module
     state.start_run();
     info!("Abyssal Depths run started - Room 1: POCKET");
 
     // Spawn initial wave of enemies
-    spawn_room_enemies(&mut commands, &state, &session);
+    spawn_room_enemies(&mut commands, &state, &session, &sprite_cache);
 
     // Spawn HUD
     spawn_abyssal_hud(&mut commands);
@@ -217,53 +369,74 @@ fn setup_abyssal(
 /// Room 1: Light rogue drones (Linear/Zigzag) — teaches mechanics
 /// Room 2: Mixed fleet (Homing/Sniper + Triglavians) — pressure ramp
 /// Room 3: Full Triglavian force (Vedmak/Damavik + Drekavac boss) — survival test
-fn spawn_room_enemies(commands: &mut Commands, state: &AbyssalState, _session: &GameSession) {
+fn spawn_room_enemies(
+    commands: &mut Commands,
+    state: &AbyssalState,
+    _session: &GameSession,
+    sprite_cache: &crate::assets::ShipSpriteCache,
+) {
     use crate::entities::enemy::{spawn_enemy, spawn_variant, EnemyBehavior, EnemyVariant};
+    use crate::entities::triglavian;
 
     let count = state.room.enemy_count();
     let spawn_y_base = SCREEN_HEIGHT / 2.0 - 50.0;
 
+    // Pre-fetch sprite handles once per room so every spawn gets the right hull.
+    let damavik_sprite = sprite_cache.get(triglavian::DAMAVIK);
+    let kikimora_sprite = sprite_cache.get(triglavian::KIKIMORA);
+    let vedmak_sprite = sprite_cache.get(triglavian::VEDMAK);
+    let drekavac_sprite = sprite_cache.get(triglavian::DREKAVAC);
+
     match state.room {
         AbyssalRoom::Room1 => {
-            // Light enemies with basic behaviors — learning room
+            // Pure Triglavian presence — Damaviks with entry-level behaviors.
+            // Lore: Abyssal Deadspace is Triglavian territory. No empire ships.
             let behaviors = [
                 EnemyBehavior::Linear,
                 EnemyBehavior::Zigzag,
                 EnemyBehavior::Weaver,
             ];
-            let ship_types: [u32; 3] = [597, 589, 591]; // Punisher, Executioner, Tormentor
 
             for i in 0..count {
                 let x =
                     -SCREEN_WIDTH / 2.0 + (i as f32 + 1.0) * (SCREEN_WIDTH / (count as f32 + 1.0));
                 let y = spawn_y_base + fastrand::f32() * 100.0;
-                let behavior = behaviors[i as usize % behaviors.len()];
-                let type_id = ship_types[i as usize % ship_types.len()];
-                spawn_enemy(commands, type_id, Vec2::new(x, y), behavior, None, None);
+                let _ = behaviors[i as usize % behaviors.len()];
+                // spawn_variant handles Triglavian-specific stats + behaviour
+                spawn_variant(
+                    commands,
+                    EnemyVariant::Damavik,
+                    Vec2::new(x, y),
+                    damavik_sprite.clone(),
+                    None,
+                );
             }
         }
         AbyssalRoom::Room2 => {
-            // Mixed fleet: standard ships with aggressive behaviors + some Triglavians
-            let behaviors = [
-                EnemyBehavior::Homing,
-                EnemyBehavior::Sniper,
-                EnemyBehavior::Orbital,
-                EnemyBehavior::Weaver,
-            ];
-            let ship_types: [u32; 3] = [16236, 597, 589]; // Coercer, Punisher, Executioner
-
+            // Escalation — Damaviks + Kikimora destroyers (T2 Triglavian).
             for i in 0..count {
                 let x =
                     -SCREEN_WIDTH / 2.0 + (i as f32 + 1.0) * (SCREEN_WIDTH / (count as f32 + 1.0));
                 let y = spawn_y_base + fastrand::f32() * 100.0;
 
-                if i % 4 == 0 {
-                    // Every 4th enemy is a Triglavian Damavik
-                    spawn_variant(commands, EnemyVariant::Damavik, Vec2::new(x, y), None, None);
+                if i % 3 == 0 {
+                    // Every 3rd enemy is a Kikimora destroyer
+                    spawn_enemy(
+                        commands,
+                        triglavian::KIKIMORA,
+                        Vec2::new(x, y),
+                        EnemyBehavior::Sniper,
+                        kikimora_sprite.clone(),
+                        None,
+                    );
                 } else {
-                    let behavior = behaviors[i as usize % behaviors.len()];
-                    let type_id = ship_types[i as usize % ship_types.len()];
-                    spawn_enemy(commands, type_id, Vec2::new(x, y), behavior, None, None);
+                    spawn_variant(
+                        commands,
+                        EnemyVariant::Damavik,
+                        Vec2::new(x, y),
+                        damavik_sprite.clone(),
+                        None,
+                    );
                 }
             }
         }
@@ -276,14 +449,20 @@ fn spawn_room_enemies(commands: &mut Commands, state: &AbyssalState, _session: &
 
                 if i % 3 == 0 {
                     // Heavy Vedmak cruisers
-                    spawn_variant(commands, EnemyVariant::Vedmak, Vec2::new(x, y), None, None);
+                    spawn_variant(
+                        commands,
+                        EnemyVariant::Vedmak,
+                        Vec2::new(x, y),
+                        vedmak_sprite.clone(),
+                        None,
+                    );
                 } else {
                     // Fast Starving Damaviks
                     spawn_variant(
                         commands,
                         EnemyVariant::StarvingDamavik,
                         Vec2::new(x, y),
-                        None,
+                        damavik_sprite.clone(),
                         None,
                     );
                 }
@@ -291,7 +470,13 @@ fn spawn_room_enemies(commands: &mut Commands, state: &AbyssalState, _session: &
 
             // Drekavac boss
             let boss_pos = Vec2::new(0.0, spawn_y_base + 50.0);
-            spawn_variant(commands, EnemyVariant::DrekavacBoss, boss_pos, None, None);
+            spawn_variant(
+                commands,
+                EnemyVariant::DrekavacBoss,
+                boss_pos,
+                drekavac_sprite.clone(),
+                None,
+            );
         }
     }
 
@@ -508,6 +693,7 @@ fn handle_extraction(
     mut state: ResMut<AbyssalState>,
     mut commands: Commands,
     session: Res<GameSession>,
+    sprite_cache: Res<crate::assets::ShipSpriteCache>,
     mut extraction_events: EventWriter<AbyssalExtractionEvent>,
     mut next_state: ResMut<NextState<GameState>>,
     gate_query: Query<Entity, With<AbyssalGate>>,
@@ -538,7 +724,7 @@ fn handle_extraction(
         // Room just changed, wait for gate spawn
     } else if !state.room_cleared && enemy_query.iter().count() == 0 && state.enemies_spawned == 0 {
         // Need to spawn enemies for current room
-        spawn_room_enemies(&mut commands, &state, &session);
+        spawn_room_enemies(&mut commands, &state, &session, &sprite_cache);
 
         // Cleanup old gate if exists
         for entity in gate_query.iter() {

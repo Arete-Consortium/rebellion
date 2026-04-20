@@ -45,6 +45,12 @@ fn get_icon_filename(collectible_type: &CollectibleType) -> Option<&'static str>
         CollectibleType::Invulnerability => Some("assault_damage_control.png"),
         CollectibleType::Nanite => Some("nanite_paste.png"),
         CollectibleType::ExtraLife => Some("speed_booster.png"),
+        // Persistent weapon-mods — faction-authentic module icons
+        CollectibleType::ScatterLauncher => Some("scourge_rage_missile.png"),
+        CollectibleType::RailSpike => Some("republic_fleet_barrage.png"),
+        CollectibleType::PlasmaLance => Some("conflagration_pulse.png"),
+        CollectibleType::HomingSwarm => Some("warrior_drone_swarm.png"),
+        CollectibleType::VortonProjector => Some("vorton_projector.png"),
         _ => None, // Credits, Refugee, Capacitor use simple shapes
     }
 }
@@ -74,6 +80,11 @@ fn load_powerup_icons(mut cache: ResMut<PowerupIconCache>, mut images: ResMut<As
         CollectibleType::Invulnerability,
         CollectibleType::Nanite,
         CollectibleType::ExtraLife,
+        CollectibleType::ScatterLauncher,
+        CollectibleType::RailSpike,
+        CollectibleType::PlasmaLance,
+        CollectibleType::HomingSwarm,
+        CollectibleType::VortonProjector,
     ];
 
     for collectible_type in types {

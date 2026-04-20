@@ -58,6 +58,13 @@ pub struct PlayerFireEvent {
     pub spread_angle: f32,
     /// Ammo type (for autocannons)
     pub ammo_type: AmmoType,
+    // Mod-driven overrides (from Inventory)
+    pub crit_chance_override: Option<f32>,
+    pub crit_mult_override: Option<f32>,
+    pub pierce: u32,
+    pub homing: f32,
+    pub burn_dps: f32,
+    pub chain_targets: u32,
 }
 
 /// Spawn enemy event
@@ -311,6 +318,12 @@ pub enum CollectibleType {
     Nanite,          // Reduces weapon heat
     ExtraLife,
     SkillPointDrop, // SP currency drop
+    // Persistent stacking weapon mods (additive, wipe on ship death)
+    ScatterLauncher, // +projectile count, +spread, -dmg/shot
+    RailSpike,       // +damage, -fire rate, +pierce
+    PlasmaLance,     // +damage, +crit, +burn
+    HomingSwarm,     // +projectile count, +homing
+    VortonProjector,       // +chain targets, +damage
 }
 
 /// Upgrade types purchasable with Skill Points

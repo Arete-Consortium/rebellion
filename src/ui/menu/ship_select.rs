@@ -26,6 +26,9 @@ pub(crate) struct ShipDetailRole;
 pub(crate) struct ShipDetailSpecial;
 #[derive(Component)]
 pub(crate) struct ShipDetailWeapon;
+/// Preview image node that shows the selected hull's sprite.
+#[derive(Component)]
+pub(crate) struct ShipDetailSprite;
 
 /// Stat bar markers
 #[derive(Component)]
@@ -45,6 +48,7 @@ pub(crate) fn spawn_ship_menu(
     difficulty: Res<Difficulty>,
     session: Res<GameSession>,
     save_data: Res<crate::core::SaveData>,
+    sprite_cache: Res<crate::assets::ShipSpriteCache>,
 ) {
     let ships = session.player_ships();
     let faction = session.player_faction;
@@ -120,6 +124,7 @@ pub(crate) fn spawn_ship_menu(
                         max_damage,
                         max_health,
                         max_fire_rate,
+                        sprite_cache.get(ships[0].type_id),
                     );
 
                     // Right: Ship list
@@ -144,7 +149,7 @@ pub(crate) fn spawn_ship_menu(
 
             // Navigation hint
             parent.spawn((
-                Text::new("↑↓ Navigate • A/ENTER Select • B/ESC Back"),
+                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
                 TextFont {
                     font_size: 12.0,
                     ..default()
@@ -163,6 +168,7 @@ fn spawn_ship_detail_panel(
     max_damage: f32,
     max_health: f32,
     max_fire_rate: f32,
+    ship_image: Option<Handle<Image>>,
 ) {
     parent
         .spawn((
@@ -313,6 +319,37 @@ fn spawn_ship_detail_panel(
                             ..default()
                         },
                         TextColor(Color::srgb(0.4, 0.8, 1.0)),
+                    ));
+                });
+
+            // Hull preview — fills the empty space under special ability.
+            // Centered, fixed aspect, faction-tinted backdrop.
+            panel
+                .spawn((
+                    Node {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(220.0),
+                        margin: UiRect::top(Val::Px(8.0)),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.3)),
+                    BorderRadius::all(Val::Px(6.0)),
+                ))
+                .with_children(|frame| {
+                    let mut image_node = ImageNode::default();
+                    if let Some(handle) = ship_image {
+                        image_node.image = handle;
+                    }
+                    frame.spawn((
+                        ShipDetailSprite,
+                        Node {
+                            width: Val::Px(200.0),
+                            height: Val::Px(200.0),
+                            ..default()
+                        },
+                        image_node,
                     ));
                 });
         });
@@ -538,6 +575,8 @@ pub(crate) fn update_ship_detail_panel(
         ),
     >,
     mut stat_bars: Query<(&StatBarFill, &mut Node)>,
+    mut sprite_query: Query<&mut ImageNode, With<ShipDetailSprite>>,
+    sprite_cache: Res<crate::assets::ShipSpriteCache>,
 ) {
     if !selection.is_changed() {
         return;
@@ -581,6 +620,13 @@ pub(crate) fn update_ship_detail_panel(
         let percent = (value / max * 100.0).clamp(0.0, 100.0);
         node.width = Val::Percent(percent);
     }
+
+    // Swap preview sprite to the newly-selected hull.
+    if let Some(handle) = sprite_cache.get(ship.type_id) {
+        for mut image_node in sprite_query.iter_mut() {
+            image_node.image = handle.clone();
+        }
+    }
 }
 
 pub(crate) fn ship_menu_input(
@@ -617,8 +663,8 @@ pub(crate) fn ship_menu_input(
         if is_unlocked {
             session.selected_ship_index = selection.index;
             info!("Selected ship: {} ({})", ship.name, ship.class.name());
-            // Slow transition into gameplay
-            transitions.send(TransitionEvent::slow(GameState::Playing));
+            // Show mission briefing before gameplay
+            transitions.send(TransitionEvent::quick(GameState::MissionBriefing));
         } else {
             info!(
                 "Ship {} is locked - complete Stage {} to unlock",

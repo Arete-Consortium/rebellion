@@ -244,6 +244,12 @@ impl Default for Weapon {
     }
 }
 
+/// Tracks the current tilt-into-turns angle (radians), layered on BaseRotation.
+/// Stored in its own component so the lerp doesn't have to re-derive it from
+/// the Transform quaternion — that's ambiguous when base rotation is near PI.
+#[derive(Component, Default)]
+pub struct CurrentTilt(pub f32);
+
 /// Stores the ship's base rotation (sprite correction) so tilt can layer on top
 #[derive(Component, Debug, Clone, Copy)]
 pub struct BaseRotation(pub f32);
@@ -255,7 +261,7 @@ impl Default for BaseRotation {
 }
 
 /// Respawn invincibility duration in seconds
-const RESPAWN_INVINCIBILITY_SECS: f32 = 3.0;
+const RESPAWN_INVINCIBILITY_SECS: f32 = 6.0;
 
 /// Player hitbox for collision detection
 #[derive(Component, Debug)]
@@ -389,10 +395,16 @@ fn spawn_player(
         friction: 8.0,
     };
 
-    // Create weapon from ship stats + upgrade bonuses
+    // Create weapon from ship stats + upgrade bonuses.
+    // Per-hull weapon family (Hawk → rockets, Confessor → lasers, etc.)
+    // overrides the faction default so invasion-era crossovers fire correctly.
+    let hull_weapon = super::enemy::get_player_weapon_type(type_id, faction);
+    // Gila fires missiles at 2× since it has no drone swarm in this build.
+    let rate_mult = if type_id == 17713 { 2.0 } else { 1.0 };
     let weapon = Weapon {
-        fire_rate: ship_def.fire_rate * bonuses.fire_rate_mult,
+        fire_rate: ship_def.fire_rate * bonuses.fire_rate_mult * rate_mult,
         damage: ship_def.damage * bonuses.damage_mult,
+        weapon_type: hull_weapon,
         bullet_color: faction.weapon_type().bullet_color(),
         ..default()
     };
@@ -408,7 +420,9 @@ fn spawn_player(
 
     // Adjust engine trail offset based on rotation correction
     // For 180° rotated ships, the engine offset needs to be flipped
-    let mut engine_trail = EngineTrail::from_faction(faction);
+    // Engine trail matches hull faction (EDENCOM/Triglavian/Pirate override
+    // the player faction for invasion-era cross-empire hulls).
+    let mut engine_trail = EngineTrail::for_hull(type_id, faction);
     if (rotation - std::f32::consts::PI).abs() < 0.1 {
         // Ship is flipped 180°, flip the engine offset
         engine_trail.offset.y = -engine_trail.offset.y;
@@ -438,7 +452,6 @@ fn spawn_player(
         commands.spawn((
             Player,
             stats,
-            movement,
             weapon,
             Ability::new(ability_type),
             AbilityEffects::default(),
@@ -450,10 +463,19 @@ fn spawn_player(
             Sprite {
                 image: texture,
                 custom_size: Some(Vec2::splat(player_size)),
+                // Tint sprite toward faction color so the hull reads as the
+                // player's alliance without repainting the PNG.
+                color: super::enemy::ship_sprite_tint(type_id, faction),
                 ..default()
             },
             Transform::from_xyz(0.0, -250.0, LAYER_PLAYER)
                 .with_rotation(Quat::from_rotation_z(rotation)),
+            (
+                movement,
+                super::items::Inventory::default(),
+                super::items::EffectiveStats::neutral(),
+                CurrentTilt::default(),
+            ),
         ));
     } else {
         // Fallback: simple colored sprite
@@ -468,7 +490,6 @@ fn spawn_player(
         commands.spawn((
             Player,
             stats,
-            movement,
             weapon,
             Ability::new(ability_type),
             AbilityEffects::default(),
@@ -483,6 +504,12 @@ fn spawn_player(
                 ..default()
             },
             Transform::from_xyz(0.0, -250.0, LAYER_PLAYER),
+            (
+                movement,
+                super::items::Inventory::default(),
+                super::items::EffectiveStats::neutral(),
+                CurrentTilt::default(),
+            ),
         ));
     }
 
@@ -530,10 +557,21 @@ fn player_movement(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<crate::systems::JoystickState>,
-    mut query: Query<(&mut Transform, &mut Movement, &BaseRotation, &ManeuverState), With<Player>>,
+    mut query: Query<
+        (
+            &mut Transform,
+            &mut Movement,
+            &BaseRotation,
+            &ManeuverState,
+            &mut CurrentTilt,
+        ),
+        With<Player>,
+    >,
     salt_miner: Res<SaltMinerSystem>,
 ) {
-    let Ok((mut transform, mut movement, base_rot, maneuver)) = query.get_single_mut() else {
+    let Ok((mut transform, mut movement, base_rot, maneuver, mut tilt)) =
+        query.get_single_mut()
+    else {
         return;
     };
 
@@ -592,12 +630,9 @@ fn player_movement(
     if !maneuver.barrel_roll_active {
         let target_tilt =
             (movement.velocity.x * TILT_FACTOR).clamp(-MAX_TILT_RADIANS, MAX_TILT_RADIANS);
-        // Extract current tilt relative to base rotation
-        let (_, _, current_z) = transform.rotation.to_euler(EulerRot::XYZ);
-        let current_tilt = current_z - base_rot.0;
-        let new_tilt =
-            current_tilt + (target_tilt - current_tilt) * (TILT_LERP_SPEED * dt).min(1.0);
-        transform.rotation = Quat::from_rotation_z(base_rot.0 + new_tilt);
+        let step = (TILT_LERP_SPEED * dt).min(1.0);
+        tilt.0 += (target_tilt - tilt.0) * step;
+        transform.rotation = Quat::from_rotation_z(base_rot.0 + tilt.0);
     }
 }
 
@@ -607,15 +642,24 @@ fn player_shooting(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<crate::systems::JoystickState>,
-    mut query: Query<(&Transform, &mut Weapon, &AbilityEffects), With<Player>>,
+    mut query: Query<
+        (
+            &Transform,
+            &mut Weapon,
+            &AbilityEffects,
+            Option<&super::items::EffectiveStats>,
+        ),
+        With<Player>,
+    >,
     mut fire_events: EventWriter<PlayerFireEvent>,
     salt_miner: Res<SaltMinerSystem>,
     mut heat_system: ResMut<crate::systems::ComboHeatSystem>,
     mut screen_shake: ResMut<crate::systems::effects::ScreenShake>,
 ) {
-    let Ok((transform, mut weapon, ability_effects)) = query.get_single_mut() else {
+    let Ok((transform, mut weapon, ability_effects, eff)) = query.get_single_mut() else {
         return;
     };
+    let eff = eff.copied().unwrap_or_else(super::items::EffectiveStats::neutral);
 
     let dt = time.delta_secs();
 
@@ -674,8 +718,14 @@ fn player_shooting(
         weapon.aim_direction = aim.normalize();
     }
 
-    // Fire if: Space pressed, OR right stick is pushed (twin-stick style)
-    let fire_pressed = keyboard.pressed(KeyCode::Space) || joystick_firing;
+    // Fire if: Space pressed, right stick pushed (twin-stick), or A/X held.
+    // Without right-stick aim, default to travel direction / up.
+    let face_button_fire = joystick.buttons[0] || joystick.buttons[2];
+    if face_button_fire && aim == Vec2::ZERO {
+        aim = Vec2::new(0.0, 1.0);
+        weapon.aim_direction = aim;
+    }
+    let fire_pressed = keyboard.pressed(KeyCode::Space) || joystick_firing || face_button_fire;
 
     if fire_pressed && weapon.cooldown <= 0.0 {
         // Track heat (doesn't block firing, just affects fire rate)
@@ -689,16 +739,32 @@ fn player_shooting(
         let ammo_mult = weapon.ammo_type.fire_rate_mult();
         let salt_miner_mult = if salt_miner.is_active { 1.5 } else { 1.0 };
         let heat_mult = heat_system.fire_rate_mult();
-        let fire_rate = weapon.fire_rate * ammo_mult * salt_miner_mult * heat_mult;
-        weapon.cooldown = 1.0 / fire_rate;
+        let fire_rate =
+            weapon.fire_rate * ammo_mult * salt_miner_mult * heat_mult * eff.fire_rate_mult;
+        weapon.cooldown = 1.0 / fire_rate.max(0.1);
 
-        // Calculate burst parameters from ability effects
+        // Calculate burst parameters from ability effects + inventory mods
         // extra_projectiles: 2 = triple shot (Rocket Barrage), 3 = quad shot (Salvo)
-        let burst_count = 1 + ability_effects.extra_projectiles;
-        let spread_angle = if ability_effects.extra_projectiles > 0 {
-            // Spread angle based on projectile count
-            // 3 projectiles = 30° spread, 4 = 40°, etc.
-            (burst_count as f32 * 10.0).to_radians()
+        // inventory mods (Scatter/Homing) add on top
+        // Per-hull baseline bullet pattern so each weapon family plays
+        // distinctly even before mods (autocannons twin-tracer, drones
+        // spread wide).
+        let (hull_burst_bonus, hull_spread_bonus) = match weapon.weapon_type {
+            WeaponType::Autocannon => (1u32, 6_f32.to_radians()),
+            WeaponType::Drone => (2u32, 24_f32.to_radians()),
+            _ => (0u32, 0.0),
+        };
+        let burst_count =
+            1 + ability_effects.extra_projectiles + eff.extra_projectiles + hull_burst_bonus;
+        let spread_angle = if burst_count > 1 {
+            let ability_spread = if ability_effects.extra_projectiles > 0 {
+                ((1 + ability_effects.extra_projectiles) as f32 * 10.0).to_radians()
+            } else {
+                0.0
+            };
+            ability_spread
+                + eff.spread_radians * (burst_count.saturating_sub(1) as f32)
+                + hull_spread_bonus
         } else {
             0.0
         };
@@ -710,16 +776,32 @@ fn player_shooting(
             weapon.bullet_color
         };
 
-        // Send fire event
+        // Send fire event (damage scaled by inventory mods + crit/pierce/homing/burn)
+        let crit_chance_override = if eff.crit_chance > 0.0 {
+            Some(eff.crit_chance)
+        } else {
+            None
+        };
+        let crit_mult_override = if eff.crit_damage_mult > 1.0 {
+            Some(eff.crit_damage_mult)
+        } else {
+            None
+        };
         fire_events.send(PlayerFireEvent {
             position: transform.translation.truncate(),
             direction: weapon.aim_direction,
             weapon_type: weapon.weapon_type,
             bullet_color,
-            damage: weapon.damage,
+            damage: weapon.damage * eff.damage_mult,
             burst_count,
             spread_angle,
             ammo_type: weapon.ammo_type,
+            crit_chance_override,
+            crit_mult_override,
+            pierce: eff.pierce,
+            homing: eff.homing,
+            burn_dps: eff.burn_dps,
+            chain_targets: eff.chain_targets,
         });
 
         // Subtle recoil shake on fire

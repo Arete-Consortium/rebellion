@@ -17,7 +17,11 @@ pub(crate) fn is_elder_fleet(active_module: Res<ActiveModule>) -> bool {
     active_module.is_elder_fleet()
 }
 
-pub(crate) fn spawn_module_select(mut commands: Commands, mut selection: ResMut<MenuSelection>) {
+pub(crate) fn spawn_module_select(
+    mut commands: Commands,
+    mut selection: ResMut<MenuSelection>,
+    faction_icons: Res<crate::assets::FactionIconCache>,
+) {
     selection.index = 0;
     selection.total = 4; // Elder Fleet, Caldari vs Gallente, Abyssal Depths, Endless
 
@@ -30,77 +34,107 @@ pub(crate) fn spawn_module_select(mut commands: Commands, mut selection: ResMut<
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                row_gap: Val::Px(20.0),
+                row_gap: Val::Px(18.0),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.5)),
+            // Deep-space background with faint cyan undertone
+            BackgroundColor(Color::srgb(0.015, 0.025, 0.045)),
         ))
         .with_children(|parent| {
-            // Title
+            // Kicker line above title
             parent.spawn((
-                Text::new("SELECT CAMPAIGN"),
+                Text::new("— NEW EDEN · CAMPAIGN SELECT —"),
                 TextFont {
-                    font_size: 48.0,
+                    font_size: 12.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                TextColor(Color::srgba(0.45, 0.70, 0.95, 0.75)),
+            ));
+
+            // Main title
+            parent.spawn((
+                Text::new("SELECT OPERATION"),
+                TextFont {
+                    font_size: 40.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.92, 0.95, 1.0)),
+            ));
+
+            // Accent line under title
+            parent.spawn((
+                Node {
+                    width: Val::Px(220.0),
+                    height: Val::Px(2.0),
+                    margin: UiRect::vertical(Val::Px(4.0)),
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.3, 0.6, 1.0, 0.6)),
             ));
 
             parent.spawn(Node {
-                height: Val::Px(20.0),
+                height: Val::Px(12.0),
                 ..default()
             });
 
-            // Module cards container
+            // 2×2 grid container — cards wrap; gaps consistent
             parent
                 .spawn(Node {
                     flex_direction: FlexDirection::Row,
-                    column_gap: Val::Px(30.0),
+                    flex_wrap: FlexWrap::Wrap,
+                    column_gap: Val::Px(24.0),
+                    row_gap: Val::Px(24.0),
+                    max_width: Val::Px(640.0),
+                    justify_content: JustifyContent::Center,
                     ..default()
                 })
                 .with_children(|row| {
-                    // Elder Fleet card
+                    // Elder Fleet — Minmatar Republic vs Amarr Empire
                     spawn_module_card(
                         row,
                         0,
                         "THE ELDER FLEET",
                         "Minmatar Liberation",
-                        "Play as any faction against their rival.\n13 missions across 3 acts.",
-                        Color::srgb(0.8, 0.5, 0.2), // Minmatar orange
-                        "⚔",
+                        "Strike against Imperial slavers.\n13 missions across 3 acts.",
+                        Color::srgb(0.8, 0.5, 0.2),
+                        CardIcon::FactionVs(Faction::Minmatar, Faction::Amarr),
+                        &faction_icons,
                     );
 
-                    // Caldari vs Gallente card
+                    // Caldari Prime — Caldari State vs Gallente Federation
                     spawn_module_card(
                         row,
                         1,
                         "CALDARI PRIME",
                         "Faction Warfare",
                         "Caldari vs Gallente conflict.\n5 missions of brutal combat.",
-                        Color::srgb(0.2, 0.4, 0.7), // Caldari blue
-                        "◆",
+                        Color::srgb(0.2, 0.4, 0.7),
+                        CardIcon::FactionVs(Faction::Caldari, Faction::Gallente),
+                        &faction_icons,
                     );
 
-                    // Abyssal Depths card
+                    // Triglavian Invasion — EDENCOM + empires vs Collective
                     spawn_module_card(
                         row,
                         2,
-                        "ABYSSAL DEPTHS",
-                        "Triglavian Extraction",
-                        "3 rooms. Limited time.\nExtract or die in the Abyss.",
-                        Color::srgb(0.6, 0.2, 0.6), // Triglavian purple
-                        "◈",
+                        "TRIGLAVIAN INVASION",
+                        "EDENCOM Counter-Strike",
+                        "The Collective breaches New Eden.\nEmpire fleets + EDENCOM deploy.",
+                        Color::srgb(0.75, 0.25, 0.35), // Triglavian crimson
+                        CardIcon::SoloEmblem("triglavian"),
+                        &faction_icons,
                     );
 
-                    // Endless Mode card
+                    // Endless Mode — Deathless Circle
                     spawn_module_card(
                         row,
                         3,
                         "ENDLESS",
-                        "Survival Mode",
+                        "Deathless Incursion",
                         "Infinite waves of enemies.\nSurvive as long as you can!",
-                        Color::srgb(0.7, 0.2, 0.2), // Red for danger
-                        "∞",
+                        Color::srgb(0.7, 0.2, 0.2),
+                        CardIcon::SoloEmblem("deathless"),
+                        &faction_icons,
                     );
                 });
 
@@ -111,7 +145,7 @@ pub(crate) fn spawn_module_select(mut commands: Commands, mut selection: ResMut<
 
             // Instructions
             parent.spawn((
-                Text::new("← → Navigate • A/ENTER Select • B/ESC Back"),
+                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -121,6 +155,16 @@ pub(crate) fn spawn_module_select(mut commands: Commands, mut selection: ResMut<
         });
 }
 
+/// How a module card's emblem area should render.
+pub(crate) enum CardIcon<'a> {
+    /// Single Unicode glyph centred in the emblem box.
+    Glyph(&'a str),
+    /// Two faction emblems separated by "VS".
+    FactionVs(Faction, Faction),
+    /// A single non-empire emblem (Triglavian, Deathless) centred and large.
+    SoloEmblem(&'a str),
+}
+
 fn spawn_module_card(
     parent: &mut ChildBuilder,
     index: usize,
@@ -128,55 +172,118 @@ fn spawn_module_card(
     subtitle: &str,
     description: &str,
     color: Color,
-    symbol: &str,
+    icon: CardIcon,
+    faction_icons: &crate::assets::FactionIconCache,
 ) {
     parent
         .spawn((
             MenuItem { index },
             Node {
-                width: Val::Px(280.0),
-                height: Val::Px(320.0),
+                width: Val::Px(256.0),
+                height: Val::Px(360.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
-                padding: UiRect::all(Val::Px(20.0)),
-                border: UiRect::all(Val::Px(3.0)),
-                row_gap: Val::Px(12.0),
+                padding: UiRect::all(Val::Px(0.0)),
+                border: UiRect::all(Val::Px(2.0)),
+                row_gap: Val::Px(0.0),
+                overflow: Overflow::clip(),
                 ..default()
             },
-            BackgroundColor(color.with_alpha(0.2)),
-            BorderColor(color.with_alpha(0.5)),
+            // Deep-space card background — near black, tinted faintly by faction
+            BackgroundColor(Color::srgba(0.04, 0.06, 0.10, 0.95)),
+            BorderColor(color.with_alpha(0.55)),
         ))
         .with_children(|card| {
-            // Symbol
+            // Top accent stripe — faction colour bar, EVE's signature flair
             card.spawn((
                 Node {
-                    width: Val::Px(80.0),
-                    height: Val::Px(80.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Px(5.0),
+                    ..default()
+                },
+                BackgroundColor(color),
+            ));
+
+            // Inner content container with padding
+            let content_color = color;
+            card.spawn(Node {
+                width: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                padding: UiRect::all(Val::Px(14.0)),
+                row_gap: Val::Px(10.0),
+                ..default()
+            })
+            .with_children(|card| {
+                let _ = content_color;
+            // Emblem area — either a single glyph or faction-vs-faction carriers
+            card.spawn((
+                Node {
+                    width: Val::Px(196.0),
+                    height: Val::Px(86.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     border: UiRect::all(Val::Px(2.0)),
-                    margin: UiRect::bottom(Val::Px(10.0)),
+                    margin: UiRect::bottom(Val::Px(6.0)),
+                    column_gap: Val::Px(6.0),
                     ..default()
                 },
                 BackgroundColor(color.with_alpha(0.4)),
                 BorderColor(color),
             ))
             .with_children(|emblem| {
-                emblem.spawn((
-                    Text::new(symbol),
-                    TextFont {
-                        font_size: 48.0,
-                        ..default()
-                    },
-                    TextColor(color),
-                ));
+                match icon {
+                    CardIcon::Glyph(symbol) => {
+                        emblem.spawn((
+                            Text::new(symbol),
+                            TextFont {
+                                font_size: 48.0,
+                                ..default()
+                            },
+                            TextColor(color),
+                        ));
+                    }
+                    CardIcon::FactionVs(left, right) => {
+                        spawn_faction_emblem(emblem, faction_icons, left);
+                        emblem.spawn((
+                            Text::new("VS"),
+                            TextFont {
+                                font_size: 18.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                        ));
+                        spawn_faction_emblem(emblem, faction_icons, right);
+                    }
+                    CardIcon::SoloEmblem(key) => {
+                        if let Some(image) = faction_icons.get_extra(key) {
+                            emblem.spawn((
+                                Node {
+                                    width: Val::Px(84.0),
+                                    height: Val::Px(84.0),
+                                    ..default()
+                                },
+                                ImageNode { image, ..default() },
+                            ));
+                        } else {
+                            emblem.spawn((
+                                Text::new("?"),
+                                TextFont {
+                                    font_size: 48.0,
+                                    ..default()
+                                },
+                                TextColor(color),
+                            ));
+                        }
+                    }
+                }
             });
 
             // Title
             card.spawn((
                 Text::new(title),
                 TextFont {
-                    font_size: 24.0,
+                    font_size: 20.0,
                     ..default()
                 },
                 TextColor(Color::WHITE),
@@ -201,11 +308,45 @@ fn spawn_module_card(
                 },
                 TextColor(Color::srgb(0.6, 0.6, 0.6)),
                 Node {
-                    max_width: Val::Px(240.0),
+                    max_width: Val::Px(220.0),
                     ..default()
                 },
             ));
+            }); // close inner content container
         });
+}
+
+fn spawn_faction_emblem(
+    parent: &mut ChildBuilder,
+    icons: &crate::assets::FactionIconCache,
+    faction: Faction,
+) {
+    if let Some(image) = icons.get(faction) {
+        parent.spawn((
+            Node {
+                width: Val::Px(68.0),
+                height: Val::Px(68.0),
+                ..default()
+            },
+            ImageNode {
+                image,
+                ..default()
+            },
+        ));
+    } else {
+        // Fallback — faction-tinted box if PNG missing
+        let tint = faction.primary_color();
+        parent.spawn((
+            Node {
+                width: Val::Px(58.0),
+                height: Val::Px(58.0),
+                border: UiRect::all(Val::Px(2.0)),
+                ..default()
+            },
+            BackgroundColor(tint.with_alpha(0.5)),
+            BorderColor(tint),
+        ));
+    }
 }
 
 pub(crate) fn module_select_input(
@@ -215,6 +356,7 @@ pub(crate) fn module_select_input(
     mut active_module: ResMut<ActiveModule>,
     mut endless: ResMut<crate::core::EndlessMode>,
     mut abyssal: ResMut<crate::games::abyssal_depths::AbyssalState>,
+    mut session: ResMut<GameSession>,
     time: Res<Time>,
     mut transitions: EventWriter<TransitionEvent>,
     mut cards: Query<(&MenuItem, &mut BackgroundColor, &mut BorderColor)>,
@@ -237,16 +379,33 @@ pub(crate) fn module_select_input(
         Color::srgb(0.7, 0.2, 0.2), // Endless red
     ];
 
+    // Time-based pulse for the selected card's border so it reads clearly.
+    let t = time.elapsed_secs();
+    let pulse = 0.65 + 0.35 * (t * 3.5).sin();
+
     for (item, mut bg, mut border) in cards.iter_mut() {
         let color = colors.get(item.index).copied().unwrap_or(colors[0]);
         let is_selected = item.index == selection.index;
 
         if is_selected {
-            *bg = BackgroundColor(color.with_alpha(0.4));
-            *border = BorderColor(color);
+            // Dark interior with faction tint + pulsing bright border
+            let r = color.to_srgba();
+            *bg = BackgroundColor(Color::srgba(
+                r.red * 0.18,
+                r.green * 0.18,
+                r.blue * 0.18,
+                0.95,
+            ));
+            *border = BorderColor(Color::srgba(
+                (r.red * pulse).min(1.0),
+                (r.green * pulse).min(1.0),
+                (r.blue * pulse).min(1.0),
+                1.0,
+            ));
         } else {
-            *bg = BackgroundColor(color.with_alpha(0.2));
-            *border = BorderColor(color.with_alpha(0.5));
+            // Unselected — near black interior, dim border
+            *bg = BackgroundColor(Color::srgba(0.04, 0.06, 0.10, 0.92));
+            *border = BorderColor(color.with_alpha(0.35));
         }
     }
 
@@ -258,6 +417,7 @@ pub(crate) fn module_select_input(
                 active_module.set_module("elder_fleet");
                 endless.active = false;
                 abyssal.active = false;
+                session.chapter_ship_override = None;
                 info!("Selected Elder Fleet campaign");
                 transitions.send(TransitionEvent::to(GameState::FactionSelect));
             }
@@ -266,24 +426,30 @@ pub(crate) fn module_select_input(
                 active_module.set_module("caldari_gallente");
                 endless.active = false;
                 abyssal.active = false;
+                session.chapter_ship_override = None;
                 info!("Selected Caldari vs Gallente campaign");
                 transitions.send(TransitionEvent::to(GameState::FactionSelect));
             }
             2 => {
-                // Abyssal Depths
+                // Triglavian Invasion (Abyssal Depths)
                 active_module.set_module("abyssal_depths");
                 endless.active = false;
-                abyssal.active = true; // Set BEFORE entering Playing state
-                info!("Selected ABYSSAL DEPTHS!");
+                abyssal.active = true;
+                // Cross-empire EDENCOM + invasion-era roster
+                session.chapter_ship_override =
+                    Some(crate::games::abyssal_depths::TRIGLAVIAN_INVASION_SHIPS);
+                info!("Selected TRIGLAVIAN INVASION!");
                 // Skip faction select, go straight to ship select
                 transitions.send(TransitionEvent::to(GameState::ShipSelect));
             }
             3 => {
-                // Endless Mode
-                active_module.set_module("elder_fleet"); // Use Elder Fleet enemies
+                // Endless Mode — every ship in the game is playable
+                active_module.set_module("elder_fleet");
                 endless.active = true;
                 abyssal.active = false;
-                info!("Selected ENDLESS MODE!");
+                session.chapter_ship_override =
+                    Some(&crate::games::abyssal_depths::ENDLESS_SHIPS);
+                info!("Selected ENDLESS MODE — full roster unlocked");
                 transitions.send(TransitionEvent::to(GameState::FactionSelect));
             }
             _ => {}

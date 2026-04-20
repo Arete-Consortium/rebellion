@@ -490,7 +490,7 @@ impl SaveData {
 }
 
 /// Stat bonuses from purchased upgrades
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct UpgradeBonuses {
     pub shield_bonus: f32,
     pub armor_bonus: f32,
@@ -502,15 +502,27 @@ pub struct UpgradeBonuses {
     pub rocket_capacity: i32,
 }
 
-impl UpgradeBonuses {
-    pub fn new() -> Self {
+impl Default for UpgradeBonuses {
+    /// Baseline bonuses with multipliers at 1.0 (no upgrades purchased yet).
+    /// A zeroed `speed_mult` multiplies `max_speed` and `acceleration` to 0 and
+    /// breaks player_movement, which is why multipliers must not default to 0.
+    fn default() -> Self {
         Self {
+            shield_bonus: 0.0,
+            armor_bonus: 0.0,
+            capacitor_bonus: 0.0,
             fire_rate_mult: 1.0,
             damage_mult: 1.0,
             speed_mult: 1.0,
             shield_regen_mult: 1.0,
-            ..Default::default()
+            rocket_capacity: 0,
         }
+    }
+}
+
+impl UpgradeBonuses {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 

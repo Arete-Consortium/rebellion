@@ -121,7 +121,7 @@ pub fn spawn_cg_stage_complete(
 
             // Continue prompt
             parent.spawn((
-                Text::new("Press SPACE to continue"),
+                Text::new("Press A to continue"),
                 TextFont {
                     font_size: 18.0,
                     ..default()
@@ -131,7 +131,7 @@ pub fn spawn_cg_stage_complete(
 
             // Controller hint
             parent.spawn((
-                Text::new("A/ENTER Continue • B/ESC Main Menu"),
+                Text::new("A Continue  •  B Main Menu"),
                 TextFont {
                     font_size: 14.0,
                     ..default()

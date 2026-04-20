@@ -178,7 +178,7 @@ pub(crate) fn spawn_stage_complete(
 
             // Continue prompt
             parent.spawn((
-                Text::new("A/ENTER Continue • B/ESC Quit"),
+                Text::new("A Continue  •  B Quit"),
                 TextFont {
                     font_size: 14.0,
                     ..default()

@@ -297,7 +297,7 @@ impl JoystickState {
     }
 
     pub fn aim_direction(&self) -> Option<Vec2> {
-        self.aim_direction_with_deadzone(0.3)
+        self.aim_direction_with_deadzone(0.18)
     }
 
     pub fn aim_direction_with_deadzone(&self, deadzone: f32) -> Option<Vec2> {
@@ -480,6 +480,58 @@ fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
     state.buttons[9] = gamepad.pressed(GamepadButton::Start); // Start/Menu
     state.buttons[10] = gamepad.pressed(GamepadButton::LeftThumb); // L3
     state.buttons[11] = gamepad.pressed(GamepadButton::RightThumb); // R3
+}
+
+/// DIAGNOSTIC: dumps every known gamepad axis so we can find out which
+/// ones actually carry data for this controller/driver combo.
+fn debug_joystick_heartbeat(
+    time: Res<Time>,
+    state: Res<JoystickState>,
+    gamepads: Query<&Gamepad>,
+    mut last: Local<f32>,
+) {
+    let t = time.elapsed_secs();
+    if t - *last < 0.5 {
+        return;
+    }
+    *last = t;
+    let Some(g) = gamepads.iter().next() else {
+        info!("JS: no gamepad");
+        return;
+    };
+    let axes = [
+        ("LX", GamepadAxis::LeftStickX),
+        ("LY", GamepadAxis::LeftStickY),
+        ("RX", GamepadAxis::RightStickX),
+        ("RY", GamepadAxis::RightStickY),
+        ("LZ", GamepadAxis::LeftZ),
+        ("RZ", GamepadAxis::RightZ),
+    ];
+    let axis_str: Vec<String> = axes
+        .iter()
+        .map(|(name, a)| match g.get(*a) {
+            Some(v) if v.abs() > 0.01 => format!("{}={:.2}", name, v),
+            Some(_) => format!("{}=0", name),
+            None => format!("{}=?", name),
+        })
+        .collect();
+    let left_stick = g.left_stick();
+    let right_stick = g.right_stick();
+    info!(
+        "JS: state.L=({:.2},{:.2}) .R=({:.2},{:.2}) dpad=({},{}) | raw_left={:?} raw_right={:?} | {} | btns[A,B,X,Y,LB,RB]={}{}{}{}{}{}",
+        state.left_x, state.left_y,
+        state.right_x, state.right_y,
+        state.dpad_x, state.dpad_y,
+        (left_stick.x, left_stick.y),
+        (right_stick.x, right_stick.y),
+        axis_str.join(" "),
+        state.buttons[0] as u8,
+        state.buttons[1] as u8,
+        state.buttons[2] as u8,
+        state.buttons[3] as u8,
+        state.buttons[4] as u8,
+        state.buttons[5] as u8,
+    );
 }
 
 // =============================================================================

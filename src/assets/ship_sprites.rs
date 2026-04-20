@@ -98,6 +98,27 @@ const SHIPS_TO_LOAD: &[u32] = &[
     24483, // Nidhoggur (Minmatar carrier)
     // === TITANS ===
     3764, // Caldari capital (Last Stand titan)
+    // === TRIGLAVIAN INVASION CHAPTER (Abyssal) ===
+    // EDENCOM (verified 2026-04: Skybreaker=54731, Thunderchild=54733, Stormbringer=54732)
+    54731, // Skybreaker
+    54732, // Stormbringer
+    54733, // Thunderchild
+    // Triglavian
+    47269, // Damavik
+    47270, // Vedmak
+    47271, // Leshak
+    49710, // Kikimora
+    49711, // Drekavac
+    // Invasion-era assault frigates
+    11393, // Retribution (Amarr AF)
+    52250, // Nergal (Triglavian AF)
+    // T3 tactical destroyers
+    34317, // Confessor (Amarr T3)
+    // Cruisers
+    621,   // Caracal (Caldari missile cruiser)
+    11993, // Muninn (Minmatar HAC)
+    12019, // Sacrilege (Amarr HAC)
+    17713, // Gila (Guristas pirate cruiser)
 ];
 
 /// Setup the sprite cache directory (native only)

@@ -88,6 +88,7 @@ impl Plugin for CollisionPlugin {
                 update_spatial_grid,
                 player_projectile_enemy_collision,
                 enemy_projectile_player_collision,
+                tick_chain_bolts,
             )
                 .chain()
                 .run_if(in_state(GameState::Playing)),
@@ -106,11 +107,110 @@ fn update_spatial_grid(
     }
 }
 
+/// Spawn a jagged chain-lightning arc between two points.
+/// Generates 5 waypoints with perpendicular jitter, draws segments between
+/// consecutive points as a bright-white core; each segment also gets a
+/// cyan halo sibling for the electric-arc glow.
+fn spawn_chain_bolt(commands: &mut Commands, from: Vec2, to: Vec2) {
+    use super::super::entities::projectile::ChainBolt;
+    const SEGMENTS: usize = 5;
+    let diff = to - from;
+    let total_len = diff.length().max(1.0);
+    // Perpendicular unit vector for zigzag jitter.
+    let dir = diff / total_len;
+    let perp = Vec2::new(-dir.y, dir.x);
+    // Zigzag amplitude scales with length so long jumps look more chaotic.
+    let jitter_amp = (total_len * 0.09).min(28.0);
+
+    let core_color = Color::srgba(1.0, 1.0, 1.0, 1.0);
+    let halo_color = Color::srgba(0.55, 0.85, 1.0, 0.85);
+
+    let mut points = Vec::with_capacity(SEGMENTS + 1);
+    points.push(from);
+    for i in 1..SEGMENTS {
+        let t = i as f32 / SEGMENTS as f32;
+        let base = from + diff * t;
+        let offset = (fastrand::f32() - 0.5) * 2.0 * jitter_amp;
+        points.push(base + perp * offset);
+    }
+    points.push(to);
+
+    for pair in points.windows(2) {
+        let a = pair[0];
+        let b = pair[1];
+        let seg = b - a;
+        let seg_len = seg.length().max(1.0);
+        let seg_mid = a + seg * 0.5;
+        let seg_angle = seg.y.atan2(seg.x);
+        // Halo (wider, semi-transparent) — spawned first so it's behind the core.
+        commands.spawn((
+            ChainBolt {
+                life: 0.22,
+                max: 0.22,
+            },
+            Sprite {
+                color: halo_color,
+                custom_size: Some(Vec2::new(seg_len, 7.0)),
+                ..default()
+            },
+            Transform::from_xyz(seg_mid.x, seg_mid.y, LAYER_PLAYER_BULLETS + 0.09)
+                .with_rotation(Quat::from_rotation_z(seg_angle)),
+        ));
+        // Bright core
+        commands.spawn((
+            ChainBolt {
+                life: 0.20,
+                max: 0.20,
+            },
+            Sprite {
+                color: core_color,
+                custom_size: Some(Vec2::new(seg_len, 2.0)),
+                ..default()
+            },
+            Transform::from_xyz(seg_mid.x, seg_mid.y, LAYER_PLAYER_BULLETS + 0.12)
+                .with_rotation(Quat::from_rotation_z(seg_angle)),
+        ));
+    }
+}
+
+/// Fade and despawn chain-lightning bolts.
+pub fn tick_chain_bolts(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut q: Query<
+        (
+            Entity,
+            &mut super::super::entities::projectile::ChainBolt,
+            &mut Sprite,
+        ),
+    >,
+) {
+    let dt = time.delta_secs();
+    for (e, mut b, mut s) in q.iter_mut() {
+        b.life -= dt;
+        if b.life <= 0.0 {
+            commands.entity(e).despawn_recursive();
+            continue;
+        }
+        s.color.set_alpha(b.life / b.max);
+    }
+}
+
 /// Player projectiles hitting enemies (optimized with spatial grid)
 fn player_projectile_enemy_collision(
     mut commands: Commands,
     grid: Res<SpatialGrid>,
-    projectile_query: Query<(Entity, &Transform, &ProjectileDamage), With<PlayerProjectile>>,
+    mut projectile_query: Query<
+        (
+            Entity,
+            &Transform,
+            &ProjectileDamage,
+            Option<&mut super::super::entities::projectile::Pierce>,
+            Option<&super::super::entities::projectile::BurnOnHit>,
+            Option<&super::super::entities::projectile::ChainOnHit>,
+        ),
+        With<PlayerProjectile>,
+    >,
     mut enemy_query: Query<(&mut EnemyStats, Option<&Sprite>), With<Enemy>>,
     player_query: Query<(&Transform, &ShipStats), With<Player>>,
     mut score: ResMut<ScoreSystem>,
@@ -139,7 +239,7 @@ fn player_projectile_enemy_collision(
     // Collision radius squared for faster distance checks
     const COLLISION_RADIUS_SQ: f32 = 25.0 * 25.0;
 
-    for (proj_entity, proj_transform, proj_damage) in projectile_query.iter() {
+    for (proj_entity, proj_transform, proj_damage, mut pierce, burn, chain) in projectile_query.iter_mut() {
         let proj_pos = proj_transform.translation.truncate();
 
         // Only check enemies in nearby grid cells (O(1) average instead of O(n))
@@ -186,6 +286,19 @@ fn player_projectile_enemy_collision(
                     .entity(enemy_entity)
                     .insert(super::effects::HitFlash::new(original_color));
 
+                // Impact sparks — radial burst in damage-type color.
+                super::effects::spawn_impact_sparks(
+                    &mut commands,
+                    enemy_pos,
+                    proj_damage.damage_type,
+                );
+
+                // Crit punch — subtle screen flash + extra shake on crit hits.
+                if is_crit {
+                    screen_flash.brief();
+                    screen_shake.trigger(4.0, 0.05);
+                }
+
                 // Spawn floating damage number
                 super::effects::spawn_damage_number(
                     &mut commands,
@@ -194,8 +307,57 @@ fn player_projectile_enemy_collision(
                     is_crit,
                 );
 
-                // Despawn projectile
-                commands.entity(proj_entity).despawn_recursive();
+                // Apply burn DoT if projectile carries one
+                if let Some(b) = burn {
+                    commands
+                        .entity(enemy_entity)
+                        .insert(super::super::entities::projectile::BurnStatus {
+                            dps: b.0,
+                            remaining: 3.0,
+                        });
+                }
+
+                // Pre-plan chain targets now (read-only grid), execute after
+                // we release the mutable borrow on enemy_stats below.
+                let chain_plan: Vec<(Entity, Vec2)> = if let Some(c) = chain {
+                    let mut visited: Vec<Entity> = vec![enemy_entity];
+                    let mut origin = enemy_pos;
+                    let mut plan = Vec::new();
+                    for _ in 0..c.0 {
+                        let mut best: Option<(Entity, Vec2)> = None;
+                        // Chain range boosted 220 → 320 for Vorton identity
+                        let mut best_d = 320.0_f32;
+                        for &(oe, opos) in grid.get_nearby_enemies(origin) {
+                            if visited.contains(&oe) {
+                                continue;
+                            }
+                            let d = origin.distance(opos);
+                            if d < best_d {
+                                best_d = d;
+                                best = Some((oe, opos));
+                            }
+                        }
+                        let Some((tgt, tpos)) = best else { break };
+                        plan.push((tgt, tpos));
+                        visited.push(tgt);
+                        origin = tpos;
+                    }
+                    plan
+                } else {
+                    Vec::new()
+                };
+
+                // Pierce: decrement and keep projectile alive; else despawn
+                let should_despawn = match pierce.as_deref_mut() {
+                    Some(p) if p.0 > 0 => {
+                        p.0 -= 1;
+                        false
+                    }
+                    _ => true,
+                };
+                if should_despawn {
+                    commands.entity(proj_entity).despawn_recursive();
+                }
 
                 // Check if enemy destroyed
                 if enemy_stats.health <= 0.0 {
@@ -272,6 +434,33 @@ fn player_projectile_enemy_collision(
 
                     // Despawn enemy
                     commands.entity(enemy_entity).despawn_recursive();
+                }
+
+                // Execute chain-lightning plan (primary enemy_stats borrow released).
+                // Chain damage bumped 0.65 → 0.9 so Vorton reads as devastating.
+                let chain_dmg = proj_damage.damage * 0.9;
+                let mut prev = enemy_pos;
+                for (tgt, tpos) in chain_plan {
+                    if let Ok((mut tstats, _)) = enemy_query.get_mut(tgt) {
+                        tstats.health -= chain_dmg;
+                        super::effects::spawn_damage_number(
+                            &mut commands,
+                            tpos,
+                            chain_dmg,
+                            false,
+                        );
+                        if tstats.health <= 0.0 {
+                            destroy_events.send(EnemyDestroyedEvent {
+                                position: tpos,
+                                enemy_type: tstats.name.clone(),
+                                score_value: tstats.score_value,
+                                was_boss: tstats.is_boss,
+                            });
+                            commands.entity(tgt).despawn_recursive();
+                        }
+                    }
+                    spawn_chain_bolt(&mut commands, prev, tpos);
+                    prev = tpos;
                 }
 
                 break; // Projectile can only hit one enemy

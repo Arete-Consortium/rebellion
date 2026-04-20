@@ -213,6 +213,12 @@ impl ScreenFlash {
         self.white(0.5);
     }
 
+    /// Subtle punch flash for crit hits — low intensity, fast fade.
+    pub fn brief(&mut self) {
+        self.white(0.10);
+        self.fade_speed = 8.0;
+    }
+
     /// Trigger red flash for salt miner activation
     pub fn salt_miner(&mut self) {
         self.colored(Color::srgb(1.0, 0.2, 0.2), 0.6);

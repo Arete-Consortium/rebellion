@@ -54,7 +54,7 @@ pub(crate) fn spawn_difficulty_menu(mut commands: Commands, mut selection: ResMu
             });
 
             parent.spawn((
-                Text::new("↑↓ Navigate • A/ENTER Select • B/ESC Back"),
+                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
                 TextFont {
                     font_size: 14.0,
                     ..default()

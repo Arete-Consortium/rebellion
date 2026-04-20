@@ -48,3 +48,6 @@ highscores.json
 *.tar.gz
 *.rar
 *.7z
+
+# Orientation analyzer debug previews (regenerated via scripts/)
+assets/_orientation_preview/
