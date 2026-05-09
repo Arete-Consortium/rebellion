@@ -19,26 +19,63 @@ impl Plugin for MusicPlugin {
         app.init_resource::<MusicAssets>()
             .init_resource::<MusicState>();
 
-        app.add_systems(Startup, generate_music).add_systems(
-            Update,
-            (
-                manage_menu_music.run_if(in_state(GameState::MainMenu)),
-                manage_gameplay_music.run_if(in_state(GameState::Playing)),
-                update_music_intensity.run_if(in_state(GameState::Playing)),
-                handle_state_music_transitions,
-            ),
-        );
+        app.add_systems(Startup, (generate_music, load_music_file_overrides).chain())
+            .add_systems(
+                Update,
+                (
+                    manage_menu_music.run_if(in_state(GameState::MainMenu)),
+                    manage_gameplay_music.run_if(in_state(GameState::Playing)),
+                    update_music_intensity.run_if(in_state(GameState::Playing)),
+                    handle_state_music_transitions,
+                ),
+            );
     }
 }
 
 /// Generated music assets
 #[derive(Resource, Default)]
 pub struct MusicAssets {
+    // Procedural fallbacks — always populated at startup.
     pub menu_ambient: Option<Handle<AudioSource>>,
     pub gameplay_ambient: Option<Handle<AudioSource>>,
     pub boss_ambient: Option<Handle<AudioSource>>,
     pub victory_sting: Option<Handle<AudioSource>>,
     pub defeat_sting: Option<Handle<AudioSource>>,
+    // Optional file-based overrides loaded from `assets/audio/music/`.
+    // When the asset's load state is Loaded, the play system prefers
+    // these over the procedural fallback. When the file is missing or
+    // failed to load, procedural plays.
+    pub menu_file: Option<Handle<AudioSource>>,
+    pub gameplay_file: Option<Handle<AudioSource>>,
+    pub boss_file: Option<Handle<AudioSource>>,
+    pub victory_file: Option<Handle<AudioSource>>,
+    pub defeat_file: Option<Handle<AudioSource>>,
+}
+
+impl MusicAssets {
+    /// Pick the best handle for a given slot — file override if it has
+    /// finished loading, else procedural fallback.
+    pub fn effective(
+        &self,
+        slot: MusicType,
+        asset_server: &AssetServer,
+    ) -> Option<Handle<AudioSource>> {
+        let (file, proc) = match slot {
+            MusicType::Menu => (&self.menu_file, &self.menu_ambient),
+            MusicType::Gameplay => (&self.gameplay_file, &self.gameplay_ambient),
+            MusicType::Boss => (&self.boss_file, &self.boss_ambient),
+            MusicType::None => return None,
+        };
+        if let Some(h) = file {
+            if matches!(
+                asset_server.get_load_state(h.id()),
+                Some(bevy::asset::LoadState::Loaded)
+            ) {
+                return Some(h.clone());
+            }
+        }
+        proc.clone()
+    }
 }
 
 /// Current music state
@@ -109,6 +146,34 @@ fn generate_music(mut music: ResMut<MusicAssets>, mut audio_sources: ResMut<Asse
     }
 
     info!("Music generation complete!");
+}
+
+/// Try to load file-based music overrides from `assets/audio/music/`.
+/// Loading is async — handles start in the Loading state and either
+/// resolve to Loaded (file present + valid) or Failed (404 or bad
+/// format). The `effective()` helper on MusicAssets picks file vs.
+/// procedural at play time based on load state, so missing files are
+/// silent fallback to procedural (no error to the player).
+///
+/// Drop tracks at:
+///   assets/audio/music/menu.ogg     (main menu)
+///   assets/audio/music/gameplay.ogg (during stages)
+///   assets/audio/music/boss.ogg     (boss fights)
+///   assets/audio/music/victory.ogg  (stage complete sting)
+///   assets/audio/music/defeat.ogg   (game over sting)
+///
+/// .ogg is preferred for size; .wav and .mp3 also work via Bevy's
+/// default audio loaders.
+fn load_music_file_overrides(
+    mut music: ResMut<MusicAssets>,
+    asset_server: Res<AssetServer>,
+) {
+    music.menu_file = Some(asset_server.load("audio/music/menu.ogg"));
+    music.gameplay_file = Some(asset_server.load("audio/music/gameplay.ogg"));
+    music.boss_file = Some(asset_server.load("audio/music/boss.ogg"));
+    music.victory_file = Some(asset_server.load("audio/music/victory.ogg"));
+    music.defeat_file = Some(asset_server.load("audio/music/defeat.ogg"));
+    info!("Queued music file overrides — files at assets/audio/music/* will replace procedural tracks if present");
 }
 
 // =============================================================================
@@ -376,6 +441,7 @@ fn generate_defeat_sting() -> Option<AudioSource> {
 fn manage_menu_music(
     mut commands: Commands,
     music_assets: Res<MusicAssets>,
+    asset_server: Res<AssetServer>,
     mut music_state: ResMut<MusicState>,
     settings: Res<crate::systems::audio::SoundSettings>,
 ) {
@@ -386,8 +452,8 @@ fn manage_menu_music(
             commands.entity(entity).despawn();
         }
 
-        // Spawn menu music
-        if let Some(source) = music_assets.menu_ambient.clone() {
+        // Spawn menu music — file override if loaded, else procedural.
+        if let Some(source) = music_assets.effective(MusicType::Menu, &asset_server) {
             if settings.enabled {
                 let entity = commands
                     .spawn((
@@ -416,6 +482,7 @@ fn manage_menu_music(
 fn manage_gameplay_music(
     mut commands: Commands,
     music_assets: Res<MusicAssets>,
+    asset_server: Res<AssetServer>,
     mut music_state: ResMut<MusicState>,
     settings: Res<crate::systems::audio::SoundSettings>,
     boss_query: Query<&crate::entities::Boss>,
@@ -434,11 +501,8 @@ fn manage_gameplay_music(
             commands.entity(entity).despawn();
         }
 
-        let source = if has_boss {
-            music_assets.boss_ambient.clone()
-        } else {
-            music_assets.gameplay_ambient.clone()
-        };
+        // File override if loaded, else procedural fallback.
+        let source = music_assets.effective(target_type, &asset_server);
 
         if let Some(source) = source {
             if settings.enabled {
