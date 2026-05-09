@@ -17,6 +17,38 @@ pub(crate) fn is_elder_fleet(active_module: Res<ActiveModule>) -> bool {
     active_module.is_elder_fleet()
 }
 
+/// Run condition: not on mobile (desktop / native). Used to gate
+/// spawn_module_select so the picker doesn't flash on mobile during
+/// the one frame between OnEnter(ModuleSelect) and the auto-skip.
+pub(crate) fn not_on_mobile(mobile: Res<crate::systems::touch_joystick::MobileMode>) -> bool {
+    !mobile.active
+}
+
+/// Mobile fast-path: when MobileMode is active, skip ModuleSelect and
+/// FactionSelect entirely and drop the player into StageSelect with
+/// Elder Fleet / Minmatar vs Amarr pre-locked. The 4-card module
+/// picker doesn't fit a portrait phone viewport, and for the scoped-
+/// down "Minmatar campaign on mobile" goal we don't need the choice.
+/// Desktop builds early-return because MobileMode is never active.
+pub(crate) fn mobile_skip_to_stage_select(
+    mobile: Res<crate::systems::touch_joystick::MobileMode>,
+    mut active_module: ResMut<ActiveModule>,
+    mut endless: ResMut<crate::core::EndlessMode>,
+    mut abyssal: ResMut<crate::games::abyssal_depths::AbyssalState>,
+    mut session: ResMut<GameSession>,
+    mut transitions: EventWriter<TransitionEvent>,
+) {
+    if !mobile.active {
+        return;
+    }
+    active_module.set_module("elder_fleet");
+    endless.active = false;
+    abyssal.active = false;
+    *session = GameSession::new(Faction::Minmatar, Faction::Amarr);
+    info!("Mobile: auto-skipping ModuleSelect → StageSelect (Elder Fleet, Minmatar)");
+    transitions.send(TransitionEvent::to(GameState::StageSelect));
+}
+
 pub(crate) fn spawn_module_select(
     mut commands: Commands,
     mut selection: ResMut<MenuSelection>,

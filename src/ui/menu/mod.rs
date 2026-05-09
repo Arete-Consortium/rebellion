@@ -69,9 +69,14 @@ impl Plugin for MenuPlugin {
                 despawn_menu::<main_menu::MainMenuRoot>,
             )
             // Module Select
+            // On mobile we auto-skip past the picker into StageSelect with
+            // Elder Fleet / Minmatar locked. Desktop keeps the full picker.
             .add_systems(
                 OnEnter(GameState::ModuleSelect),
-                module_select::spawn_module_select,
+                (
+                    module_select::spawn_module_select.run_if(module_select::not_on_mobile),
+                    module_select::mobile_skip_to_stage_select,
+                ),
             )
             .add_systems(
                 Update,
