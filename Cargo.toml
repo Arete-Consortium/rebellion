@@ -33,7 +33,7 @@ dirs = "5"
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"
 web-sys = { version = "0.3", features = ["Window", "Storage", "Navigator", "Screen"] }
-getrandom = { version = "0.3", features = ["wasm_js"] }
+getrandom = { version = "0.4", features = ["wasm_js"] }
 
 # Game Engine - Linux with x11/wayland
 [target.'cfg(target_os = "linux")'.dependencies]
