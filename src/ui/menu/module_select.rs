@@ -30,13 +30,19 @@ pub(crate) fn not_on_mobile(mobile: Res<crate::systems::touch_joystick::MobileMo
 /// picker doesn't fit a portrait phone viewport, and for the scoped-
 /// down "Minmatar campaign on mobile" goal we don't need the choice.
 /// Desktop builds early-return because MobileMode is never active.
+///
+/// Uses NextState directly instead of TransitionEvent because the
+/// TransitionState can only hold one in-flight fade — the fade from
+/// MainMenu → ModuleSelect is still finishing when this OnEnter runs,
+/// so a TransitionEvent fired from here would be dropped silently and
+/// strand the user on a black ModuleSelect screen.
 pub(crate) fn mobile_skip_to_stage_select(
     mobile: Res<crate::systems::touch_joystick::MobileMode>,
     mut active_module: ResMut<ActiveModule>,
     mut endless: ResMut<crate::core::EndlessMode>,
     mut abyssal: ResMut<crate::games::abyssal_depths::AbyssalState>,
     mut session: ResMut<GameSession>,
-    mut transitions: EventWriter<TransitionEvent>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     if !mobile.active {
         return;
@@ -46,7 +52,7 @@ pub(crate) fn mobile_skip_to_stage_select(
     abyssal.active = false;
     *session = GameSession::new(Faction::Minmatar, Faction::Amarr);
     info!("Mobile: auto-skipping ModuleSelect → StageSelect (Elder Fleet, Minmatar)");
-    transitions.send(TransitionEvent::to(GameState::StageSelect));
+    next_state.set(GameState::StageSelect);
 }
 
 pub(crate) fn spawn_module_select(
