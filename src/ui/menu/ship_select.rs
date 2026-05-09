@@ -49,6 +49,7 @@ pub(crate) fn spawn_ship_menu(
     session: Res<GameSession>,
     save_data: Res<crate::core::SaveData>,
     sprite_cache: Res<crate::assets::ShipSpriteCache>,
+    mobile: Res<crate::systems::touch_joystick::MobileMode>,
 ) {
     let ships = session.player_ships();
     let faction = session.player_faction;
@@ -105,33 +106,52 @@ pub(crate) fn spawn_ship_menu(
             ));
 
             // Main content: Detail panel (left) + Ship list (right)
+            // Mobile lays out vertically: detail panel hidden, ship list
+            // full-width. Tap-on-card handles selection + confirm in one
+            // gesture so the detail panel is informational-only.
+            let mobile_active = mobile.active;
             parent
                 .spawn(Node {
                     width: Val::Percent(100.0),
                     max_width: Val::Px(900.0),
-                    flex_direction: FlexDirection::Row,
+                    flex_direction: if mobile_active {
+                        FlexDirection::Column
+                    } else {
+                        FlexDirection::Row
+                    },
                     justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
                     column_gap: Val::Px(30.0),
+                    row_gap: Val::Px(16.0),
                     ..default()
                 })
                 .with_children(|content| {
-                    // Left: Selected ship detail panel
-                    spawn_ship_detail_panel(
-                        content,
-                        &ships[0],
-                        faction_color,
-                        max_speed,
-                        max_damage,
-                        max_health,
-                        max_fire_rate,
-                        sprite_cache.get(ships[0].type_id),
-                    );
+                    // Detail panel — hidden on mobile (the ship list cards
+                    // are tappable directly).
+                    if !mobile_active {
+                        spawn_ship_detail_panel(
+                            content,
+                            &ships[0],
+                            faction_color,
+                            max_speed,
+                            max_damage,
+                            max_health,
+                            max_fire_rate,
+                            sprite_cache.get(ships[0].type_id),
+                        );
+                    }
 
-                    // Right: Ship list
+                    // Ship list — wider on mobile so each row is a
+                    // generous tap target.
                     content
                         .spawn(Node {
                             flex_direction: FlexDirection::Column,
                             row_gap: Val::Px(8.0),
+                            width: if mobile_active {
+                                Val::Percent(94.0)
+                            } else {
+                                Val::Auto
+                            },
                             ..default()
                         })
                         .with_children(|list| {
