@@ -32,6 +32,18 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app
+            // Tap-on-card: every MenuItem gets a Button so mouse + touch
+            // can click-to-select-and-confirm. Runs in PreUpdate so the
+            // updated MenuSelection.index is visible to per-screen input
+            // handlers (which run in Update).
+            .add_systems(
+                PreUpdate,
+                (
+                    common::ensure_menu_items_interactive,
+                    common::handle_menu_item_taps,
+                )
+                    .chain(),
+            )
             // Loading
             .add_systems(OnEnter(GameState::Loading), loading::spawn_loading_screen)
             .add_systems(

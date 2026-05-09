@@ -25,6 +25,36 @@ pub(crate) struct MenuItem {
     pub(crate) index: usize,
 }
 
+/// Adds a `Button` component to every freshly-spawned `MenuItem` so it
+/// receives `Interaction` updates for mouse + touch hit-testing. One-shot
+/// fix-up — runs every frame but only writes to entities that don't yet
+/// have a `Button`. Cheap.
+pub(crate) fn ensure_menu_items_interactive(
+    mut commands: Commands,
+    items: Query<Entity, (With<MenuItem>, Without<Button>)>,
+) {
+    for entity in &items {
+        commands.entity(entity).insert(Button);
+    }
+}
+
+/// Tap or click on a `MenuItem` → set `MenuSelection.index` to that item
+/// and synthesize a confirm-button press for one frame so the existing
+/// menu input handlers fire with the freshly-clicked index. Mobile and
+/// desktop both flow through this — desktop gets click-to-go for free.
+pub(crate) fn handle_menu_item_taps(
+    mut selection: ResMut<MenuSelection>,
+    mut joystick: ResMut<JoystickState>,
+    items: Query<(&MenuItem, &Interaction), Changed<Interaction>>,
+) {
+    for (item, interaction) in &items {
+        if matches!(interaction, Interaction::Pressed) {
+            selection.index = item.index;
+            joystick.buttons[0] = true;
+        }
+    }
+}
+
 /// Marker for selected menu item highlight
 #[derive(Component)]
 pub(crate) struct SelectionIndicator;
