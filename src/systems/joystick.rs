@@ -418,7 +418,7 @@ fn detect_gamepad(
 }
 
 /// Poll Bevy's gamepad state and write to JoystickState
-fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
+pub(super) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
     // Save previous state for edge detection
     state.prev_buttons = state.buttons;
     state.prev_dpad_x = state.dpad_x;

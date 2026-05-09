@@ -40,10 +40,22 @@ struct VirtualStick {
     offset: Vec2,
 }
 
+#[derive(Default, Debug, Clone, Copy)]
+struct TapCandidate {
+    touch_id: u64,
+    start_pos: Vec2,
+    start_time: f32,
+}
+
 #[derive(Resource, Default, Debug)]
 pub struct TouchJoystickState {
     left: VirtualStick,
     right: VirtualStick,
+    /// In-flight tap candidates — added on touch-down outside stick
+    /// zones, removed when released or when displacement exceeds the
+    /// tap threshold. Released candidates within thresholds emit a
+    /// confirm-button press for one frame.
+    pending_taps: Vec<TapCandidate>,
 }
 
 /// Marker components for the joystick UI nodes.
@@ -66,6 +78,13 @@ const STICK_DEAD_PX: f32 = 6.0;
 const STICK_INSET_PX: f32 = 96.0;
 /// Threshold below which a viewport is treated as mobile.
 const MOBILE_VIEWPORT_PX: f32 = 1024.0;
+/// Touches that land at or above this fraction of the viewport height
+/// belong to the stick zones; touches above it are tap candidates.
+const STICK_ZONE_TOP_FRAC: f32 = 0.55;
+/// Maximum displacement for a tap to count as a tap (not a drag), px.
+const TAP_MAX_TRAVEL_PX: f32 = 28.0;
+/// Maximum duration for a tap (seconds).
+const TAP_MAX_DURATION_S: f32 = 0.32;
 
 pub struct TouchJoystickPlugin;
 
@@ -75,9 +94,13 @@ impl Plugin for TouchJoystickPlugin {
             .init_resource::<TouchJoystickState>()
             .add_systems(Startup, (detect_mobile_mode, spawn_joystick_ui).chain())
             // Touch → JoystickState runs in PreUpdate AFTER gamepad
-            // polling so touch wins on mobile (where there's typically
-            // no gamepad) but doesn't disrupt desktop builds.
-            .add_systems(PreUpdate, update_touch_joystick)
+            // polling so (a) touch wins on mobile, and (b) prev_buttons
+            // is snapshotted before we synthesize a confirm press —
+            // otherwise just_pressed() never fires.
+            .add_systems(
+                PreUpdate,
+                update_touch_joystick.after(super::joystick::poll_gamepad),
+            )
             .add_systems(Update, update_knob_positions);
     }
 }
@@ -189,9 +212,15 @@ fn update_touch_joystick(
     mobile: Res<MobileMode>,
     touches: Res<Touches>,
     windows: Query<&Window>,
+    time: Res<Time>,
     mut sticks: ResMut<TouchJoystickState>,
     mut joystick: ResMut<JoystickState>,
 ) {
+    // We always reset confirm-button-state every frame — even when
+    // mobile mode is off — so a stale press from a prior frame can't
+    // linger.
+    joystick.buttons[0] = false;
+
     if !mobile.active {
         return;
     }
@@ -199,23 +228,59 @@ fn update_touch_joystick(
         return;
     };
     let mid_x = window.width() * 0.5;
+    let stick_zone_top = window.height() * STICK_ZONE_TOP_FRAC;
+    let now = time.elapsed_secs();
 
-    // Step 1 — claim newly-pressed touches based on which half they
-    // landed in. A touch can only claim a stick if that side is free.
+    // Step 1 — classify newly-pressed touches: stick claim vs. tap candidate.
     for touch in touches.iter_just_pressed() {
         let pos = touch.position();
         let id = touch.id();
-        if pos.x < mid_x {
-            if sticks.left.touch_id.is_none() {
-                sticks.left.touch_id = Some(id);
-                sticks.left.anchor = pos;
-                sticks.left.offset = Vec2::ZERO;
+        if pos.y >= stick_zone_top {
+            // Bottom band of the screen — claim the matching stick.
+            if pos.x < mid_x {
+                if sticks.left.touch_id.is_none() {
+                    sticks.left.touch_id = Some(id);
+                    sticks.left.anchor = pos;
+                    sticks.left.offset = Vec2::ZERO;
+                }
+            } else if sticks.right.touch_id.is_none() {
+                sticks.right.touch_id = Some(id);
+                sticks.right.anchor = pos;
+                sticks.right.offset = Vec2::ZERO;
             }
-        } else if sticks.right.touch_id.is_none() {
-            sticks.right.touch_id = Some(id);
-            sticks.right.anchor = pos;
-            sticks.right.offset = Vec2::ZERO;
+        } else {
+            // Upper region — pending tap candidate.
+            sticks.pending_taps.push(TapCandidate {
+                touch_id: id,
+                start_pos: pos,
+                start_time: now,
+            });
         }
+    }
+
+    // Step 1b — resolve pending taps: drop dragged/timed-out candidates,
+    // emit a confirm-button press for ones that released within thresholds.
+    let mut confirm_fired = false;
+    sticks.pending_taps.retain(|c| {
+        if let Some(touch) = touches.get_pressed(c.touch_id) {
+            // Still held — keep if within travel + duration thresholds.
+            let travel = (touch.position() - c.start_pos).length();
+            let duration = now - c.start_time;
+            travel < TAP_MAX_TRAVEL_PX && duration < TAP_MAX_DURATION_S
+        } else {
+            // Released or canceled — see if it counts as a tap.
+            // We only have access to the original press position; fall
+            // back to "not yet exceeded thresholds while held".
+            let duration = now - c.start_time;
+            if duration < TAP_MAX_DURATION_S {
+                confirm_fired = true;
+            }
+            // Drop the candidate either way.
+            false
+        }
+    });
+    if confirm_fired {
+        joystick.buttons[0] = true;
     }
 
     // Step 2 — update tracked-touch offsets, drop released touches.
