@@ -18,6 +18,7 @@
 
 #![allow(dead_code)]
 
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 
 use super::joystick::JoystickState;
@@ -68,6 +69,11 @@ struct LeftStickKnob;
 struct RightStickBase;
 #[derive(Component)]
 struct RightStickKnob;
+/// FPS overlay (mobile-only, top-left corner). Diagnostic for the
+/// freeze reports — lets the player report what FPS they see when
+/// the game appears to stall.
+#[derive(Component)]
+struct FpsOverlay;
 
 /// Stick visual radius in pixels — also the maximum knob displacement.
 const STICK_RADIUS_PX: f32 = 64.0;
@@ -93,7 +99,12 @@ impl Plugin for TouchJoystickPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MobileMode>()
             .init_resource::<TouchJoystickState>()
-            .add_systems(Startup, (detect_mobile_mode, spawn_joystick_ui).chain())
+            // Frame-time diagnostics for the mobile FPS overlay.
+            .add_plugins(FrameTimeDiagnosticsPlugin::default())
+            .add_systems(
+                Startup,
+                (detect_mobile_mode, spawn_joystick_ui, spawn_fps_overlay).chain(),
+            )
             // Touch → JoystickState runs in PreUpdate AFTER gamepad
             // polling so (a) touch wins on mobile, and (b) prev_buttons
             // is snapshotted before we synthesize a confirm press —
@@ -102,7 +113,14 @@ impl Plugin for TouchJoystickPlugin {
                 PreUpdate,
                 update_touch_joystick.after(super::joystick::poll_gamepad),
             )
-            .add_systems(Update, (update_stick_visibility, update_knob_positions));
+            .add_systems(
+                Update,
+                (
+                    update_stick_visibility,
+                    update_knob_positions,
+                    update_fps_overlay,
+                ),
+            );
     }
 }
 
@@ -403,6 +421,47 @@ fn update_knob_positions(
     if let Ok(mut node) = right.get_single_mut() {
         node.left = Val::Px(center_inset + sticks.right.offset.x);
         node.top = Val::Px(center_inset + sticks.right.offset.y);
+    }
+}
+
+/// Spawn the mobile FPS overlay (top-left, behind nothing). Diagnostic
+/// only — lets the player report what FPS they observe when the game
+/// appears to stall.
+fn spawn_fps_overlay(mut commands: Commands, mobile: Res<MobileMode>) {
+    if !mobile.active {
+        return;
+    }
+    commands.spawn((
+        FpsOverlay,
+        Text::new("-- fps"),
+        TextFont {
+            font_size: 12.0,
+            ..default()
+        },
+        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.55)),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(8.0),
+            left: Val::Px(8.0),
+            ..default()
+        },
+        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.5)),
+        ZIndex(2000),
+    ));
+}
+
+fn update_fps_overlay(
+    diagnostics: Res<DiagnosticsStore>,
+    mut q: Query<&mut Text, With<FpsOverlay>>,
+) {
+    let Ok(mut text) = q.get_single_mut() else {
+        return;
+    };
+    if let Some(fps) = diagnostics
+        .get(&FrameTimeDiagnosticsPlugin::FPS)
+        .and_then(|d| d.smoothed())
+    {
+        **text = format!("{:.0} fps", fps);
     }
 }
 

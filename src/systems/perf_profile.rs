@@ -39,15 +39,19 @@ impl PerfProfile {
     }
 
     pub const fn mobile() -> Self {
+        // Aggressive cuts — first round at 30% of desktop didn't fully
+        // resolve mid-combat freezes on iPhone. Going to ~10% of desktop
+        // for the brutal-mode pass. Combat will look thinner; if the
+        // freeze stops, we walk it back up to a comfortable middle.
         Self {
-            explosion_particles: 150,
-            engine_particles: 60,
-            damage_layer_particles: 30,
-            shield_ripples: 6,
-            speed_lines: 10,
-            aura_particles: 5,
-            trail_particles: 90,
-            pickup_particles: 30,
+            explosion_particles: 60,
+            engine_particles: 25,
+            damage_layer_particles: 12,
+            shield_ripples: 3,
+            speed_lines: 4,
+            aura_particles: 3,
+            trail_particles: 35,
+            pickup_particles: 12,
         }
     }
 }

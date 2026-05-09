@@ -5,7 +5,10 @@
 use super::common::*;
 use bevy::prelude::*;
 
-pub fn spawn_hud(mut commands: Commands) {
+pub fn spawn_hud(
+    mut commands: Commands,
+    mobile: Res<crate::systems::touch_joystick::MobileMode>,
+) {
     commands
         .spawn((
             HudRoot,
@@ -386,36 +389,60 @@ pub fn spawn_hud(mut commands: Commands) {
         });
 
     // === DIALOGUE BOX (separate from HUD root for positioning) ===
+    // Mobile reads the screen as portrait, so the desktop "bottom-center"
+    // position obscures the entire play area. On mobile we pin it to the
+    // top, slim it down, and skip the portrait so the player can keep
+    // sight of their ship.
+    let dialogue_node = if mobile.active {
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(60.0),
+            left: Val::Percent(4.0),
+            width: Val::Percent(92.0),
+            height: Val::Auto,
+            flex_direction: FlexDirection::Column,
+            align_items: AlignItems::FlexStart,
+            padding: UiRect::all(Val::Px(8.0)),
+            row_gap: Val::Px(2.0),
+            display: Display::None,
+            ..default()
+        }
+    } else {
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: Val::Px(120.0),
+            left: Val::Percent(15.0),
+            width: Val::Percent(70.0),
+            height: Val::Auto,
+            flex_direction: FlexDirection::Row,
+            align_items: AlignItems::FlexStart,
+            padding: UiRect::all(Val::Px(15.0)),
+            column_gap: Val::Px(15.0),
+            display: Display::None,
+            ..default()
+        }
+    };
     commands
         .spawn((
             DialogueContainer,
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(120.0),
-                left: Val::Percent(15.0),
-                width: Val::Percent(70.0),
-                height: Val::Auto,
-                flex_direction: FlexDirection::Row,
-                align_items: AlignItems::FlexStart,
-                padding: UiRect::all(Val::Px(15.0)),
-                column_gap: Val::Px(15.0),
-                display: Display::None, // Hidden by default
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.05, 0.05, 0.1, 0.9)),
+            dialogue_node,
+            BackgroundColor(Color::srgba(0.05, 0.05, 0.1, 0.85)),
             BorderRadius::all(Val::Px(8.0)),
         ))
         .with_children(|dialogue| {
-            // Elder portrait placeholder (rust-colored square)
-            dialogue.spawn((
-                Node {
-                    width: Val::Px(64.0),
-                    height: Val::Px(64.0),
-                    ..default()
-                },
-                BackgroundColor(Color::srgb(0.6, 0.35, 0.2)), // Rust/bronze color for Minmatar
-                BorderRadius::all(Val::Px(4.0)),
-            ));
+            // Elder portrait placeholder (rust-colored square) — skipped
+            // on mobile to keep the dialogue box compact.
+            if !mobile.active {
+                dialogue.spawn((
+                    Node {
+                        width: Val::Px(64.0),
+                        height: Val::Px(64.0),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgb(0.6, 0.35, 0.2)), // Rust/bronze color for Minmatar
+                    BorderRadius::all(Val::Px(4.0)),
+                ));
+            }
 
             // Text container
             dialogue
