@@ -396,7 +396,10 @@ pub fn spawn_hud(
     let dialogue_node = if mobile.active {
         Node {
             position_type: PositionType::Absolute,
-            top: Val::Px(60.0),
+            // 200px clears the score / wave / objective header block;
+            // 60px overlapped it. Still in the upper third of the screen
+            // so it doesn't cover the player's ship in the lower third.
+            top: Val::Px(200.0),
             left: Val::Percent(4.0),
             width: Val::Percent(92.0),
             height: Val::Auto,
