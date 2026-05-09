@@ -217,6 +217,7 @@ fn update_touch_joystick(
     state: Res<State<GameState>>,
     mut sticks: ResMut<TouchJoystickState>,
     mut joystick: ResMut<JoystickState>,
+    mut last_state: Local<Option<GameState>>,
 ) {
     // Always reset confirm-button-state every frame so a stale press
     // can't linger when no gamepad is filling JoystickState.
@@ -224,6 +225,21 @@ fn update_touch_joystick(
 
     if !mobile.active {
         return;
+    }
+
+    // On state change, drop pending tap candidates and reset stick
+    // claims. Otherwise a touch held down during the previous screen
+    // can fire confirm on the new screen the instant it's released.
+    let current = *state.get();
+    let state_changed = match *last_state {
+        Some(prev) => prev != current,
+        None => true,
+    };
+    *last_state = Some(current);
+    if state_changed {
+        sticks.pending_taps.clear();
+        sticks.left = VirtualStick::default();
+        sticks.right = VirtualStick::default();
     }
     let Ok(window) = windows.get_single() else {
         return;

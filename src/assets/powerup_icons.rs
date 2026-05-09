@@ -3,10 +3,7 @@
 //! Loads powerup icons from the assets/powerups directory.
 
 use bevy::prelude::*;
-use bevy::render::render_asset::RenderAssetUsages;
 use std::collections::HashMap;
-use std::fs;
-use std::path::PathBuf;
 
 use crate::core::CollectibleType;
 
@@ -56,21 +53,12 @@ fn get_icon_filename(collectible_type: &CollectibleType) -> Option<&'static str>
 }
 
 /// Load powerup icons from assets directory
-fn load_powerup_icons(mut cache: ResMut<PowerupIconCache>, mut images: ResMut<Assets<Image>>) {
-    // Construct path to powerups assets directory
-    let assets_dir = std::env::current_dir()
-        .unwrap_or_else(|_| PathBuf::from("."))
-        .join("assets")
-        .join("powerups");
-
-    if !assets_dir.exists() {
-        warn!("Powerup icons directory not found: {:?}", assets_dir);
-        return;
-    }
-
-    info!("Loading powerup icons from {:?}", assets_dir);
-
-    // Load each icon type
+/// Load powerup icons via Bevy's AssetServer. Works on both native and
+/// WASM — the previous implementation used `std::env::current_dir()`
+/// + `fs::read`, which silently fails on WASM (no filesystem). On the
+/// browser the icons rendered as colored placeholder rects because
+/// the cache was empty.
+fn load_powerup_icons(mut cache: ResMut<PowerupIconCache>, asset_server: Res<AssetServer>) {
     let types = [
         CollectibleType::ShieldBoost,
         CollectibleType::ArmorRepair,
@@ -89,47 +77,11 @@ fn load_powerup_icons(mut cache: ResMut<PowerupIconCache>, mut images: ResMut<As
 
     for collectible_type in types {
         if let Some(filename) = get_icon_filename(&collectible_type) {
-            let path = assets_dir.join(filename);
-            if path.exists() {
-                match load_image_file(&path) {
-                    Ok(image) => {
-                        let handle = images.add(image);
-                        cache.icons.insert(collectible_type, handle);
-                        info!("Loaded powerup icon: {}", filename);
-                    }
-                    Err(e) => {
-                        warn!("Failed to load powerup icon {}: {}", filename, e);
-                    }
-                }
-            } else {
-                warn!("Powerup icon not found: {:?}", path);
-            }
+            let path = format!("powerups/{}", filename);
+            let handle: Handle<Image> = asset_server.load(&path);
+            cache.icons.insert(collectible_type, handle);
         }
     }
 
-    info!("Loaded {} powerup icons", cache.icons.len());
-}
-
-/// Load an image file and convert to Bevy Image
-fn load_image_file(path: &PathBuf) -> Result<Image, String> {
-    let bytes = fs::read(path).map_err(|e| e.to_string())?;
-
-    let img = image::load_from_memory(&bytes)
-        .map_err(|e| e.to_string())?
-        .into_rgba8();
-
-    let (width, height) = img.dimensions();
-    let data = img.into_raw();
-
-    Ok(Image::new(
-        bevy::render::render_resource::Extent3d {
-            width,
-            height,
-            depth_or_array_layers: 1,
-        },
-        bevy::render::render_resource::TextureDimension::D2,
-        data,
-        bevy::render::render_resource::TextureFormat::Rgba8UnormSrgb,
-        RenderAssetUsages::RENDER_WORLD,
-    ))
+    info!("Queued {} powerup icons for load via AssetServer", cache.icons.len());
 }

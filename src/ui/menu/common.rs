@@ -42,11 +42,36 @@ pub(crate) fn ensure_menu_items_interactive(
 /// and synthesize a confirm-button press for one frame so the existing
 /// menu input handlers fire with the freshly-clicked index. Mobile and
 /// desktop both flow through this — desktop gets click-to-go for free.
+///
+/// Debounce: after a `GameState` change, a touch that was already down
+/// during the previous screen will fire `Interaction::Pressed` on the
+/// just-spawned default item of the next screen, auto-confirming it.
+/// Suppress all tap-confirms for ~250ms after a state change.
 pub(crate) fn handle_menu_item_taps(
+    state: Res<State<GameState>>,
     mut selection: ResMut<MenuSelection>,
     mut joystick: ResMut<JoystickState>,
     items: Query<(&MenuItem, &Interaction), Changed<Interaction>>,
+    mut last_state: Local<Option<GameState>>,
 ) {
+    let current = *state.get();
+    let state_changed = match *last_state {
+        Some(prev) => prev != current,
+        None => true,
+    };
+    *last_state = Some(current);
+
+    if state_changed {
+        // Force a quarter-second debounce so a finger held during the
+        // previous screen can't immediately auto-fire the new screen's
+        // default item.
+        selection.cooldown = selection.cooldown.max(0.25);
+        return;
+    }
+    if selection.cooldown > 0.0 {
+        return;
+    }
+
     for (item, interaction) in &items {
         if matches!(interaction, Interaction::Pressed) {
             selection.index = item.index;
