@@ -59,10 +59,10 @@ pub fn spawn_bullet_trails(
     time: Res<Time>,
     mut query: Query<(&Transform, &mut BulletTrail)>,
     particle_count: Query<&BulletTrailParticle>,
+    profile: Res<crate::systems::perf_profile::PerfProfile>,
 ) {
     // Cap trail particles to avoid performance issues
-    const MAX_TRAIL_PARTICLES: usize = 300;
-    if particle_count.iter().count() >= MAX_TRAIL_PARTICLES {
+    if particle_count.iter().count() >= profile.trail_particles {
         return;
     }
 

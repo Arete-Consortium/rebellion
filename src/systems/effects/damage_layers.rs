@@ -2,13 +2,8 @@
 
 use super::screen_effects::ScreenShake;
 use crate::core::*;
+use crate::systems::perf_profile::PerfProfile;
 use bevy::prelude::*;
-
-/// Maximum damage layer particles
-const MAX_DAMAGE_LAYER_PARTICLES: usize = 100;
-
-/// Maximum shield ripple effects at once
-const MAX_SHIELD_RIPPLES: usize = 15;
 
 /// Shield impact ripple - hexagonal expanding ring
 #[derive(Component)]
@@ -43,6 +38,7 @@ pub fn handle_damage_layer_events(
     spark_query: Query<&ArmorSpark>,
     ripple_query: Query<&ShieldRipple>,
     mut screen_shake: ResMut<ScreenShake>,
+    profile: Res<PerfProfile>,
 ) {
     let current_sparks = spark_query.iter().count();
     let current_ripples = ripple_query.iter().count();
@@ -51,12 +47,12 @@ pub fn handle_damage_layer_events(
         match event.layer {
             DamageLayer::Shield => {
                 // Cap shield ripples to prevent lag during sustained fire
-                if current_ripples < MAX_SHIELD_RIPPLES {
+                if current_ripples < profile.shield_ripples {
                     spawn_shield_ripple(&mut commands, event.position, event.direction);
                 }
             }
             DamageLayer::Armor => {
-                if current_sparks < MAX_DAMAGE_LAYER_PARTICLES {
+                if current_sparks < profile.damage_layer_particles {
                     spawn_armor_sparks(
                         &mut commands,
                         event.position,

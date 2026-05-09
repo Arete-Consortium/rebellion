@@ -35,9 +35,9 @@ pub use trails::*;
 use crate::core::GameState;
 use bevy::prelude::*;
 
-/// Maximum particles to prevent slowdown during intense combat
-pub const MAX_EXPLOSION_PARTICLES: usize = 500;
-pub const MAX_ENGINE_PARTICLES: usize = 200;
+// Particle caps moved to systems::perf_profile::PerfProfile so they can
+// scale down on mobile. Desktop = 500 explosion / 200 engine; mobile =
+// 150 / 60. See src/systems/perf_profile.rs.
 
 /// Effects plugin
 pub struct EffectsPlugin;

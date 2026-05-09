@@ -1,7 +1,7 @@
 //! Explosion particle effects
 
-use super::MAX_EXPLOSION_PARTICLES;
 use crate::core::*;
+use crate::systems::perf_profile::PerfProfile;
 use bevy::prelude::*;
 
 /// Explosion particle
@@ -41,13 +41,14 @@ pub fn handle_explosion_events(
     mut events: EventReader<ExplosionEvent>,
     particle_query: Query<&ExplosionParticle>,
     mut rumble_events: EventWriter<crate::systems::joystick::RumbleRequest>,
+    profile: Res<PerfProfile>,
 ) {
     let current_count = particle_query.iter().count();
     let mut spawned = 0;
 
     for event in events.read() {
         // Check particle cap before spawning
-        if current_count + spawned < MAX_EXPLOSION_PARTICLES {
+        if current_count + spawned < profile.explosion_particles {
             let new_count =
                 spawn_explosion_capped(&mut commands, event.position, &event.size, event.color);
             spawned += new_count;

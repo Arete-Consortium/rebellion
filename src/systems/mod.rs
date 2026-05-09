@@ -12,6 +12,7 @@ pub mod effects;
 pub mod joystick;
 pub mod maneuvers;
 pub mod music;
+pub mod perf_profile;
 pub mod scoring;
 pub mod scoring_v2;
 pub mod spawning;
@@ -52,6 +53,7 @@ impl Plugin for SystemsPlugin {
             EffectsPlugin,
             JoystickPlugin,
             touch_joystick::TouchJoystickPlugin,
+            perf_profile::PerfProfilePlugin,
             BossPlugin,
             DialoguePlugin,
             AudioPlugin,

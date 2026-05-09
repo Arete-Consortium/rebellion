@@ -2,6 +2,7 @@
 
 use crate::core::*;
 use crate::entities::{Player, PowerupEffects};
+use crate::systems::perf_profile::PerfProfile;
 use bevy::prelude::*;
 
 /// Golden hexagonal shield bubble for invulnerability
@@ -44,6 +45,7 @@ pub fn update_active_buff_visuals(
     >,
     speed_line_query: Query<&OverdriveSpeedLine>,
     aura_query: Query<&DamageBoostAura>,
+    profile: Res<PerfProfile>,
 ) {
     let dt = time.delta_secs();
     let elapsed = time.elapsed_secs();
@@ -120,9 +122,8 @@ pub fn update_active_buff_visuals(
     if effects.is_overdrive() {
         // Spawn speed lines behind player
         let current_lines = speed_line_query.iter().count();
-        const MAX_SPEED_LINES: usize = 30;
 
-        if current_lines < MAX_SPEED_LINES && fastrand::f32() < 0.6 {
+        if current_lines < profile.speed_lines && fastrand::f32() < 0.6 {
             // Spawn at random position behind player
             let offset_x = (fastrand::f32() - 0.5) * 40.0;
             let offset_y = -30.0 - fastrand::f32() * 20.0;
@@ -152,9 +153,8 @@ pub fn update_active_buff_visuals(
     if effects.is_damage_boosted() {
         // Spawn orbiting particles
         let current_aura = aura_query.iter().count();
-        const MAX_AURA_PARTICLES: usize = 12;
 
-        if current_aura < MAX_AURA_PARTICLES && fastrand::f32() < 0.3 {
+        if current_aura < profile.aura_particles && fastrand::f32() < 0.3 {
             let angle = fastrand::f32() * std::f32::consts::TAU;
             let radius = 35.0 + fastrand::f32() * 15.0;
             let lifetime = 0.5 + fastrand::f32() * 0.3;

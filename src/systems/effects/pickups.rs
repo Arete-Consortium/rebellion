@@ -3,10 +3,8 @@
 use super::screen_effects::{ScreenFlash, ScreenShake};
 use crate::core::*;
 use crate::entities::collectible::Rarity;
+use crate::systems::perf_profile::PerfProfile;
 use bevy::prelude::*;
-
-/// Maximum pickup effect particles at once
-const MAX_PICKUP_PARTICLES: usize = 100;
 
 /// Pickup flash - instant bright burst at collection point
 #[derive(Component)]
@@ -41,6 +39,7 @@ pub fn handle_pickup_effect_events(
     particle_query: Query<&PickupParticle>,
     mut screen_shake: ResMut<ScreenShake>,
     mut screen_flash: ResMut<ScreenFlash>,
+    profile: Res<PerfProfile>,
 ) {
     let current_particles = particle_query.iter().count();
 
@@ -48,7 +47,7 @@ pub fn handle_pickup_effect_events(
         let rarity = Rarity::for_collectible(event.collectible_type);
 
         // Only spawn particles if under cap (always spawn flash/shockwave for feedback)
-        if current_particles < MAX_PICKUP_PARTICLES {
+        if current_particles < profile.pickup_particles {
             spawn_pickup_effects(&mut commands, event.position, event.color, rarity);
         }
 
