@@ -15,6 +15,7 @@ pub mod music;
 pub mod scoring;
 pub mod scoring_v2;
 pub mod spawning;
+pub mod touch_joystick;
 pub mod wav_encoder;
 
 pub use ability::*;
@@ -30,6 +31,8 @@ pub use music::*;
 pub use scoring::*;
 pub use scoring_v2::*;
 pub use spawning::*;
+// touch_joystick intentionally not glob-re-exported — its public items
+// are accessed via `crate::systems::touch_joystick::...` if needed.
 
 use bevy::prelude::*;
 
@@ -48,6 +51,7 @@ impl Plugin for SystemsPlugin {
             ScoringSystemPlugin,
             EffectsPlugin,
             JoystickPlugin,
+            touch_joystick::TouchJoystickPlugin,
             BossPlugin,
             DialoguePlugin,
             AudioPlugin,
