@@ -95,10 +95,11 @@ fn draw_capacitor_wheel(
     // rather than on top of either stick.
     let wheel_radius = 38.0;
     let (center_x, center_y) = if mobile.active {
-        // Joysticks anchor 96px from each bottom corner with 64px radius —
-        // centering horizontally + offsetting up ~150px from the bottom
-        // puts the wheel above the stick gap.
-        (window.width() * 0.5, window.height() - 150.0)
+        // Sit in the horizontal gap between the two joysticks, at the
+        // same vertical level as the stick centers (96px from bottom).
+        // Wheel radius is 38px, joysticks anchor 96px in from each side
+        // so there's ~200-280px of clear horizontal space in the middle.
+        (window.width() * 0.5, window.height() - 96.0)
     } else {
         (window.width() - 70.0, window.height() - 55.0)
     };
