@@ -234,11 +234,16 @@ fn spawn_act_row(
                 TextColor(act_color),
             ));
 
-            // Stage cards row
+            // Stage cards row — flex-wrap so the 5-card act fits on
+            // narrow portrait phones (375px) without clipping.
             act_col
                 .spawn(Node {
                     flex_direction: FlexDirection::Row,
-                    column_gap: Val::Px(12.0),
+                    flex_wrap: FlexWrap::Wrap,
+                    justify_content: JustifyContent::Center,
+                    column_gap: Val::Px(10.0),
+                    row_gap: Val::Px(10.0),
+                    max_width: Val::Percent(94.0),
                     ..default()
                 })
                 .with_children(|row| {
@@ -279,14 +284,16 @@ fn spawn_stage_card(parent: &mut ChildBuilder, stage: &StageInfo, locked: bool, 
                 locked,
             },
             Node {
-                width: Val::Px(130.0),
-                height: Val::Px(100.0),
+                // Smaller cards so a 5-card act wraps to 3+2 on a 375px
+                // portrait viewport (3 × 105 + 2 × 10 = 335px).
+                width: Val::Px(105.0),
+                height: Val::Px(82.0),
                 flex_direction: FlexDirection::Column,
                 align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center,
-                padding: UiRect::all(Val::Px(8.0)),
+                padding: UiRect::all(Val::Px(6.0)),
                 border: UiRect::all(Val::Px(2.0)),
-                row_gap: Val::Px(4.0),
+                row_gap: Val::Px(3.0),
                 ..default()
             },
             BackgroundColor(bg_color),

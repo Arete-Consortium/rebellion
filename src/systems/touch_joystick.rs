@@ -21,6 +21,7 @@
 use bevy::prelude::*;
 
 use super::joystick::JoystickState;
+use crate::core::GameState;
 
 /// Auto-detected at startup. False on native builds, false on desktop
 /// browsers, true on touch-capable browsers with small viewports.
@@ -101,7 +102,7 @@ impl Plugin for TouchJoystickPlugin {
                 PreUpdate,
                 update_touch_joystick.after(super::joystick::poll_gamepad),
             )
-            .add_systems(Update, update_knob_positions);
+            .add_systems(Update, (update_stick_visibility, update_knob_positions));
     }
 }
 
@@ -213,12 +214,12 @@ fn update_touch_joystick(
     touches: Res<Touches>,
     windows: Query<&Window>,
     time: Res<Time>,
+    state: Res<State<GameState>>,
     mut sticks: ResMut<TouchJoystickState>,
     mut joystick: ResMut<JoystickState>,
 ) {
-    // We always reset confirm-button-state every frame — even when
-    // mobile mode is off — so a stale press from a prior frame can't
-    // linger.
+    // Always reset confirm-button-state every frame so a stale press
+    // can't linger when no gamepad is filling JoystickState.
     joystick.buttons[0] = false;
 
     if !mobile.active {
@@ -227,16 +228,36 @@ fn update_touch_joystick(
     let Ok(window) = windows.get_single() else {
         return;
     };
+    // Sticks only claim screen real estate during active gameplay. In
+    // menus, the entire viewport is a tap zone — no stick logic, no
+    // y-coordinate gating, and the LEFT/RIGHT stick axes get zeroed.
+    let gameplay = matches!(state.get(), GameState::Playing | GameState::BossFight);
     let mid_x = window.width() * 0.5;
-    let stick_zone_top = window.height() * STICK_ZONE_TOP_FRAC;
+    let stick_zone_top = if gameplay {
+        window.height() * STICK_ZONE_TOP_FRAC
+    } else {
+        f32::INFINITY // no stick zone in menus
+    };
     let now = time.elapsed_secs();
+
+    if !gameplay {
+        // Drop any stale stick claims so a finger held from gameplay
+        // doesn't keep writing axes after a state transition.
+        sticks.left = VirtualStick::default();
+        sticks.right = VirtualStick::default();
+        joystick.left_x = 0.0;
+        joystick.left_y = 0.0;
+        joystick.right_x = 0.0;
+        joystick.right_y = 0.0;
+        joystick.right_trigger = 0.0;
+    }
 
     // Step 1 — classify newly-pressed touches: stick claim vs. tap candidate.
     for touch in touches.iter_just_pressed() {
         let pos = touch.position();
         let id = touch.id();
         if pos.y >= stick_zone_top {
-            // Bottom band of the screen — claim the matching stick.
+            // Bottom band of the screen during gameplay — claim a stick.
             if pos.x < mid_x {
                 if sticks.left.touch_id.is_none() {
                     sticks.left.touch_id = Some(id);
@@ -249,7 +270,8 @@ fn update_touch_joystick(
                 sticks.right.offset = Vec2::ZERO;
             }
         } else {
-            // Upper region — pending tap candidate.
+            // In menus this branch is hit by every touch (no stick zone).
+            // In gameplay it's hit only by upper-screen taps.
             sticks.pending_taps.push(TapCandidate {
                 touch_id: id,
                 start_pos: pos,
@@ -306,23 +328,48 @@ fn update_touch_joystick(
 
     // Step 3 — translate to JoystickState. Bevy convention: up = +1.0,
     // but touch.position().y grows downward. Negate Y on output.
-    let to_unit = |offset: Vec2| -> Vec2 {
-        if offset.length() < STICK_DEAD_PX {
-            return Vec2::ZERO;
-        }
-        let dir = offset / STICK_RADIUS_PX;
-        Vec2::new(dir.x.clamp(-1.0, 1.0), (-dir.y).clamp(-1.0, 1.0))
-    };
-    let left = to_unit(sticks.left.offset);
-    let right = to_unit(sticks.right.offset);
+    // Skipped entirely outside gameplay so menu input doesn't write
+    // ghost stick axes (we already zeroed them above).
+    if gameplay {
+        let to_unit = |offset: Vec2| -> Vec2 {
+            if offset.length() < STICK_DEAD_PX {
+                return Vec2::ZERO;
+            }
+            let dir = offset / STICK_RADIUS_PX;
+            Vec2::new(dir.x.clamp(-1.0, 1.0), (-dir.y).clamp(-1.0, 1.0))
+        };
+        let left = to_unit(sticks.left.offset);
+        let right = to_unit(sticks.right.offset);
 
-    joystick.left_x = left.x;
-    joystick.left_y = left.y;
-    joystick.right_x = right.x;
-    joystick.right_y = right.y;
-    // Right stick engaged → fire. Aim direction is read from
-    // (right_x, right_y) by the existing player_shooting system.
-    joystick.right_trigger = if right.length() > 0.18 { 1.0 } else { 0.0 };
+        joystick.left_x = left.x;
+        joystick.left_y = left.y;
+        joystick.right_x = right.x;
+        joystick.right_y = right.y;
+        // Right stick engaged → fire. Aim direction is read from
+        // (right_x, right_y) by the existing player_shooting system.
+        joystick.right_trigger = if right.length() > 0.18 { 1.0 } else { 0.0 };
+    }
+}
+
+/// Hide stick UI in non-gameplay states so menus get the full screen.
+fn update_stick_visibility(
+    state: Res<State<GameState>>,
+    mut bases: Query<
+        &mut Visibility,
+        Or<(With<LeftStickBase>, With<RightStickBase>)>,
+    >,
+) {
+    let gameplay = matches!(state.get(), GameState::Playing | GameState::BossFight);
+    let target = if gameplay {
+        Visibility::Inherited
+    } else {
+        Visibility::Hidden
+    };
+    for mut vis in bases.iter_mut() {
+        if *vis != target {
+            *vis = target;
+        }
+    }
 }
 
 /// Move each stick's knob to mirror its current offset.
