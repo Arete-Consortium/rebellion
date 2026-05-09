@@ -76,6 +76,7 @@ fn draw_capacitor_wheel(
     heat_system: Res<ComboHeatSystem>,
     anim: Res<CapacitorAnimation>,
     windows: Query<&Window>,
+    mobile: Res<crate::systems::touch_joystick::MobileMode>,
 ) {
     let Ok((stats, movement)) = player_query.get_single() else {
         return;
@@ -89,10 +90,18 @@ fn draw_capacitor_wheel(
         return;
     };
 
-    // Position at bottom RIGHT corner
-    let wheel_radius = 38.0; // 30% smaller (was 55)
-    let center_x = window.width() - 70.0; // Right side
-    let center_y = window.height() - 55.0;
+    // Position: desktop = bottom-right corner; mobile = centered between
+    // the two virtual joysticks, lifted ~50px so it sits above them
+    // rather than on top of either stick.
+    let wheel_radius = 38.0;
+    let (center_x, center_y) = if mobile.active {
+        // Joysticks anchor 96px from each bottom corner with 64px radius —
+        // centering horizontally + offsetting up ~150px from the bottom
+        // puts the wheel above the stick gap.
+        (window.width() * 0.5, window.height() - 150.0)
+    } else {
+        (window.width() - 70.0, window.height() - 55.0)
+    };
 
     // Calculate percentages
     let shield_pct = (stats.shield / stats.max_shield).clamp(0.0, 1.0);
