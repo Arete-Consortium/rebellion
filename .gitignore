@@ -51,3 +51,15 @@ highscores.json
 
 # Orientation analyzer debug previews (regenerated via scripts/)
 assets/_orientation_preview/
+
+# Security: prevent secret files from being committed
+.env
+.env.local
+.envrc
+*.pem
+*.key
+id_rsa*
+id_ecdsa*
+id_ed25519*
+*.p12
+secrets.json
