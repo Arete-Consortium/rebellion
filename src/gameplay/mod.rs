@@ -9,8 +9,8 @@
 use bevy::prelude::*;
 
 use crate::core::{
-    CampaignState, CurrentStage, Difficulty, EndlessMode, GameProgress, GameSession,
-    SaltMinerSystem, ScoreSystem, SelectedShip, ShipUnlocks,
+    CampaignState, CurrentStage, Difficulty, EndlessMode, GameProgress, GameSession, SelectedShip,
+    ShipUnlocks,
 };
 use crate::entities::{DronePlugin, EnemyPlugin, PlayerPlugin, WingmanPlugin};
 use crate::systems::{
@@ -26,9 +26,7 @@ pub struct GameplayPlugin;
 
 impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ScoreSystem>()
-            .init_resource::<SaltMinerSystem>()
-            .init_resource::<GameProgress>()
+        app.init_resource::<GameProgress>()
             .init_resource::<Difficulty>()
             .init_resource::<SelectedShip>()
             .init_resource::<CurrentStage>()

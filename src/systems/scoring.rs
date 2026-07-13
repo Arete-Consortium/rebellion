@@ -13,15 +13,18 @@ pub struct ScoringPlugin;
 
 impl Plugin for ScoringPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ComboHeatSystem>().add_systems(
-            FixedUpdate,
-            (
-                update_score_system,
-                update_salt_miner_system,
-                update_combo_heat_system,
-            )
-                .run_if(in_state(GameState::Playing)),
-        );
+        app.init_resource::<ScoreSystem>()
+            .init_resource::<SaltMinerSystem>()
+            .init_resource::<ComboHeatSystem>()
+            .add_systems(
+                FixedUpdate,
+                (
+                    update_score_system,
+                    update_salt_miner_system,
+                    update_combo_heat_system,
+                )
+                    .run_if(in_state(GameState::Playing)),
+            );
     }
 }
 
