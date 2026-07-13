@@ -38,11 +38,11 @@ impl Plugin for SimulationPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SpatialGrid::new())
             .configure_sets(
-                Update,
+                FixedUpdate,
                 (CollisionPhase::Detection, CollisionPhase::Resolution).chain(),
             )
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     update_spatial_grid,
                     detect_player_projectile_hits,
@@ -53,7 +53,7 @@ impl Plugin for SimulationPlugin {
                     .run_if(in_state(crate::core::GameState::Playing)),
             )
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     resolve_player_projectile_damage,
                     resolve_enemy_projectile_damage,

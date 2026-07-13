@@ -163,7 +163,7 @@ pub struct ProjectilePlugin;
 impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<DisintegratorHeat>().add_systems(
-            Update,
+            FixedUpdate,
             (
                 spawn_player_projectiles,
                 seeking_projectile_update,
