@@ -1,10 +1,11 @@
 # Architecture Audit — Current State
 
-**Repository:** `Arete-Consortium/rebellion`  
-**Commit:** `121c431ecc623ddc153a134e56aff3c185715321`  
-**Date:** 2026-07-12  
-**Auditor:** Claude Code (Milestone 00)  
-**Status:** Baseline inventory — no code changes yet  
+**Repository:** `Arete-Consortium/rebellion`
+**Baseline Commit:** `121c431ecc623ddc153a134e56aff3c185715321`
+**Mission 1 Complete Commit:** `bc60c79`
+**Date:** 2026-07-12
+**Auditor:** Claude Code (Mission 1)
+**Status:** Mission 1 complete — six plugin boundaries established, `collision.rs` untangled  
 
 ---
 
@@ -27,7 +28,7 @@
 
 ---
 
-## 2. Plugin Inventory
+## 2. Plugin Inventory (Post-Mission 1)
 
 ```text
 main.rs
@@ -39,37 +40,46 @@ main.rs
     ├── SavePlugin
     ├── AnalyticsPlugin
     ├── AchievementPlugin
-    ├── AssetsPlugin
+    ├── ContentPlugin          ← was AssetsPlugin
+    │   └── (asset loading, caches)
     ├── GameEventsPlugin
-    ├── EntitiesPlugin
+    ├── SimulationPlugin       ← NEW
+    │   ├── SpatialGrid
+    │   ├── detect_collisions.rs   (ContactDetected events)
+    │   ├── resolve_damage.rs      (health math, burn, chain, pierce)
+    │   ├── resolve_deaths.rs        (health ≤ 0, EnemyDestroyedEvent)
+    │   ├── ProjectilePlugin
+    │   └── CollectiblePlugin
+    ├── GameplayPlugin         ← NEW
     │   ├── PlayerPlugin
     │   ├── EnemyPlugin
-    │   ├── ProjectilePlugin
-    │   ├── CollectiblePlugin
     │   ├── WingmanPlugin
-    │   └── DronePlugin
-    ├── SystemsPlugin
+    │   ├── DronePlugin
     │   ├── AbilityPlugin
-    │   ├── CollisionPlugin
     │   ├── SpawningPlugin
-    │   ├── ScoringPlugin          ← DUPLICATE AUTHORITY #1
-    │   ├── ScoringSystemPlugin      ← DUPLICATE AUTHORITY #2
-    │   ├── EffectsPlugin
-    │   ├── JoystickPlugin
-    │   ├── TouchJoystickPlugin
-    │   ├── PerfProfilePlugin
     │   ├── BossPlugin
-    │   ├── DialoguePlugin
+    │   ├── ManeuverPlugin
+    │   ├── CampaignPlugin
+    │   ├── ScoringPlugin          ← DUPLICATE AUTHORITY #1 (co-located)
+    │   ├── ScoringSystemPlugin      ← DUPLICATE AUTHORITY #2 (co-located)
+    │   └── combat_outcomes.rs     (score, salt miner, drops, game over)
+    ├── PresentationPlugin     ← NEW
+    │   ├── EffectsPlugin
     │   ├── AudioPlugin
     │   ├── MusicPlugin
-    │   ├── ManeuverPlugin
-    │   └── CampaignPlugin
-    ├── UiPlugin
-    │   ├── HudPlugin
-    │   ├── MenuPlugin
-    │   ├── CapacitorWheelPlugin
-    │   ├── BackgroundPlugin
-    │   └── TransitionPlugin
+    │   ├── DialoguePlugin
+    │   ├── UiPlugin
+    │   │   ├── HudPlugin
+    │   │   ├── MenuPlugin
+    │   │   ├── CapacitorWheelPlugin
+    │   │   ├── BackgroundPlugin
+    │   │   └── TransitionPlugin
+    │   └── combat_reactions.rs    (FX, screen shake, hit flash, damage numbers)
+    ├── PlatformPlugin         ← NEW
+    │   ├── JoystickPlugin
+    │   └── TouchJoystickPlugin
+    ├── DiagnosticsPlugin      ← NEW
+    │   └── PerfProfilePlugin
     └── GameModulesPlugin
         ├── ElderFleetPlugin
         ├── CaldariGallentePlugin
@@ -83,8 +93,8 @@ main.rs
 
 | Resource | Type | Writers | Readers | Target Plugin (Mission 1) |
 |----------|------|---------|---------|---------------------------|
-| `ScoreSystem` | `Resource` | `ScoringPlugin`, `ScoringSystemPlugin`, `collision.rs` | HUD, results screen | `GameplayPlugin` |
-| `SaltMinerSystem` | `Resource` | `collision.rs` | HUD | `GameplayPlugin` |
+| `ScoreSystem` | `Resource` | `ScoringPlugin`, `ScoringSystemPlugin`, `combat_outcomes.rs` | HUD, results screen | `GameplayPlugin` |
+| `SaltMinerSystem` | `Resource` | `combat_outcomes.rs` | HUD | `GameplayPlugin` |
 | `GameProgress` | `Resource` | Save, campaign, scoring | UI | `GameplayPlugin` |
 | `InputConfig` | `Resource` | Settings menu | Input systems | `PlatformPlugin` |
 | `AudioSettings` | `Resource` | Settings menu | Audio systems | `PresentationPlugin` |
@@ -95,11 +105,11 @@ main.rs
 | `CampaignState` | `Resource` | Campaign systems | UI | `GameplayPlugin` |
 | `GameSession` | `Resource` | Campaign, game over | UI, analytics | `GameplayPlugin` |
 | `EndlessMode` | `Resource` | Menu | Spawning | `GameplayPlugin` |
-| `SpatialGrid` | `Resource` | `CollisionPlugin` (clear+insert) | `CollisionPlugin` (query) | `SimulationPlugin` |
-| `ScreenShake` | `Resource` | `collision.rs` | Camera/effects | `PresentationPlugin` |
-| `ScreenFlash` | `Resource` | `collision.rs` | Camera/effects | `PresentationPlugin` |
-| `CameraZoom` | `Resource` | `collision.rs` | Camera | `PresentationPlugin` |
-| `HitStop` | `Resource` | `collision.rs` | Time/effects | `PresentationPlugin` |
+| `SpatialGrid` | `Resource` | `detect_collisions.rs` (clear+insert) | `resolve_damage.rs` (query) | `SimulationPlugin` |
+| `ScreenShake` | `Resource` | `combat_reactions.rs` | Camera/effects | `PresentationPlugin` |
+| `ScreenFlash` | `Resource` | `combat_reactions.rs` | Camera/effects | `PresentationPlugin` |
+| `CameraZoom` | `Resource` | `combat_reactions.rs` | Camera | `PresentationPlugin` |
+| `HitStop` | `Resource` | `combat_reactions.rs` | Time/effects | `PresentationPlugin` |
 | `JoystickState` | `Resource` | `JoystickPlugin` | Pause system, player | `PlatformPlugin` |
 
 **Components (selected — full inventory deferred to per-system pass):**
@@ -125,14 +135,36 @@ All systems currently run in `Update` unless noted.
 | (wingman AI) | `WingmanPlugin` | Wingman behavior | `GameplayPlugin` |
 | (drone AI) | `DronePlugin` | Drone behavior | `GameplayPlugin` |
 
-### 4.2 `SystemsPlugin` systems
+### 4.2 `SimulationPlugin` systems
 
-| System | Registers In | Description | Target Plugin |
-|--------|-------------|-------------|---------------|
-| `update_spatial_grid` | `CollisionPlugin` | Spatial partitioning | `SimulationPlugin` |
-| `player_projectile_enemy_collision` | `CollisionPlugin` | Detection + damage + death + score + FX + drops + dialogue + camera | **SPLIT** across `SimulationPlugin`, `GameplayPlugin`, `PresentationPlugin` |
-| `enemy_projectile_player_collision` | `CollisionPlugin` | Detection + damage + death + FX + rumble + state change | **SPLIT** across `SimulationPlugin`, `GameplayPlugin`, `PresentationPlugin` |
-| `tick_chain_bolts` | `CollisionPlugin` | FX lifecycle (non-authoritative) | `PresentationPlugin` |
+| System | Registers In | Description | Status |
+|--------|-------------|-------------|--------|
+| `update_spatial_grid` | `SimulationPlugin` | Spatial partitioning | ✅ Moved |
+| `detect_player_projectile_hits` | `SimulationPlugin` | Detection loop (emits `ContactDetected`) | ✅ New (PR #9a) |
+| `detect_enemy_projectile_hits` | `SimulationPlugin` | Detection loop (emits `ContactDetected`) | ✅ New (PR #9a) |
+| `resolve_player_projectile_damage` | `SimulationPlugin` | Damage math, burn, chain, pierce | ✅ New (PR #9b) |
+| `resolve_enemy_projectile_damage` | `SimulationPlugin` | Player damage with layer breakdown | ✅ New (PR #9b) |
+| `resolve_enemy_deaths` | `SimulationPlugin` | Health ≤ 0 check, `EnemyDestroyedEvent`, despawn | ✅ New (PR #9c) |
+
+### 4.3 `GameplayPlugin` systems (collision outcomes)
+
+| System | Registers In | Description | Status |
+|--------|-------------|-------------|--------|
+| `enemy_death_outcomes` | `GameplayPlugin` | Score, salt miner, drops, liberation pods | ✅ New (PR #9e) |
+| `player_damage_outcomes` | `GameplayPlugin` | No-damage bonus lost | ✅ New (PR #9e) |
+| `player_death_outcome` | `GameplayPlugin` | `GameState::GameOver` transition | ✅ New (PR #9e) |
+
+### 4.4 `PresentationPlugin` systems (combat reactions)
+
+| System | Registers In | Description | Status |
+|--------|-------------|-------------|--------|
+| `enemy_hit_reactions` | `PresentationPlugin` | Impact sparks, damage numbers, hit flash, screen shake | ✅ New (PR #9d) |
+| `boss_health_callouts` | `PresentationPlugin` | Boss low-health dialogue | ✅ New (PR #9d) |
+| `enemy_death_reactions` | `PresentationPlugin` | Explosions, screen effects, camera zoom | ✅ New (PR #9d) |
+| `player_hit_reactions` | `PresentationPlugin` | Hit flash, rumble, screen shake, health callouts | ✅ New (PR #9d) |
+| `player_death_reactions` | `PresentationPlugin` | Death FX (explosion, screen flash/shake) | ✅ New (PR #9d) |
+| `spawn_chain_bolts` | `PresentationPlugin` | Chain lightning sprite spawn | ✅ Moved (PR #9d) |
+| `tick_chain_bolts` | `PresentationPlugin` | Chain bolt FX lifecycle | ✅ Moved (PR #9d) |
 | `pause_trigger_system` | `SystemsPlugin` | ESC / Start → Pause | `PlatformPlugin` |
 | (scoring v1) | `ScoringPlugin` | Score/combo logic | `GameplayPlugin` |
 | (scoring v2) | `ScoringSystemPlugin` | ComboHeatSystem, SaltMiner | `GameplayPlugin` |
@@ -241,34 +273,45 @@ The `enemy_projectile_player_collision` system directly touches:
 
 ---
 
-## 9. Dependency Direction Analysis
+## 9. Dependency Direction Analysis (Post-Mission 1)
 
-**Current violation of `DEPENDENCY_RULES.md` §1:**
+**Resolved violations:**
 
-- `collision.rs` imports `crate::assets::PowerupIconCache` (presentation/content asset) — **violation**
-- `collision.rs` imports `super::effects::*` (presentation FX) — **violation**
-- `collision.rs` imports `super::DialogueEvent` (presentation) — **violation**
-- `collision.rs` writes to `ScoreSystem` and `SaltMinerSystem` (fragmented authority) — **violation**
+- `collision.rs` no longer imports `crate::assets::PowerupIconCache` — removed
+- `collision.rs` no longer imports `super::effects::*` — removed
+- `collision.rs` no longer imports `super::DialogueEvent` — removed
+- `collision.rs` no longer writes to `ScoreSystem` or `SaltMinerSystem` — removed
+
+**Remaining structural risks (deferred to Mission 2+):**
+
 - `systems/mod.rs` glob-re-exports everything, making cross-domain imports trivial — **structural risk**
+- `main.rs` initializes 11+ resources manually — needs plugin self-registration
 
 ---
 
-## 10. Mission 2 Candidates (Flagged, Not Fixed in Mission 1)
+## 10. Mission 2 Candidates
+
+| ID | Issue | Location | Status |
+|----|-------|----------|--------|
+| ~~M2-001~~ | No `FixedUpdate` / `SimSet` | Entire codebase | **Deferred** — Mission 2 scope |
+| ~~M2-002~~ | Unseeded `fastrand` in crit/drops | `resolve_damage.rs` | **Deferred** — Needs `SimulationRng` + `MissionSeed` |
+| ~~M2-003~~ | Chain bolt jitter uses gameplay RNG | `combat_reactions.rs` | **Deferred** — Needs `PresentationRng` separation |
+| ~~M2-004~~ | Frame-rate dependent cooldowns | Assumed across systems | **Deferred** — Needs `Time<Fixed>` migration |
+| ~~M2-005~~ | `collision.rs` performs scoring | `collision.rs` | **RESOLVED** — Extracted to `combat_outcomes.rs` (PR #9e) |
+| M2-006 | Duplicate score authority | `ScoringPlugin` + `ScoringSystemPlugin` | **Deferred** — Needs unified scoring design |
+| ~~M2-007~~ | Campaign plugins executable | `games/` | **Deferred** — Mission 4+ scope |
+| M2-008 | `main.rs` initializes 11+ resources manually | `main.rs` | **Deferred** — Needs plugin self-registration |
+| ~~M2-009~~ | No headless app constructor | Missing | **Deferred** — Mission 2 scope |
+| ~~M2-010~~ | No `SimId` stable IDs | Missing | **Deferred** — Mission 2 scope |
+| ~~M2-011~~ | No replay recording | Missing | **Deferred** — Mission 3 scope |
+| ~~M2-012~~ | No state hashing | Missing | **Deferred** — Mission 3 scope |
+
+**New findings from PR #9:**
 
 | ID | Issue | Location | Why Deferred |
 |----|-------|----------|--------------|
-| M2-001 | No `FixedUpdate` / `SimSet` | Entire codebase | Mission 2 scope |
-| M2-002 | Unseeded `fastrand` in crit/drops | `collision.rs:257, 426` | Needs `SimulationRng` + `MissionSeed` |
-| M2-003 | Chain bolt jitter uses gameplay RNG | `collision.rs:133` | Needs `PresentationRng` separation |
-| M2-004 | Frame-rate dependent cooldowns | Assumed across systems | Needs `Time<Fixed>` migration |
-| M2-005 | `collision.rs` performs scoring | `collision.rs:368-373` | Needs request/outcome event split |
-| M2-006 | Duplicate score authority | `ScoringPlugin` + `ScoringSystemPlugin` | Needs unified scoring design |
-| M2-007 | Campaign plugins executable | `games/` | Mission 4+ scope |
-| M2-008 | `main.rs` initializes 11+ resources manually | `main.rs` | Needs plugin self-registration |
-| M2-009 | No headless app constructor | Missing | Mission 2 scope |
-| M2-010 | No `SimId` stable IDs | Missing | Mission 2 scope |
-| M2-011 | No replay recording | Missing | Mission 3 scope |
-| M2-012 | No state hashing | Missing | Mission 3 scope |
+| M2-013 | `ContactDetected` carries raw crit_chance/ammo_type | `core/events.rs` | Detection shouldn't know resolution details; could split into raw + resolved event |
+| M2-014 | `BossCalloutSent` uses component marker instead of resource | `combat_reactions.rs` | Works for single-boss case; revisit if multi-boss fights added |
 
 ---
 
