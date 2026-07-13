@@ -68,7 +68,34 @@ pub struct ChainBoltSpawnEvent {
     pub to: Vec2,
 }
 
-/// Contact detected between two entities (detection → resolution decoupling)
+/// Raw contact detected between two entities (detection only — no damage values).
+/// Detection systems emit this; resolution systems consume it and enrich into
+/// `ContactDetected`.
+#[derive(Event, Debug, Clone, Copy)]
+pub struct ContactRaw {
+    pub contact_type: RawContactType,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum RawContactType {
+    /// Player projectile collided with an enemy
+    PlayerProjectileEnemy {
+        projectile: Entity,
+        enemy: Entity,
+        projectile_pos: Vec2,
+        enemy_pos: Vec2,
+    },
+    /// Enemy projectile collided with the player
+    EnemyProjectilePlayer {
+        projectile: Entity,
+        player: Entity,
+        projectile_pos: Vec2,
+        player_pos: Vec2,
+    },
+}
+
+/// Resolved contact with full damage / crit / ammo data.
+/// Emitted by resolution systems after looking up projectile stats.
 #[derive(Event, Debug, Clone)]
 pub struct ContactDetected {
     pub contact_type: ContactType,

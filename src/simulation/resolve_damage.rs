@@ -1,16 +1,99 @@
 //! Damage Resolution Systems
 //!
-//! Consumes `ContactDetected` events and applies damage to entities.
+//! Consumes `ContactRaw` events, enriches them into `ContactDetected`,
+//! then applies damage to entities.
 //! Does NOT spawn FX, mutate score, or trigger dialogue.
 
 use crate::core::{
-    ContactDetected, ContactType, DamageLayer, DamageLayerEvent, EnemyDamageAppliedEvent,
-    PlayerDamagedEvent,
+    ContactDetected, ContactRaw, ContactType, DamageLayer, DamageLayerEvent,
+    EnemyDamageAppliedEvent, PlayerDamagedEvent, RawContactType,
 };
-use crate::entities::{BurnStatus, Enemy, EnemyStats, Pierce, Player, PowerupEffects, ShipStats};
+use crate::entities::{
+    BurnOnHit, BurnStatus, ChainOnHit, Enemy, EnemyProjectile, EnemyStats, Pierce, Player,
+    PlayerProjectile, PowerupEffects, ProjectileDamage, ShipStats,
+};
 use crate::systems::collision::SpatialGrid;
 use crate::systems::ManeuverState;
 use bevy::prelude::*;
+
+// =============================================================================
+// Stage 1: Enrich raw contacts into resolved contacts
+// =============================================================================
+
+/// Consume `ContactRaw` events and emit `ContactDetected` with full projectile
+/// stats looked up from the ECS.
+pub fn enrich_contacts(
+    mut raw_events: EventReader<ContactRaw>,
+    player_proj_query: Query<
+        (
+            &ProjectileDamage,
+            Option<&Pierce>,
+            Option<&BurnOnHit>,
+            Option<&ChainOnHit>,
+        ),
+        With<PlayerProjectile>,
+    >,
+    enemy_proj_query: Query<&ProjectileDamage, With<EnemyProjectile>>,
+    mut resolved_events: EventWriter<ContactDetected>,
+) {
+    for raw in raw_events.read() {
+        match raw.contact_type {
+            RawContactType::PlayerProjectileEnemy {
+                projectile,
+                enemy,
+                projectile_pos,
+                enemy_pos,
+            } => {
+                let Ok((proj_damage, pierce, burn, chain)) = player_proj_query.get(projectile)
+                else {
+                    continue;
+                };
+                let pierce_remaining: Option<u32> = pierce.map(|p| p.0);
+                let burn_dps: Option<f32> = burn.map(|b| b.0);
+                let chain_targets: Option<u32> = chain.map(|c| c.0);
+                resolved_events.send(ContactDetected {
+                    contact_type: ContactType::PlayerProjectileEnemy {
+                        projectile,
+                        enemy,
+                        projectile_pos,
+                        enemy_pos,
+                        damage: proj_damage.damage,
+                        damage_type: proj_damage.damage_type,
+                        crit_chance: proj_damage.crit_chance,
+                        crit_multiplier: proj_damage.crit_multiplier,
+                        ammo_type: proj_damage.ammo_type,
+                        pierce_remaining,
+                        burn_dps,
+                        chain_targets,
+                    },
+                });
+            }
+            RawContactType::EnemyProjectilePlayer {
+                projectile,
+                player,
+                projectile_pos,
+                player_pos: _,
+            } => {
+                let Ok(proj_damage) = enemy_proj_query.get(projectile) else {
+                    continue;
+                };
+                resolved_events.send(ContactDetected {
+                    contact_type: ContactType::EnemyProjectilePlayer {
+                        projectile,
+                        player,
+                        projectile_pos,
+                        damage: proj_damage.damage,
+                        damage_type: proj_damage.damage_type,
+                    },
+                });
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Stage 2: Apply damage from resolved contacts
+// =============================================================================
 
 /// Resolve player projectiles hitting enemies.
 /// Applies damage, burn DoT, pierce, and chain lightning.

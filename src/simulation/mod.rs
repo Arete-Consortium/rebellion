@@ -15,7 +15,9 @@ use crate::systems::CollisionPlugin;
 use detect_collisions::{
     detect_enemy_projectile_hits, detect_player_projectile_hits, update_spatial_grid,
 };
-use resolve_damage::{resolve_enemy_projectile_damage, resolve_player_projectile_damage};
+use resolve_damage::{
+    enrich_contacts, resolve_enemy_projectile_damage, resolve_player_projectile_damage,
+};
 use resolve_deaths::resolve_enemy_deaths;
 
 pub mod detect_collisions;
@@ -59,6 +61,7 @@ impl Plugin for SimulationPlugin {
             .add_systems(
                 FixedUpdate,
                 (
+                    enrich_contacts,
                     resolve_player_projectile_damage,
                     resolve_enemy_projectile_damage,
                     resolve_enemy_deaths,
