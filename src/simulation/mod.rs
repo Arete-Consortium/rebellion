@@ -19,8 +19,11 @@ use resolve_damage::{resolve_enemy_projectile_damage, resolve_player_projectile_
 use resolve_deaths::resolve_enemy_deaths;
 
 pub mod detect_collisions;
+pub mod fixed_step;
 pub mod resolve_damage;
 pub mod resolve_deaths;
+
+pub use fixed_step::{SimSet, FIXED_TIMESTEP_SECS};
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CollisionPhase {

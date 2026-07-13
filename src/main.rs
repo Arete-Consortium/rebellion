@@ -37,7 +37,7 @@ use gameplay::GameplayPlugin;
 use games::GameModulesPlugin;
 use platform::PlatformPlugin;
 use presentation::PresentationPlugin;
-use simulation::SimulationPlugin;
+use simulation::{SimulationPlugin, FIXED_TIMESTEP_SECS};
 
 fn main() {
     // WASM: Set up panic hook for better error messages
@@ -61,6 +61,8 @@ fn main() {
             ..default()
         }))
         .add_plugins(EguiPlugin)
+        // Fixed timestep for authoritative simulation systems
+        .insert_resource(Time::<Fixed>::from_seconds(FIXED_TIMESTEP_SECS))
         // Game state
         .init_state::<GameState>()
         // Campaign events
@@ -69,6 +71,16 @@ fn main() {
         .add_event::<WaveCompleteEvent>()
         .add_event::<BossSpawnEvent>()
         .add_event::<ActCompleteEvent>()
+        // System set ordering: Simulation → Gameplay → Presentation
+        .configure_sets(
+            Update,
+            (
+                simulation::SimSet::Simulation,
+                simulation::SimSet::Gameplay,
+                simulation::SimSet::Presentation,
+            )
+                .chain(),
+        )
         // Game plugins
         .add_plugins((
             PlatformPlugin,
