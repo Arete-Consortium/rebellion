@@ -22,18 +22,11 @@ pub use wingman::*;
 
 use bevy::prelude::*;
 
-/// Plugin that registers all entity-related systems
+/// Plugin that registers entity systems that have not yet been migrated.
 pub struct EntitiesPlugin;
 
 impl Plugin for EntitiesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            PlayerPlugin,
-            EnemyPlugin,
-            ProjectilePlugin,
-            CollectiblePlugin,
-            WingmanPlugin,
-            DronePlugin,
-        ));
+        app.add_plugins((ProjectilePlugin, CollectiblePlugin));
     }
 }

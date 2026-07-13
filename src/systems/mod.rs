@@ -36,20 +36,11 @@ pub use spawning::*;
 
 use bevy::prelude::*;
 
-/// Plugin that registers all gameplay systems
+/// Plugin that registers systems not yet migrated to domain plugins.
 pub struct SystemsPlugin;
 
 impl Plugin for SystemsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((
-            AbilityPlugin,
-            CollisionPlugin,
-            SpawningPlugin,
-            ScoringPlugin,
-            ScoringSystemPlugin,
-            BossPlugin,
-            ManeuverPlugin,
-            CampaignPlugin,
-        ));
+        app.add_plugins(CollisionPlugin);
     }
 }

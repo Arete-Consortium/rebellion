@@ -8,11 +8,43 @@
 
 use bevy::prelude::*;
 
+use crate::core::{
+    CampaignState, CurrentStage, Difficulty, EndlessMode, GameProgress, GameSession,
+    SaltMinerSystem, ScoreSystem, SelectedShip, ShipUnlocks,
+};
+use crate::entities::{DronePlugin, EnemyPlugin, PlayerPlugin, WingmanPlugin};
+use crate::systems::{
+    AbilityPlugin, BossPlugin, CampaignPlugin, ManeuverPlugin, ScoringPlugin, ScoringSystemPlugin,
+    SpawningPlugin,
+};
+
 /// Plugin that registers all shared gameplay systems.
 pub struct GameplayPlugin;
 
 impl Plugin for GameplayPlugin {
-    fn build(&self, _app: &mut App) {
-        // Empty shell for Mission 1 — systems will migrate here in later PRs.
+    fn build(&self, app: &mut App) {
+        app.init_resource::<ScoreSystem>()
+            .init_resource::<SaltMinerSystem>()
+            .init_resource::<GameProgress>()
+            .init_resource::<Difficulty>()
+            .init_resource::<SelectedShip>()
+            .init_resource::<CurrentStage>()
+            .init_resource::<ShipUnlocks>()
+            .init_resource::<CampaignState>()
+            .init_resource::<GameSession>()
+            .init_resource::<EndlessMode>()
+            .add_plugins((
+                PlayerPlugin,
+                EnemyPlugin,
+                WingmanPlugin,
+                DronePlugin,
+                AbilityPlugin,
+                SpawningPlugin,
+                BossPlugin,
+                ManeuverPlugin,
+                CampaignPlugin,
+                ScoringPlugin,
+                ScoringSystemPlugin,
+            ));
     }
 }

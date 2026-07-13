@@ -29,10 +29,8 @@ mod ui;
 
 use content::ContentPlugin;
 use core::{
-    AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, BossSpawnEvent,
-    CampaignState, CurrentStage, Difficulty, EndlessMode, GameEventsPlugin, GameProgress,
-    GameSession, GameState, MissionCompleteEvent, MissionStartEvent, SaltMinerSystem,
-    SavePlugin, ScoreSystem, SelectedShip, ShipUnlocks, WaveCompleteEvent,
+    AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, BossSpawnEvent, GameEventsPlugin,
+    GameState, MissionCompleteEvent, MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
 use diagnostics::DiagnosticsPlugin;
 use entities::EntitiesPlugin;
@@ -67,17 +65,6 @@ fn main() {
         .add_plugins(EguiPlugin)
         // Game state
         .init_state::<GameState>()
-        // Resources
-        .init_resource::<ScoreSystem>()
-        .init_resource::<SaltMinerSystem>()
-        .init_resource::<GameProgress>()
-        .init_resource::<Difficulty>()
-        .init_resource::<SelectedShip>()
-        .init_resource::<CurrentStage>()
-        .init_resource::<ShipUnlocks>()
-        .init_resource::<CampaignState>()
-        .init_resource::<GameSession>()
-        .init_resource::<EndlessMode>()
         // Campaign events
         .add_event::<MissionStartEvent>()
         .add_event::<MissionCompleteEvent>()
