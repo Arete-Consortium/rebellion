@@ -251,6 +251,7 @@ pub(super) fn disintegrator_update(
 pub(super) fn enemy_bounds_check(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Transform, Option<&super::CycleOnExit>), With<Enemy>>,
+    mut sim_rng: ResMut<crate::simulation::SimulationRng>,
 ) {
     let margin = 100.0;
     let half_w = SCREEN_WIDTH / 2.0 + margin;
@@ -268,7 +269,7 @@ pub(super) fn enemy_bounds_check(
             if out_bottom {
                 transform.translation.y = half_h - margin;
                 // randomise X a bit so they don't all loop on the same column
-                transform.translation.x = (fastrand::f32() - 0.5) * (SCREEN_WIDTH - 120.0);
+                transform.translation.x = (sim_rng.f32() - 0.5) * (SCREEN_WIDTH - 120.0);
             } else if out_top {
                 transform.translation.y = -half_h + margin;
             } else if out_x {

@@ -18,6 +18,7 @@ use bevy::prelude::*;
 pub fn resolve_player_projectile_damage(
     mut commands: Commands,
     grid: Res<SpatialGrid>,
+    mut sim_rng: ResMut<crate::simulation::SimulationRng>,
     mut contact_events: EventReader<ContactDetected>,
     mut enemy_query: Query<&mut EnemyStats, With<Enemy>>,
     mut damage_applied_events: EventWriter<EnemyDamageAppliedEvent>,
@@ -47,7 +48,7 @@ pub fn resolve_player_projectile_damage(
         };
 
         // Roll for critical hit
-        let is_crit = fastrand::f32() < crit_chance;
+        let is_crit = sim_rng.f32() < crit_chance;
         let crit_mult = if is_crit { crit_multiplier } else { 1.0 };
         let ammo_mult = ammo_type.armor_mult();
         let final_damage = damage * crit_mult * ammo_mult;

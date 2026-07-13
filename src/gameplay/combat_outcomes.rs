@@ -25,6 +25,7 @@ pub fn enemy_death_outcomes(
     mut salt_miner: ResMut<SaltMinerSystem>,
     player_query: Query<(&Transform, &ShipStats), With<Player>>,
     icon_cache: Res<crate::assets::PowerupIconCache>,
+    mut sim_rng: ResMut<crate::simulation::SimulationRng>,
 ) {
     let Ok((player_transform, player_stats)) = player_query.get_single() else {
         return;
@@ -55,7 +56,7 @@ pub fn enemy_death_outcomes(
 
         // 30% chance to drop powerup (100% for bosses)
         let drop_chance = if event.was_boss { 1.0 } else { 0.30 };
-        if fastrand::f32() < drop_chance {
+        if sim_rng.f32() < drop_chance {
             spawn_smart_powerup(
                 &mut commands,
                 event.position,
