@@ -283,7 +283,9 @@ fn tick_carrier_flash(
 /// Cleanup carrier when leaving playing state
 fn cleanup_carrier(mut commands: Commands, carrier_query: Query<Entity, With<EnemyCarrier>>) {
     for entity in carrier_query.iter() {
-        commands.entity(entity).despawn_recursive();
+        if let Some(ec) = commands.get_entity(entity) {
+            ec.despawn_recursive();
+        }
     }
 }
 

@@ -208,9 +208,12 @@ pub(crate) fn is_confirm(keyboard: &ButtonInput<KeyCode>, joystick: &JoystickSta
         || joystick.confirm()
 }
 
+/// Safely despawn menu root entities, skipping any that no longer exist.
 pub(crate) fn despawn_menu<T: Component>(mut commands: Commands, query: Query<Entity, With<T>>) {
     for entity in query.iter() {
-        commands.entity(entity).despawn_recursive();
+        if let Some(ec) = commands.get_entity(entity) {
+            ec.despawn_recursive();
+        }
     }
 }
 

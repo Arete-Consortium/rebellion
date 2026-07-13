@@ -419,8 +419,10 @@ fn check_boss_defeated(
                 info!("Act {} complete!", completed_act.number());
             }
 
-            // Despawn boss
-            commands.entity(entity).despawn_recursive();
+            // Despawn boss (entity may already be despawned by resolve_enemy_deaths)
+            if let Some(ec) = commands.get_entity(entity) {
+                ec.despawn_recursive();
+            }
 
             // Go to stage complete
             next_state.set(GameState::StageComplete);

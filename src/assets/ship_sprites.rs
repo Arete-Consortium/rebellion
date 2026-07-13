@@ -370,16 +370,19 @@ fn check_sprite_loading(
     mut cache: ResMut<ShipSpriteCache>,
     mut images: ResMut<Assets<Image>>,
     time: Res<Time>,
-    mut timer: Local<f32>,
+    mut check_timer: Local<f32>,
+    mut elapsed: Local<f32>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    *timer += time.delta_secs();
+    let dt = time.delta_secs();
+    *check_timer += dt;
+    *elapsed += dt;
 
     // Check every 0.5 seconds
-    if *timer < 0.5 {
+    if *check_timer < 0.5 {
         return;
     }
-    *timer = 0.0;
+    *check_timer = 0.0;
 
     if cache.ready {
         next_state.set(GameState::MainMenu);
@@ -415,7 +418,7 @@ fn check_sprite_loading(
     }
 
     // Timeout after 10 seconds - proceed anyway
-    if *timer > 10.0 && !cache.ready {
+    if *elapsed > 10.0 && !cache.ready {
         warn!("Sprite loading timeout, proceeding without all sprites");
         cache.ready = true;
     }
