@@ -147,7 +147,7 @@ pub fn player_hit_reactions(
     // Advance callout cooldown timer
     *last_callout += time.delta_secs();
 
-    let Ok((player_entity, player_transform, player_stats, sprite)) = player_query.get_single()
+    let Ok((player_entity, _player_transform, player_stats, sprite)) = player_query.get_single()
     else {
         return;
     };
