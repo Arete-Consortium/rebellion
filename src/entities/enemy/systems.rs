@@ -223,16 +223,21 @@ pub(super) fn disintegrator_update(
             let damage_per_frame = disintegrator.current_damage() * dt;
 
             // Apply damage directly to player
-            let destroyed = player_stats.take_damage(damage_per_frame, DamageType::Thermal);
+            let damage_result =
+                player_stats.take_damage_detailed(damage_per_frame, DamageType::Thermal);
 
             // Send damage event for other systems to react
             damage_events.send(PlayerDamagedEvent {
                 damage: damage_per_frame,
                 damage_type: DamageType::Thermal,
                 source_position: enemy_pos,
+                shield_damage: damage_result.shield_damage,
+                armor_damage: damage_result.armor_damage,
+                hull_damage: damage_result.hull_damage,
+                destroyed: damage_result.destroyed,
             });
 
-            if destroyed {
+            if damage_result.destroyed {
                 info!("Player destroyed by disintegrator beam!");
                 next_state.set(GameState::GameOver);
             }
@@ -245,10 +250,7 @@ pub(super) fn disintegrator_update(
 /// the battlefield instead of one-shot vanishing.
 pub(super) fn enemy_bounds_check(
     mut commands: Commands,
-    mut query: Query<
-        (Entity, &mut Transform, Option<&super::CycleOnExit>),
-        With<Enemy>,
-    >,
+    mut query: Query<(Entity, &mut Transform, Option<&super::CycleOnExit>), With<Enemy>>,
 ) {
     let margin = 100.0;
     let half_w = SCREEN_WIDTH / 2.0 + margin;
@@ -266,8 +268,7 @@ pub(super) fn enemy_bounds_check(
             if out_bottom {
                 transform.translation.y = half_h - margin;
                 // randomise X a bit so they don't all loop on the same column
-                transform.translation.x =
-                    (fastrand::f32() - 0.5) * (SCREEN_WIDTH - 120.0);
+                transform.translation.x = (fastrand::f32() - 0.5) * (SCREEN_WIDTH - 120.0);
             } else if out_top {
                 transform.translation.y = -half_h + margin;
             } else if out_x {

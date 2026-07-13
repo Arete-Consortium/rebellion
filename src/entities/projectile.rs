@@ -333,10 +333,13 @@ pub fn player_disintegrator_beam_update(
         enemy_stats.health -= damage;
         if enemy_stats.health <= 0.0 {
             destroy_events.send(crate::core::EnemyDestroyedEvent {
+                enemy: enemy_entity,
                 position: enemy_pos,
                 enemy_type: enemy_stats.name.clone(),
                 score_value: enemy_stats.score_value,
                 was_boss: enemy_stats.is_boss,
+                liberation_value: enemy_stats.liberation_value,
+                type_id: enemy_stats.type_id,
             });
             explosion_events.send(crate::core::ExplosionEvent {
                 position: enemy_pos,

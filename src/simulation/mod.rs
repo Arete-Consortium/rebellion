@@ -5,28 +5,25 @@
 //!
 //! Per SIMULATION_CONTRACT.md, this plugin must never import presentation,
 //! audio, UI, or campaign-authoring types.
-//!
-//! NOTE: collision.rs still contains presentation-side reactions (FX, scoring,
-//! dialogue) — those will be extracted in later sub-PRs of PR #9. The
-//! registrations below are transitional.
 
 use bevy::prelude::*;
 
 use crate::entities::{CollectiblePlugin, ProjectilePlugin};
-use crate::systems::collision::{
-    enemy_projectile_player_collision, player_projectile_enemy_collision, tick_chain_bolts,
-    SpatialGrid,
-};
+use crate::systems::collision::SpatialGrid;
 use crate::systems::CollisionPlugin;
 
 use detect_collisions::{
     detect_enemy_projectile_hits, detect_player_projectile_hits, update_spatial_grid,
 };
+use resolve_damage::{resolve_enemy_projectile_damage, resolve_player_projectile_damage};
+use resolve_deaths::resolve_enemy_deaths;
 
 pub mod detect_collisions;
+pub mod resolve_damage;
+pub mod resolve_deaths;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-enum CollisionPhase {
+pub enum CollisionPhase {
     Detection,
     Resolution,
 }
@@ -55,9 +52,9 @@ impl Plugin for SimulationPlugin {
             .add_systems(
                 Update,
                 (
-                    player_projectile_enemy_collision,
-                    enemy_projectile_player_collision,
-                    tick_chain_bolts,
+                    resolve_player_projectile_damage,
+                    resolve_enemy_projectile_damage,
+                    resolve_enemy_deaths,
                 )
                     .chain()
                     .in_set(CollisionPhase::Resolution)

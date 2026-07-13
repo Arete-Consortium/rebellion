@@ -12,6 +12,10 @@ pub struct PlayerDamagedEvent {
     pub damage: f32,
     pub damage_type: DamageType,
     pub source_position: Vec2,
+    pub shield_damage: f32,
+    pub armor_damage: f32,
+    pub hull_damage: f32,
+    pub destroyed: bool,
 }
 
 /// Which defensive layer absorbed damage
@@ -38,10 +42,30 @@ pub struct DamageLayerEvent {
 /// Enemy was destroyed
 #[derive(Event)]
 pub struct EnemyDestroyedEvent {
+    pub enemy: Entity,
     pub position: Vec2,
     pub enemy_type: String,
     pub score_value: u64,
     pub was_boss: bool,
+    pub liberation_value: u32,
+    pub type_id: u32,
+}
+
+/// Damage was applied to an enemy (simulation → presentation decoupling)
+#[derive(Event, Debug, Clone, Copy)]
+pub struct EnemyDamageAppliedEvent {
+    pub enemy: Entity,
+    pub damage: f32,
+    pub is_crit: bool,
+    pub enemy_pos: Vec2,
+    pub damage_type: DamageType,
+}
+
+/// Request to spawn a chain-lightning bolt sprite (simulation → presentation)
+#[derive(Event, Debug, Clone, Copy)]
+pub struct ChainBoltSpawnEvent {
+    pub from: Vec2,
+    pub to: Vec2,
 }
 
 /// Contact detected between two entities (detection → resolution decoupling)
@@ -356,7 +380,7 @@ pub enum CollectibleType {
     RailSpike,       // +damage, -fire rate, +pierce
     PlasmaLance,     // +damage, +crit, +burn
     HomingSwarm,     // +projectile count, +homing
-    VortonProjector,       // +chain targets, +damage
+    VortonProjector, // +chain targets, +damage
 }
 
 /// Upgrade types purchasable with Skill Points
@@ -531,6 +555,8 @@ impl Plugin for GameEventsPlugin {
         app.add_event::<PlayerDamagedEvent>()
             .add_event::<DamageLayerEvent>()
             .add_event::<EnemyDestroyedEvent>()
+            .add_event::<EnemyDamageAppliedEvent>()
+            .add_event::<ChainBoltSpawnEvent>()
             .add_event::<ContactDetected>()
             .add_event::<PlayerFireEvent>()
             .add_event::<SpawnEnemyEvent>()

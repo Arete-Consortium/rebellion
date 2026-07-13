@@ -18,6 +18,10 @@ use crate::systems::{
     SpawningPlugin,
 };
 
+use combat_outcomes::{enemy_death_outcomes, player_damage_outcomes, player_death_outcome};
+
+pub mod combat_outcomes;
+
 /// Plugin that registers all shared gameplay systems.
 pub struct GameplayPlugin;
 
@@ -45,6 +49,16 @@ impl Plugin for GameplayPlugin {
                 CampaignPlugin,
                 ScoringPlugin,
                 ScoringSystemPlugin,
-            ));
+            ))
+            .add_systems(
+                Update,
+                (
+                    enemy_death_outcomes,
+                    player_damage_outcomes,
+                    player_death_outcome,
+                )
+                    .after(crate::simulation::CollisionPhase::Resolution)
+                    .run_if(in_state(crate::core::GameState::Playing)),
+            );
     }
 }

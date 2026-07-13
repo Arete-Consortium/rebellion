@@ -38,9 +38,7 @@ pub fn detect_player_projectile_hits(
 ) {
     const COLLISION_RADIUS_SQ: f32 = 25.0 * 25.0;
 
-    for (proj_entity, proj_transform, proj_damage, pierce, burn, chain) in
-        projectile_query.iter()
-    {
+    for (proj_entity, proj_transform, proj_damage, pierce, burn, chain) in projectile_query.iter() {
         let proj_pos = proj_transform.translation.truncate();
 
         for &(enemy_entity, enemy_pos) in grid.get_nearby_enemies(proj_pos) {
