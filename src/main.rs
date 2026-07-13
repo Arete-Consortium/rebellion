@@ -32,7 +32,7 @@ use content::ContentPlugin;
 use core::{
     AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, AudioSettings, BossSpawnEvent,
     CampaignState, CurrentStage, Difficulty, EndlessMode, GameEventsPlugin, GameProgress,
-    GameSession, GameState, InputConfig, MissionCompleteEvent, MissionStartEvent, SaltMinerSystem,
+    GameSession, GameState, MissionCompleteEvent, MissionStartEvent, SaltMinerSystem,
     SavePlugin, ScoreSystem, SelectedShip, ShipUnlocks, WaveCompleteEvent,
 };
 use diagnostics::DiagnosticsPlugin;
@@ -73,7 +73,6 @@ fn main() {
         .init_resource::<ScoreSystem>()
         .init_resource::<SaltMinerSystem>()
         .init_resource::<GameProgress>()
-        .init_resource::<InputConfig>()
         .init_resource::<AudioSettings>()
         .init_resource::<Difficulty>()
         .init_resource::<SelectedShip>()
