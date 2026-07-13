@@ -25,7 +25,7 @@ impl Plugin for BossPlugin {
             .add_event::<BossSpawnEvent>()
             .add_event::<BossDefeatedEvent>()
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     handle_boss_spawn,
                     boss_intro_sequence,

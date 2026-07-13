@@ -164,10 +164,7 @@ fn generate_music(mut music: ResMut<MusicAssets>, mut audio_sources: ResMut<Asse
 ///
 /// .ogg is preferred for size; .wav and .mp3 also work via Bevy's
 /// default audio loaders.
-fn load_music_file_overrides(
-    mut music: ResMut<MusicAssets>,
-    asset_server: Res<AssetServer>,
-) {
+fn load_music_file_overrides(mut music: ResMut<MusicAssets>, asset_server: Res<AssetServer>) {
     music.menu_file = Some(asset_server.load("audio/music/menu.ogg"));
     music.gameplay_file = Some(asset_server.load("audio/music/gameplay.ogg"));
     music.boss_file = Some(asset_server.load("audio/music/boss.ogg"));

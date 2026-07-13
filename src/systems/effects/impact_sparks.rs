@@ -13,7 +13,7 @@ pub struct ImpactSpark {
 /// Impact spark color based on damage type (EM/Kinetic/Thermal/Explosive).
 pub fn spark_color_from_damage(damage_type: DamageType) -> Color {
     match damage_type {
-        DamageType::EM => Color::srgba(0.7, 0.95, 1.0, 1.0),       // EDENCOM/Laser
+        DamageType::EM => Color::srgba(0.7, 0.95, 1.0, 1.0), // EDENCOM/Laser
         DamageType::Thermal => Color::srgba(1.0, 0.45, 0.15, 1.0), // Disintegrator/drone
         DamageType::Kinetic => Color::srgba(1.0, 0.85, 0.35, 1.0), // Autocannon/rail
         DamageType::Explosive => Color::srgba(1.0, 0.55, 0.25, 1.0), // Missile
@@ -26,8 +26,8 @@ pub fn spawn_impact_sparks(commands: &mut Commands, pos: Vec2, damage_type: Dama
     let color = spark_color_from_damage(damage_type);
     let base_speed = 180.0;
     for i in 0..COUNT {
-        let angle = (i as f32) / COUNT as f32 * std::f32::consts::TAU
-            + (fastrand::f32() - 0.5) * 0.4;
+        let angle =
+            (i as f32) / COUNT as f32 * std::f32::consts::TAU + (fastrand::f32() - 0.5) * 0.4;
         let speed = base_speed * (0.65 + fastrand::f32() * 0.5);
         let velocity = Vec2::new(angle.cos(), angle.sin()) * speed;
         let life = 0.18 + fastrand::f32() * 0.12;

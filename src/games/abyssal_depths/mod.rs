@@ -13,16 +13,15 @@ use crate::systems::JoystickState;
 
 /// Aggregated Endless-mode roster — every player ship in the game.
 /// Built once lazily from all 4 empire pools + the Invasion cross-faction set.
-pub static ENDLESS_SHIPS: std::sync::LazyLock<Vec<ShipDef>> =
-    std::sync::LazyLock::new(|| {
-        let mut v: Vec<ShipDef> = Vec::new();
-        v.extend_from_slice(crate::core::factions::MINMATAR_SHIPS);
-        v.extend_from_slice(crate::core::factions::AMARR_SHIPS);
-        v.extend_from_slice(crate::core::factions::CALDARI_SHIPS);
-        v.extend_from_slice(crate::core::factions::GALLENTE_SHIPS);
-        v.extend_from_slice(TRIGLAVIAN_INVASION_SHIPS);
-        v
-    });
+pub static ENDLESS_SHIPS: std::sync::LazyLock<Vec<ShipDef>> = std::sync::LazyLock::new(|| {
+    let mut v: Vec<ShipDef> = Vec::new();
+    v.extend_from_slice(crate::core::factions::MINMATAR_SHIPS);
+    v.extend_from_slice(crate::core::factions::AMARR_SHIPS);
+    v.extend_from_slice(crate::core::factions::CALDARI_SHIPS);
+    v.extend_from_slice(crate::core::factions::GALLENTE_SHIPS);
+    v.extend_from_slice(TRIGLAVIAN_INVASION_SHIPS);
+    v
+});
 
 /// Cross-faction player roster used while the Triglavian Invasion chapter is
 /// active. Historically-accurate EVE ships that fought in Invasion-era combat.

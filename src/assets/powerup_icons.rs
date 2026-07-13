@@ -55,7 +55,7 @@ fn get_icon_filename(collectible_type: &CollectibleType) -> Option<&'static str>
 /// Load powerup icons from assets directory
 /// Load powerup icons via Bevy's AssetServer. Works on both native and
 /// WASM — the previous implementation used `std::env::current_dir()`
-/// + `fs::read`, which silently fails on WASM (no filesystem). On the
+/// and `fs::read`, which silently fails on WASM (no filesystem). On the
 /// browser the icons rendered as colored placeholder rects because
 /// the cache was empty.
 fn load_powerup_icons(mut cache: ResMut<PowerupIconCache>, asset_server: Res<AssetServer>) {
@@ -83,5 +83,8 @@ fn load_powerup_icons(mut cache: ResMut<PowerupIconCache>, asset_server: Res<Ass
         }
     }
 
-    info!("Queued {} powerup icons for load via AssetServer", cache.icons.len());
+    info!(
+        "Queued {} powerup icons for load via AssetServer",
+        cache.icons.len()
+    );
 }

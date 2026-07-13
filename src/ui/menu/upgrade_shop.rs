@@ -160,10 +160,7 @@ pub(crate) fn spawn_upgrade_shop(
                         ))
                         .with_children(|row| {
                             // Icon (EVE module) on the left
-                            let icon_path = format!(
-                                "powerups/{}",
-                                upgrade_icon_filename(upgrade)
-                            );
+                            let icon_path = format!("powerups/{}", upgrade_icon_filename(upgrade));
                             row.spawn((
                                 Node {
                                     width: Val::Px(34.0),

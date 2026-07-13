@@ -222,7 +222,7 @@ impl EngineTrail {
     pub fn for_hull(type_id: u32, faction: crate::core::Faction) -> Self {
         match type_id {
             // EDENCOM
-            54731 | 54732 | 54733 => Self::edencom(),
+            54731..=54733 => Self::edencom(),
             // Triglavian (incl. Nergal, Ikitursa, Draugur)
             47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => Self::triglavian(),
             // Guristas pirate (Gila)

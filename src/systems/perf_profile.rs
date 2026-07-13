@@ -73,17 +73,12 @@ impl Plugin for PerfProfilePlugin {
     }
 }
 
-fn apply_mobile_profile_if_active(
-    mobile: Res<MobileMode>,
-    mut profile: ResMut<PerfProfile>,
-) {
+fn apply_mobile_profile_if_active(mobile: Res<MobileMode>, mut profile: ResMut<PerfProfile>) {
     if mobile.active {
         *profile = PerfProfile::mobile();
         info!(
             "Mobile perf profile applied: explosions={}, engines={}, trails={}",
-            profile.explosion_particles,
-            profile.engine_particles,
-            profile.trail_particles,
+            profile.explosion_particles, profile.engine_particles, profile.trail_particles,
         );
     }
 }

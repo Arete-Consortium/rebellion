@@ -81,7 +81,7 @@ pub struct DronePlugin;
 impl Plugin for DronePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            FixedUpdate,
             (
                 spawn_drones_on_ability,
                 drone_orbit_player,

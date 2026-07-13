@@ -15,7 +15,6 @@ pub use boss::*;
 pub use collectible::*;
 pub use drone::*;
 pub use enemy::*;
-pub use items::{EffectiveStats, Inventory};
 pub use player::*;
 pub use projectile::*;
 pub use wingman::*;

@@ -314,7 +314,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_player)
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     player_movement,
                     player_shooting,
@@ -569,8 +569,7 @@ fn player_movement(
     >,
     salt_miner: Res<SaltMinerSystem>,
 ) {
-    let Ok((mut transform, mut movement, base_rot, maneuver, mut tilt)) =
-        query.get_single_mut()
+    let Ok((mut transform, mut movement, base_rot, maneuver, mut tilt)) = query.get_single_mut()
     else {
         return;
     };
@@ -659,7 +658,9 @@ fn player_shooting(
     let Ok((transform, mut weapon, ability_effects, eff)) = query.get_single_mut() else {
         return;
     };
-    let eff = eff.copied().unwrap_or_else(super::items::EffectiveStats::neutral);
+    let eff = eff
+        .copied()
+        .unwrap_or_else(super::items::EffectiveStats::neutral);
 
     let dt = time.delta_secs();
 

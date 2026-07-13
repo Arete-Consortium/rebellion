@@ -231,7 +231,7 @@ pub struct ScoringSystemPlugin;
 impl Plugin for ScoringSystemPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ComboHeatSystem>()
-            .add_systems(Update, update_combo_heat_system);
+            .add_systems(FixedUpdate, update_combo_heat_system);
     }
 }
 

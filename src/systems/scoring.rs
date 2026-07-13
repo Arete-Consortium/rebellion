@@ -11,7 +11,7 @@ pub struct ScoringPlugin;
 impl Plugin for ScoringPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            FixedUpdate,
             (update_score_system, update_salt_miner_system).run_if(in_state(GameState::Playing)),
         );
     }

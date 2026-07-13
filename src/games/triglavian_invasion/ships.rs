@@ -18,24 +18,24 @@ pub struct TriglavianShips {
 /// Triglavian ship type IDs — verified via CCP ESI /universe/ids 2026-04.
 pub mod triglavian {
     // Frigates
-    pub const DAMAVIK: u32 = 47269;  // T1 Frigate
-    pub const NERGAL: u32 = 52250;   // Assault Frigate
+    pub const DAMAVIK: u32 = 47269; // T1 Frigate
+    pub const NERGAL: u32 = 52250; // Assault Frigate
 
     // Destroyers
     pub const KIKIMORA: u32 = 49710; // T1 Destroyer
-    pub const DRAUGUR: u32 = 52254;  // Command Destroyer
+    pub const DRAUGUR: u32 = 52254; // Command Destroyer
 
     // Cruisers
-    pub const VEDMAK: u32 = 47270;   // T1 Cruiser
+    pub const VEDMAK: u32 = 47270; // T1 Cruiser
     pub const IKITURSA: u32 = 52252; // Heavy Assault Cruiser
-    pub const RODIVA: u32 = 52253;   // Logistics Cruiser
+    pub const RODIVA: u32 = 52253; // Logistics Cruiser
 
     // Battlecruisers
     pub const DREKAVAC: u32 = 49711; // T1 Battlecruiser
 
     // Battleships
-    pub const LESHAK: u32 = 47271;   // T1 Battleship
-    pub const XORDAZH: u32 = 56756;  // World Ark (capital; unverified)
+    pub const LESHAK: u32 = 47271; // T1 Battleship
+    pub const XORDAZH: u32 = 56756; // World Ark (capital; unverified)
 
     // Special
     pub const ZIRNITRA: u32 = 52907; // Dreadnought

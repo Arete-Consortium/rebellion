@@ -620,10 +620,10 @@ pub fn spawn_collectible(
         CollectibleType::ExtraLife => (Color::srgb(0.0, 1.0, 0.5), 28.0, 1),
         CollectibleType::SkillPointDrop => (Color::srgb(0.9, 0.7, 1.0), 18.0, 5), // Purple glow, 5 SP
         CollectibleType::ScatterLauncher => (Color::srgb(0.30, 0.70, 1.00), 24.0, 1),
-        CollectibleType::RailSpike       => (Color::srgb(0.80, 0.85, 0.90), 24.0, 1),
-        CollectibleType::PlasmaLance     => (Color::srgb(1.00, 0.35, 0.80), 24.0, 1),
-        CollectibleType::HomingSwarm     => (Color::srgb(1.00, 0.40, 0.40), 24.0, 1),
-        CollectibleType::VortonProjector       => (Color::srgb(0.55, 0.90, 1.00), 24.0, 1),
+        CollectibleType::RailSpike => (Color::srgb(0.80, 0.85, 0.90), 24.0, 1),
+        CollectibleType::PlasmaLance => (Color::srgb(1.00, 0.35, 0.80), 24.0, 1),
+        CollectibleType::HomingSwarm => (Color::srgb(1.00, 0.40, 0.40), 24.0, 1),
+        CollectibleType::VortonProjector => (Color::srgb(0.55, 0.90, 1.00), 24.0, 1),
     };
 
     // Determine rarity and scale size accordingly

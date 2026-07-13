@@ -24,7 +24,7 @@ impl Plugin for CampaignPlugin {
                 .run_if(not(is_abyssal_module)),
         )
         .add_systems(
-            Update,
+            FixedUpdate,
             (
                 update_mission_timer,
                 check_wave_complete,

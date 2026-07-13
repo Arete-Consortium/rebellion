@@ -254,23 +254,22 @@ fn spawn_module_card(
             })
             .with_children(|card| {
                 let _ = content_color;
-            // Emblem area — either a single glyph or faction-vs-faction carriers
-            card.spawn((
-                Node {
-                    width: Val::Px(196.0),
-                    height: Val::Px(86.0),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    border: UiRect::all(Val::Px(2.0)),
-                    margin: UiRect::bottom(Val::Px(6.0)),
-                    column_gap: Val::Px(6.0),
-                    ..default()
-                },
-                BackgroundColor(color.with_alpha(0.4)),
-                BorderColor(color),
-            ))
-            .with_children(|emblem| {
-                match icon {
+                // Emblem area — either a single glyph or faction-vs-faction carriers
+                card.spawn((
+                    Node {
+                        width: Val::Px(196.0),
+                        height: Val::Px(86.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        border: UiRect::all(Val::Px(2.0)),
+                        margin: UiRect::bottom(Val::Px(6.0)),
+                        column_gap: Val::Px(6.0),
+                        ..default()
+                    },
+                    BackgroundColor(color.with_alpha(0.4)),
+                    BorderColor(color),
+                ))
+                .with_children(|emblem| match icon {
                     CardIcon::Glyph(symbol) => {
                         emblem.spawn((
                             Text::new(symbol),
@@ -314,42 +313,41 @@ fn spawn_module_card(
                             ));
                         }
                     }
-                }
-            });
+                });
 
-            // Title
-            card.spawn((
-                Text::new(title),
-                TextFont {
-                    font_size: 20.0,
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-            ));
+                // Title
+                card.spawn((
+                    Text::new(title),
+                    TextFont {
+                        font_size: 20.0,
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                ));
 
-            // Subtitle
-            card.spawn((
-                Text::new(subtitle),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(color),
-            ));
+                // Subtitle
+                card.spawn((
+                    Text::new(subtitle),
+                    TextFont {
+                        font_size: 16.0,
+                        ..default()
+                    },
+                    TextColor(color),
+                ));
 
-            // Description
-            card.spawn((
-                Text::new(description),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.6, 0.6, 0.6)),
-                Node {
-                    max_width: Val::Px(220.0),
-                    ..default()
-                },
-            ));
+                // Description
+                card.spawn((
+                    Text::new(description),
+                    TextFont {
+                        font_size: 14.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.6, 0.6, 0.6)),
+                    Node {
+                        max_width: Val::Px(220.0),
+                        ..default()
+                    },
+                ));
             }); // close inner content container
         });
 }
@@ -366,10 +364,7 @@ fn spawn_faction_emblem(
                 height: Val::Px(68.0),
                 ..default()
             },
-            ImageNode {
-                image,
-                ..default()
-            },
+            ImageNode { image, ..default() },
         ));
     } else {
         // Fallback — faction-tinted box if PNG missing
@@ -485,8 +480,7 @@ pub(crate) fn module_select_input(
                 active_module.set_module("elder_fleet");
                 endless.active = true;
                 abyssal.active = false;
-                session.chapter_ship_override =
-                    Some(&crate::games::abyssal_depths::ENDLESS_SHIPS);
+                session.chapter_ship_override = Some(&crate::games::abyssal_depths::ENDLESS_SHIPS);
                 info!("Selected ENDLESS MODE — full roster unlocked");
                 transitions.send(TransitionEvent::to(GameState::FactionSelect));
             }

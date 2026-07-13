@@ -247,7 +247,7 @@ impl Plugin for AbilityPlugin {
         app.add_event::<AbilityActivatedEvent>()
             .add_event::<AbilityEndedEvent>()
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     ability_input,
                     ability_update_cooldowns,

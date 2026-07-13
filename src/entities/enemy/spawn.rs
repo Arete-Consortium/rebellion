@@ -485,19 +485,19 @@ pub fn spawn_variant(
 
 /// Triglavian ship type IDs — verified CCP inventory_type IDs 2026-04.
 pub mod triglavian {
-    pub const DAMAVIK: u32 = 47269;  // Light frigate
-    pub const VEDMAK: u32 = 47270;   // Cruiser
-    pub const LESHAK: u32 = 47271;   // Battleship
+    pub const DAMAVIK: u32 = 47269; // Light frigate
+    pub const VEDMAK: u32 = 47270; // Cruiser
+    pub const LESHAK: u32 = 47271; // Battleship
     pub const KIKIMORA: u32 = 49710; // Destroyer
     pub const DREKAVAC: u32 = 49711; // Battlecruiser
-    pub const NERGAL: u32 = 52250;   // Assault frigate
+    pub const NERGAL: u32 = 52250; // Assault frigate
     pub const IKITURSA: u32 = 52252; // HAC
-    pub const DRAUGUR: u32 = 52254;  // Command destroyer
+    pub const DRAUGUR: u32 = 52254; // Command destroyer
 }
 
 /// EDENCOM ship type IDs — verified CCP inventory_type IDs 2026-04.
 pub mod edencom {
-    pub const SKYBREAKER: u32 = 54731;   // Frigate
+    pub const SKYBREAKER: u32 = 54731; // Frigate
     pub const STORMBRINGER: u32 = 54732; // Battleship
     pub const THUNDERCHILD: u32 = 54733; // Cruiser
 }

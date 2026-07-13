@@ -51,18 +51,26 @@ fn resolve_briefing(
         let accent = s.player_faction.primary_color();
         let rival = s.enemy_faction;
         let lore = match (s.player_faction, rival) {
-            (Faction::Caldari, Faction::Gallente) =>
+            (Faction::Caldari, Faction::Gallente) => {
                 "Federation forces probe Caldari orbital defenses. First contact \
-                 over contested space. The State demands its stars back.".to_string(),
-            (Faction::Gallente, Faction::Caldari) =>
+                 over contested space. The State demands its stars back."
+                    .to_string()
+            }
+            (Faction::Gallente, Faction::Caldari) => {
                 "Caldari encroachment threatens Federation trade lanes. Your \
-                 squadron is the first line of response. Liberty does not wait.".to_string(),
-            (Faction::Minmatar, Faction::Amarr) =>
+                 squadron is the first line of response. Liberty does not wait."
+                    .to_string()
+            }
+            (Faction::Minmatar, Faction::Amarr) => {
                 "The chains that bind a thousand cannot hold the one who wakes \
-                 the rest. Strike the slavers before they reinforce.".to_string(),
-            (Faction::Amarr, Faction::Minmatar) =>
+                 the rest. Strike the slavers before they reinforce."
+                    .to_string()
+            }
+            (Faction::Amarr, Faction::Minmatar) => {
                 "Rebel elements threaten Imperial holdings. The Empress commands \
-                 their correction. Amarr Victor.".to_string(),
+                 their correction. Amarr Victor."
+                    .to_string()
+            }
             _ => format!(
                 "{} hostiles contest this region. Engage and establish dominance.",
                 rival.short_name()
@@ -70,9 +78,16 @@ fn resolve_briefing(
         };
         return (
             format!("BATTLE OF {}", s.player_faction.short_name()),
-            format!("{} vs {}", s.player_faction.short_name(), rival.short_name()),
+            format!(
+                "{} vs {}",
+                s.player_faction.short_name(),
+                rival.short_name()
+            ),
             lore,
-            format!("Defeat {} forces. Survive all waves. Destroy the flagship.", rival.short_name()),
+            format!(
+                "Defeat {} forces. Survive all waves. Destroy the flagship.",
+                rival.short_name()
+            ),
             format!("⚠ ENEMY FLAGSHIP: {} CARRIER", rival.short_name()),
             accent,
         );

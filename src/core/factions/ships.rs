@@ -1,7 +1,5 @@
 //! Ship definitions, classes, and per-faction ship pools.
 
-use std::sync::LazyLock;
-
 /// Player ship definition
 #[derive(Debug, Clone, Copy)]
 pub struct ShipDef {

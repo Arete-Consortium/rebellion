@@ -36,17 +36,21 @@ impl Plugin for PresentationPlugin {
                 UiPlugin,
             ))
             .add_systems(
+                FixedUpdate,
+                player_hit_reactions
+                    .after(crate::simulation::CollisionPhase::Resolution)
+                    .run_if(in_state(crate::core::GameState::Playing)),
+            )
+            .add_systems(
                 Update,
                 (
                     enemy_hit_reactions,
                     boss_health_callouts,
                     enemy_death_reactions,
-                    player_hit_reactions,
                     player_death_reactions,
                     spawn_chain_bolts,
                     tick_chain_bolts,
                 )
-                    .after(crate::simulation::CollisionPhase::Resolution)
                     .run_if(in_state(crate::core::GameState::Playing)),
             );
     }

@@ -5,10 +5,7 @@
 use super::common::*;
 use bevy::prelude::*;
 
-pub fn spawn_hud(
-    mut commands: Commands,
-    mobile: Res<crate::systems::touch_joystick::MobileMode>,
-) {
+pub fn spawn_hud(mut commands: Commands, mobile: Res<crate::systems::touch_joystick::MobileMode>) {
     commands
         .spawn((
             HudRoot,

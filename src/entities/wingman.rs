@@ -88,7 +88,7 @@ pub struct WingmanPlugin;
 impl Plugin for WingmanPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(WingmanTracker::new()).add_systems(
-            Update,
+            FixedUpdate,
             (
                 track_kills_for_wingman,
                 wingman_follow_player,

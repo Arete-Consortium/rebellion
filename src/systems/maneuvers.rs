@@ -17,7 +17,7 @@ impl Plugin for ManeuverPlugin {
         app.add_event::<ThrustEvent>()
             .add_event::<BarrelRollEvent>()
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     handle_maneuver_input,
                     update_thrust,

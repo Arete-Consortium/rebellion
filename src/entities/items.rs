@@ -49,9 +49,9 @@ pub fn display_name(t: CollectibleType) -> &'static str {
     use CollectibleType as C;
     match t {
         C::ScatterLauncher => "Scourge Rage Missile",
-        C::RailSpike       => "Republic Fleet Barrage",
-        C::PlasmaLance     => "Conflagration Pulse",
-        C::HomingSwarm     => "Warrior Drone Swarm",
+        C::RailSpike => "Republic Fleet Barrage",
+        C::PlasmaLance => "Conflagration Pulse",
+        C::HomingSwarm => "Warrior Drone Swarm",
         C::VortonProjector => "Vorton Projector",
         _ => "",
     }
@@ -63,9 +63,9 @@ pub fn required_weapon_type(t: CollectibleType) -> Option<WeaponType> {
     use CollectibleType as C;
     Some(match t {
         C::ScatterLauncher => WeaponType::MissileLauncher, // Caldari
-        C::RailSpike       => WeaponType::Autocannon,      // Minmatar
-        C::PlasmaLance     => WeaponType::Laser,           // Amarr
-        C::HomingSwarm     => WeaponType::Drone,           // Gallente
+        C::RailSpike => WeaponType::Autocannon,            // Minmatar
+        C::PlasmaLance => WeaponType::Laser,               // Amarr
+        C::HomingSwarm => WeaponType::Drone,               // Gallente
         C::VortonProjector => WeaponType::Vorton,          // EDENCOM
         _ => return None,
     })
@@ -133,14 +133,14 @@ impl Inventory {
 /// Zeroed deltas — player's baseline Weapon component values are multiplied/added on top.
 #[derive(Component, Default, Clone, Copy, Debug)]
 pub struct EffectiveStats {
-    pub damage_mult: f32,         // 1.0 = no change
-    pub fire_rate_mult: f32,      // 1.0 = no change
+    pub damage_mult: f32,    // 1.0 = no change
+    pub fire_rate_mult: f32, // 1.0 = no change
     pub extra_projectiles: u32,
     pub spread_radians: f32,
     pub pierce: u32,
     pub crit_chance: f32,
-    pub crit_damage_mult: f32,    // 1.0 = no bonus
-    pub homing: f32,              // 0.0..1.0
+    pub crit_damage_mult: f32, // 1.0 = no bonus
+    pub homing: f32,           // 0.0..1.0
     pub chain_targets: u32,
     pub burn_dps: f32,
 }
@@ -167,11 +167,7 @@ impl EffectiveStats {
 // ═══════════════════════════════════════════════════════════════
 
 pub fn recompute_stats(
-    mut q: Query<(
-        &mut Inventory,
-        &mut EffectiveStats,
-        &super::player::Weapon,
-    )>,
+    mut q: Query<(&mut Inventory, &mut EffectiveStats, &super::player::Weapon)>,
 ) {
     for (mut inv, mut eff, weapon) in &mut q {
         if !inv.dirty {

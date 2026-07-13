@@ -38,7 +38,7 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<PlayerTracker>().add_systems(
-            Update,
+            FixedUpdate,
             (
                 // Ordered pipeline: track player -> compute awareness -> move -> shoot
                 (

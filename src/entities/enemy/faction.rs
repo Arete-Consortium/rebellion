@@ -37,11 +37,9 @@ pub(super) fn get_faction_engine_trail(type_id: u32) -> EngineTrail {
         // Minmatar - rust engines
         587 | 585 | 598 | 11400 | 11993 => EngineTrail::minmatar(),
         // EDENCOM — Vorton arc trails
-        54731 | 54732 | 54733 => EngineTrail::edencom(),
+        54731..=54733 => EngineTrail::edencom(),
         // Triglavian — entropic crimson
-        47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => {
-            EngineTrail::triglavian()
-        }
+        47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => EngineTrail::triglavian(),
         // Guristas pirate (Gila) — violet
         17713 => EngineTrail::pirate(),
         _ => EngineTrail::amarr(),
@@ -63,7 +61,7 @@ pub(super) fn get_faction_weapon(type_id: u32) -> WeaponType {
         // Triglavian — Disintegrators (Damavik, Vedmak, Leshak, Kikimora, Drekavac, Nergal)
         47269 | 47270 | 47271 | 49710 | 49711 | 52250 => WeaponType::Disintegrator,
         // EDENCOM - Vorton projectors (chain lightning)
-        54731 | 54733 | 54732 => WeaponType::Vorton,
+        54731..=54733 => WeaponType::Vorton,
         _ => WeaponType::Laser,
     }
 }
@@ -83,11 +81,7 @@ pub fn ship_sprite_tint(type_id: u32, faction: Faction) -> Color {
         // looks factional but detail stays readable.
         _ => {
             let c = faction.primary_color().to_srgba();
-            Color::srgb(
-                c.red * 0.3 + 0.7,
-                c.green * 0.3 + 0.7,
-                c.blue * 0.3 + 0.7,
-            )
+            Color::srgb(c.red * 0.3 + 0.7, c.green * 0.3 + 0.7, c.blue * 0.3 + 0.7)
         }
     }
 }
@@ -98,7 +92,7 @@ pub fn ship_sprite_tint(type_id: u32, faction: Faction) -> Color {
 pub fn get_player_weapon_type(type_id: u32, faction: Faction) -> WeaponType {
     match type_id {
         // EDENCOM — Vorton projectors (chain lightning)
-        54731 | 54733 | 54732 => WeaponType::Vorton,
+        54731..=54733 => WeaponType::Vorton,
         // Triglavian + derived — Entropic disintegrators (ramping damage)
         47269 | 47270 | 47271 | 49710 | 49711 | 52250 => WeaponType::Disintegrator,
         // Caldari missile hulls (Kestrel, Condor, Hawk rockets, Jackdaw, Caracal, Drake)
@@ -131,17 +125,17 @@ pub fn get_player_weapon_type(type_id: u32, faction: Faction) -> WeaponType {
 /// Get rotation correction for ships with non-standard orientations from CCP renders
 /// Returns additional rotation in radians to apply on top of base rotation
 pub fn get_ship_rotation_correction(type_id: u32) -> f32 {
-    use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, PI};
+    use std::f32::consts::{FRAC_PI_2, PI};
     match type_id {
         // === CALDARI === (bundled sprites face up, need 180deg base only)
-        602 => -FRAC_PI_2,  // Kestrel — observed facing right, rotate -90° to face down
-        603 => -FRAC_PI_2,  // Merlin - faces left
-        583 => -FRAC_PI_2,  // Condor - faces left
+        602 => -FRAC_PI_2, // Kestrel — observed facing right, rotate -90° to face down
+        603 => -FRAC_PI_2, // Merlin - faces left
+        583 => -FRAC_PI_2, // Condor - faces left
         // Auto-detected via scripts/analyze_ship_orientation.py (PCA + CCP 3/4
         // render convention). Update with preview mode if a sprite rotates off.
-        11381 => 0.0,        // Hawk — hand-drawn top-down, nose up
-        11387 => FRAC_PI_2,  // Harpy - legacy sprite
-        35683 => 0.0,        // Jackdaw — hand-drawn top-down
+        11381 => 0.0,       // Hawk — hand-drawn top-down, nose up
+        11387 => FRAC_PI_2, // Harpy - legacy sprite
+        35683 => 0.0,       // Jackdaw — hand-drawn top-down
 
         // === INVASION ROSTER === (custom sprites from eve-ship-sprites)
         // Triglavian + Nergal: natively nose-up, no correction.

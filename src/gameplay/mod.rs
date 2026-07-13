@@ -51,7 +51,7 @@ impl Plugin for GameplayPlugin {
                 ScoringSystemPlugin,
             ))
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     enemy_death_outcomes,
                     player_damage_outcomes,

@@ -26,7 +26,7 @@ impl Plugin for SpawningPlugin {
             )
             .add_systems(OnExit(GameState::Playing), cleanup_carrier)
             .add_systems(
-                Update,
+                FixedUpdate,
                 (
                     wave_spawning,
                     handle_spawn_events,
@@ -227,10 +227,7 @@ fn carrier_launch_fighters(
             // just above the screen top regardless of carrier scroll phase so
             // every wave stays visible to the player.
             let launch_y = crate::core::SCREEN_HEIGHT / 2.0 + 40.0 - jitter_y;
-            let launch_pos = Vec2::new(
-                carrier_t.translation.x + offset_x + jitter_x,
-                launch_y,
-            );
+            let launch_pos = Vec2::new(carrier_t.translation.x + offset_x + jitter_x, launch_y);
 
             let _fighter_entity = crate::entities::enemy::spawn_enemy(
                 &mut commands,

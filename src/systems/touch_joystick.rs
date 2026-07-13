@@ -100,7 +100,7 @@ impl Plugin for TouchJoystickPlugin {
         app.init_resource::<MobileMode>()
             .init_resource::<TouchJoystickState>()
             // Frame-time diagnostics for the mobile FPS overlay.
-            .add_plugins(FrameTimeDiagnosticsPlugin::default())
+            .add_plugins(FrameTimeDiagnosticsPlugin)
             .add_systems(
                 Startup,
                 (detect_mobile_mode, spawn_joystick_ui, spawn_fps_overlay).chain(),
@@ -388,10 +388,7 @@ fn update_touch_joystick(
 /// Hide stick UI in non-gameplay states so menus get the full screen.
 fn update_stick_visibility(
     state: Res<State<GameState>>,
-    mut bases: Query<
-        &mut Visibility,
-        Or<(With<LeftStickBase>, With<RightStickBase>)>,
-    >,
+    mut bases: Query<&mut Visibility, Or<(With<LeftStickBase>, With<RightStickBase>)>>,
 ) {
     let gameplay = matches!(state.get(), GameState::Playing | GameState::BossFight);
     let target = if gameplay {
