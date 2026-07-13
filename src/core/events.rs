@@ -579,7 +579,8 @@ pub struct GameEventsPlugin;
 
 impl Plugin for GameEventsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<PlayerDamagedEvent>()
+        app.add_event::<ContactRaw>()
+            .add_event::<PlayerDamagedEvent>()
             .add_event::<DamageLayerEvent>()
             .add_event::<EnemyDestroyedEvent>()
             .add_event::<EnemyDamageAppliedEvent>()

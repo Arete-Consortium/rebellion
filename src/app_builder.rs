@@ -31,6 +31,12 @@ pub fn build_headless_app() -> App {
     // Fixed timestep
     app.insert_resource(Time::<Fixed>::from_seconds(FIXED_TIMESTEP_SECS));
 
+    // In headless mode, advance time by exactly one fixed tick per update
+    // so that FixedUpdate systems run deterministically in tests.
+    app.insert_resource(bevy::time::TimeUpdateStrategy::ManualDuration(
+        std::time::Duration::from_secs_f64(FIXED_TIMESTEP_SECS),
+    ));
+
     // Game state
     app.init_state::<GameState>();
 
@@ -68,7 +74,8 @@ pub fn build_headless_app() -> App {
         .add_event::<crate::systems::joystick::BackButtonEvent>();
 
     // Stub resources normally provided by presentation / platform plugins
-    app.init_resource::<crate::assets::ShipSpriteCache>()
+    app.init_resource::<ButtonInput<KeyCode>>()
+        .init_resource::<crate::assets::ShipSpriteCache>()
         .init_resource::<crate::assets::ShipModelCache>()
         .init_resource::<crate::assets::PowerupIconCache>()
         .init_resource::<crate::systems::JoystickState>()
