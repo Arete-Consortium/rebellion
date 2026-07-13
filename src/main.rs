@@ -15,21 +15,33 @@ use bevy_egui::EguiPlugin;
 use console_error_panic_hook;
 
 mod assets;
+mod content;
 mod core;
+mod diagnostics;
 mod entities;
+mod gameplay;
 mod games;
+mod platform;
+mod presentation;
+mod simulation;
 mod systems;
 mod ui;
 
 use assets::AssetsPlugin;
+use content::ContentPlugin;
 use core::{
     AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, AudioSettings, BossSpawnEvent,
     CampaignState, CurrentStage, Difficulty, EndlessMode, GameEventsPlugin, GameProgress,
     GameSession, GameState, InputConfig, MissionCompleteEvent, MissionStartEvent, SaltMinerSystem,
     SavePlugin, ScoreSystem, SelectedShip, ShipUnlocks, WaveCompleteEvent,
 };
+use diagnostics::DiagnosticsPlugin;
 use entities::EntitiesPlugin;
+use gameplay::GameplayPlugin;
 use games::GameModulesPlugin;
+use platform::PlatformPlugin;
+use presentation::PresentationPlugin;
+use simulation::SimulationPlugin;
 use systems::SystemsPlugin;
 use ui::UiPlugin;
 
@@ -78,6 +90,12 @@ fn main() {
         .add_event::<ActCompleteEvent>()
         // Game plugins
         .add_plugins((
+            PlatformPlugin,
+            ContentPlugin,
+            SimulationPlugin,
+            GameplayPlugin,
+            PresentationPlugin,
+            DiagnosticsPlugin,
             SavePlugin,
             AnalyticsPlugin,
             AchievementPlugin,
