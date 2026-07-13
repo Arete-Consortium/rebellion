@@ -9,11 +9,24 @@
 
 use bevy::prelude::*;
 
+use crate::core::AudioSettings;
+use crate::systems::{
+    audio::AudioPlugin, dialogue::DialoguePlugin, effects::EffectsPlugin, music::MusicPlugin,
+};
+use crate::ui::UiPlugin;
+
 /// Plugin that registers all presentation systems.
 pub struct PresentationPlugin;
 
 impl Plugin for PresentationPlugin {
-    fn build(&self, _app: &mut App) {
-        // Empty shell for Mission 1 — systems will migrate here in later PRs.
+    fn build(&self, app: &mut App) {
+        app.init_resource::<AudioSettings>()
+            .add_plugins((
+                EffectsPlugin,
+                AudioPlugin,
+                MusicPlugin,
+                DialoguePlugin,
+                UiPlugin,
+            ));
     }
 }

@@ -28,7 +28,6 @@ pub use dialogue::*;
 pub use effects::*;
 pub use joystick::*;
 pub use maneuvers::*;
-pub use music::*;
 pub use scoring::*;
 pub use scoring_v2::*;
 pub use spawning::*;
@@ -48,11 +47,7 @@ impl Plugin for SystemsPlugin {
             SpawningPlugin,
             ScoringPlugin,
             ScoringSystemPlugin,
-            EffectsPlugin,
             BossPlugin,
-            DialoguePlugin,
-            AudioPlugin,
-            MusicPlugin,
             ManeuverPlugin,
             CampaignPlugin,
         ));

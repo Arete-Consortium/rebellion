@@ -29,7 +29,7 @@ mod ui;
 
 use content::ContentPlugin;
 use core::{
-    AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, AudioSettings, BossSpawnEvent,
+    AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, BossSpawnEvent,
     CampaignState, CurrentStage, Difficulty, EndlessMode, GameEventsPlugin, GameProgress,
     GameSession, GameState, MissionCompleteEvent, MissionStartEvent, SaltMinerSystem,
     SavePlugin, ScoreSystem, SelectedShip, ShipUnlocks, WaveCompleteEvent,
@@ -42,7 +42,6 @@ use platform::PlatformPlugin;
 use presentation::PresentationPlugin;
 use simulation::SimulationPlugin;
 use systems::SystemsPlugin;
-use ui::UiPlugin;
 
 fn main() {
     // WASM: Set up panic hook for better error messages
@@ -72,7 +71,6 @@ fn main() {
         .init_resource::<ScoreSystem>()
         .init_resource::<SaltMinerSystem>()
         .init_resource::<GameProgress>()
-        .init_resource::<AudioSettings>()
         .init_resource::<Difficulty>()
         .init_resource::<SelectedShip>()
         .init_resource::<CurrentStage>()
@@ -100,7 +98,6 @@ fn main() {
             GameEventsPlugin,
             EntitiesPlugin,
             SystemsPlugin,
-            UiPlugin,
             GameModulesPlugin,
         ))
         // Setup
