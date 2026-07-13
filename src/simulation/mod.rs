@@ -19,15 +19,18 @@ use resolve_damage::{
     enrich_contacts, resolve_enemy_projectile_damage, resolve_player_projectile_damage,
 };
 use resolve_deaths::resolve_enemy_deaths;
+use sim_id::assign_sim_ids;
 
 pub mod detect_collisions;
 pub mod fixed_step;
 pub mod resolve_damage;
 pub mod resolve_deaths;
 pub mod rng;
+pub mod sim_id;
 
 pub use fixed_step::{SimSet, FIXED_TIMESTEP_SECS};
 pub use rng::{MissionSeed, SimulationRng, DEFAULT_MISSION_SEED};
+pub use sim_id::SimIdGenerator;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CollisionPhase {
@@ -43,6 +46,7 @@ impl Plugin for SimulationPlugin {
         app.insert_resource(SpatialGrid::new())
             .init_resource::<MissionSeed>()
             .insert_resource(SimulationRng::from_seed(DEFAULT_MISSION_SEED))
+            .init_resource::<SimIdGenerator>()
             .configure_sets(
                 FixedUpdate,
                 (CollisionPhase::Detection, CollisionPhase::Resolution).chain(),
@@ -68,6 +72,12 @@ impl Plugin for SimulationPlugin {
                 )
                     .chain()
                     .in_set(CollisionPhase::Resolution)
+                    .run_if(in_state(crate::core::GameState::Playing)),
+            )
+            .add_systems(
+                FixedUpdate,
+                assign_sim_ids
+                    .after(CollisionPhase::Resolution)
                     .run_if(in_state(crate::core::GameState::Playing)),
             )
             .add_plugins((CollisionPlugin, ProjectilePlugin, CollectiblePlugin));
