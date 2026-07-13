@@ -49,7 +49,6 @@ impl Plugin for SystemsPlugin {
             ScoringPlugin,
             ScoringSystemPlugin,
             EffectsPlugin,
-            perf_profile::PerfProfilePlugin,
             BossPlugin,
             DialoguePlugin,
             AudioPlugin,

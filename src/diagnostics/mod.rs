@@ -8,11 +8,13 @@
 
 use bevy::prelude::*;
 
+use crate::systems::perf_profile::PerfProfilePlugin;
+
 /// Plugin that registers all diagnostic and profiling systems.
 pub struct DiagnosticsPlugin;
 
 impl Plugin for DiagnosticsPlugin {
-    fn build(&self, _app: &mut App) {
-        // Empty shell for Mission 1 — systems will migrate here in later PRs.
+    fn build(&self, app: &mut App) {
+        app.add_plugins(PerfProfilePlugin);
     }
 }
