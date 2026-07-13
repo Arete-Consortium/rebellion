@@ -33,14 +33,3 @@ pub use scoring_v2::*;
 pub use spawning::*;
 // touch_joystick intentionally not glob-re-exported — its public items
 // are accessed via `crate::systems::touch_joystick::...` if needed.
-
-use bevy::prelude::*;
-
-/// Plugin that registers systems not yet migrated to domain plugins.
-pub struct SystemsPlugin;
-
-impl Plugin for SystemsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(CollisionPlugin);
-    }
-}

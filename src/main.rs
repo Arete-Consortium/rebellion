@@ -33,13 +33,11 @@ use core::{
     GameState, MissionCompleteEvent, MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
 use diagnostics::DiagnosticsPlugin;
-use entities::EntitiesPlugin;
 use gameplay::GameplayPlugin;
 use games::GameModulesPlugin;
 use platform::PlatformPlugin;
 use presentation::PresentationPlugin;
 use simulation::SimulationPlugin;
-use systems::SystemsPlugin;
 
 fn main() {
     // WASM: Set up panic hook for better error messages
@@ -83,8 +81,6 @@ fn main() {
             AnalyticsPlugin,
             AchievementPlugin,
             GameEventsPlugin,
-            EntitiesPlugin,
-            SystemsPlugin,
             GameModulesPlugin,
         ))
         // Setup

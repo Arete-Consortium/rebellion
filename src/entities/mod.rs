@@ -19,14 +19,3 @@ pub use items::{EffectiveStats, Inventory};
 pub use player::*;
 pub use projectile::*;
 pub use wingman::*;
-
-use bevy::prelude::*;
-
-/// Plugin that registers entity systems that have not yet been migrated.
-pub struct EntitiesPlugin;
-
-impl Plugin for EntitiesPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins((ProjectilePlugin, CollectiblePlugin));
-    }
-}
