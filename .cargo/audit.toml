@@ -1,0 +1,32 @@
+[advisories]
+ignore = [
+    # RUSTSEC-2026-0204: crossbeam-epoch invalid pointer dereference in fmt::Pointer.
+    # Transitive through Bevy 0.15. Not triggered by game code (no Atomic/Shared fmt).
+    # TODO: Remove when Bevy upgrades crossbeam-epoch to >=0.9.20.
+    "RUSTSEC-2026-0204",
+
+    # RUSTSEC-2026-0194 / RUSTSEC-2026-0195: quick-xml quadratic DoS and
+    # unbounded namespace allocation. Transitive through Bevy 0.15 gltf/scene.
+    # Rebellion only parses trusted game assets (not untrusted network XML).
+    # TODO: Remove when Bevy upgrades quick-xml to >=0.41.0.
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
+
+    # RUSTSEC-2026-0185: quinn-proto remote memory exhaustion via out-of-order
+    # stream reassembly. Transitive through Bevy networking. Rebellion is
+    # single-player; no QUIC multiplayer is implemented.
+    # TODO: Remove when Bevy upgrades quinn-proto to >=0.11.15.
+    "RUSTSEC-2026-0185",
+
+    # RUSTSEC-2026-0097: rand unsoundness via custom logger calling thread_rng().
+    # Requires a custom log::Log implementation that calls rand during reseed.
+    # Rebellion has no custom logger and does not enable the `log` feature on rand.
+    # TODO: Remove when Bevy upgrades rand to >=0.8.6 or >=0.9.3.
+    "RUSTSEC-2026-0097",
+
+    # RUSTSEC-2026-0186: memmap2 unchecked pointer offset in advise_range/flush_range.
+    # Requires explicitly passing out-of-bounds offset+len to those APIs.
+    # Rebellion does not call memmap2 directly; it is transitive through Bevy asset loading.
+    # TODO: Remove when Bevy upgrades memmap2 to >=0.9.11.
+    "RUSTSEC-2026-0186",
+]
