@@ -44,6 +44,39 @@ pub struct EnemyDestroyedEvent {
     pub was_boss: bool,
 }
 
+/// Contact detected between two entities (detection → resolution decoupling)
+#[derive(Event, Debug, Clone)]
+pub struct ContactDetected {
+    pub contact_type: ContactType,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ContactType {
+    /// Player projectile collided with an enemy
+    PlayerProjectileEnemy {
+        projectile: Entity,
+        enemy: Entity,
+        projectile_pos: Vec2,
+        enemy_pos: Vec2,
+        damage: f32,
+        damage_type: DamageType,
+        crit_chance: f32,
+        crit_multiplier: f32,
+        ammo_type: AmmoType,
+        pierce_remaining: Option<u32>,
+        burn_dps: Option<f32>,
+        chain_targets: Option<u32>,
+    },
+    /// Enemy projectile collided with the player
+    EnemyProjectilePlayer {
+        projectile: Entity,
+        player: Entity,
+        projectile_pos: Vec2,
+        damage: f32,
+        damage_type: DamageType,
+    },
+}
+
 /// Player fired weapon
 #[derive(Event)]
 pub struct PlayerFireEvent {
@@ -498,6 +531,7 @@ impl Plugin for GameEventsPlugin {
         app.add_event::<PlayerDamagedEvent>()
             .add_event::<DamageLayerEvent>()
             .add_event::<EnemyDestroyedEvent>()
+            .add_event::<ContactDetected>()
             .add_event::<PlayerFireEvent>()
             .add_event::<SpawnEnemyEvent>()
             .add_event::<SpawnWaveEvent>()

@@ -29,7 +29,7 @@ impl SpatialGrid {
         }
     }
 
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         for cell in &mut self.enemy_cells {
             cell.clear();
         }
@@ -77,33 +77,15 @@ impl SpatialGrid {
     }
 }
 
-/// Collision plugin
+/// Collision plugin — now empty. All collision systems are registered
+/// directly by SimulationPlugin to maintain ordering between detection
+/// (src/simulation/) and resolution (src/systems/collision.rs) without
+/// circular module dependencies. SpatialGrid is inserted by SimulationPlugin.
 pub struct CollisionPlugin;
 
 impl Plugin for CollisionPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(SpatialGrid::new()).add_systems(
-            Update,
-            (
-                update_spatial_grid,
-                player_projectile_enemy_collision,
-                enemy_projectile_player_collision,
-                tick_chain_bolts,
-            )
-                .chain()
-                .run_if(in_state(GameState::Playing)),
-        );
-    }
-}
-
-/// Update spatial grid with current enemy positions
-fn update_spatial_grid(
-    mut grid: ResMut<SpatialGrid>,
-    enemy_query: Query<(Entity, &Transform), With<Enemy>>,
-) {
-    grid.clear();
-    for (entity, transform) in enemy_query.iter() {
-        grid.insert_enemy(entity, transform.translation.truncate());
+    fn build(&self, _app: &mut App) {
+        // Intentionally no-op — systems registered by SimulationPlugin.
     }
 }
 
@@ -196,21 +178,12 @@ pub fn tick_chain_bolts(
     }
 }
 
-/// Player projectiles hitting enemies (optimized with spatial grid)
-fn player_projectile_enemy_collision(
+/// Player projectiles hitting enemies — consumes `ContactDetected` events
+/// produced by `detect_player_projectile_hits` in `src/simulation/detect_collisions.rs`.
+pub fn player_projectile_enemy_collision(
     mut commands: Commands,
     grid: Res<SpatialGrid>,
-    mut projectile_query: Query<
-        (
-            Entity,
-            &Transform,
-            &ProjectileDamage,
-            Option<&mut super::super::entities::projectile::Pierce>,
-            Option<&super::super::entities::projectile::BurnOnHit>,
-            Option<&super::super::entities::projectile::ChainOnHit>,
-        ),
-        With<PlayerProjectile>,
-    >,
+    mut contact_events: EventReader<ContactDetected>,
     mut enemy_query: Query<(&mut EnemyStats, Option<&Sprite>), With<Enemy>>,
     player_query: Query<(&Transform, &ShipStats), With<Player>>,
     mut score: ResMut<ScoreSystem>,
@@ -236,243 +209,239 @@ fn player_projectile_enemy_collision(
         })
         .unwrap_or((Vec2::ZERO, None));
 
-    // Collision radius squared for faster distance checks
-    const COLLISION_RADIUS_SQ: f32 = 25.0 * 25.0;
+    for contact in contact_events.read() {
+        let ContactType::PlayerProjectileEnemy {
+            projectile: proj_entity,
+            enemy: enemy_entity,
+            projectile_pos: _proj_pos,
+            enemy_pos,
+            damage,
+            damage_type,
+            crit_chance,
+            crit_multiplier,
+            ammo_type,
+            pierce_remaining,
+            burn_dps,
+            chain_targets,
+        } = contact.contact_type
+        else {
+            continue;
+        };
 
-    for (proj_entity, proj_transform, proj_damage, mut pierce, burn, chain) in projectile_query.iter_mut() {
-        let proj_pos = proj_transform.translation.truncate();
+        // Get mutable enemy stats
+        let Ok((mut enemy_stats, sprite)) = enemy_query.get_mut(enemy_entity) else {
+            continue;
+        };
 
-        // Only check enemies in nearby grid cells (O(1) average instead of O(n))
-        for &(enemy_entity, enemy_pos) in grid.get_nearby_enemies(proj_pos) {
-            let dist_sq = (proj_pos - enemy_pos).length_squared();
+        // Roll for critical hit
+        let is_crit = fastrand::f32() < crit_chance;
+        let crit_mult = if is_crit { crit_multiplier } else { 1.0 };
 
-            // Use squared distance to avoid sqrt
-            if dist_sq < COLLISION_RADIUS_SQ {
-                // Get mutable enemy stats
-                let Ok((mut enemy_stats, sprite)) = enemy_query.get_mut(enemy_entity) else {
-                    continue;
-                };
+        // Apply ammo type multiplier (use armor mult since most enemies are armored)
+        let ammo_mult = ammo_type.armor_mult();
 
-                // Roll for critical hit
-                let is_crit = fastrand::f32() < proj_damage.crit_chance;
-                let crit_mult = if is_crit {
-                    proj_damage.crit_multiplier
-                } else {
-                    1.0
-                };
+        let final_damage = damage * crit_mult * ammo_mult;
 
-                // Apply ammo type multiplier (use armor mult since most enemies are armored)
-                let ammo_mult = proj_damage.ammo_type.armor_mult();
+        // Apply damage
+        enemy_stats.health -= final_damage;
 
-                let final_damage = proj_damage.damage * crit_mult * ammo_mult;
+        // Boss low health callout (once per boss)
+        if enemy_stats.is_boss && !*boss_callout_sent {
+            let health_pct = enemy_stats.health / enemy_stats.max_health;
+            if health_pct > 0.0 && health_pct < 0.25 {
+                dialogue_events.send(super::DialogueEvent::combat_callout(
+                    super::CombatCalloutType::BossLowHealth,
+                ));
+                *boss_callout_sent = true;
+            }
+        }
 
-                // Apply damage
-                enemy_stats.health -= final_damage;
+        // Add hit flash effect (white flash when damaged)
+        let original_color = sprite.map(|s| s.color).unwrap_or(Color::WHITE);
+        commands
+            .entity(enemy_entity)
+            .insert(super::effects::HitFlash::new(original_color));
 
-                // Boss low health callout (once per boss)
-                if enemy_stats.is_boss && !*boss_callout_sent {
-                    let health_pct = enemy_stats.health / enemy_stats.max_health;
-                    if health_pct > 0.0 && health_pct < 0.25 {
-                        dialogue_events.send(super::DialogueEvent::combat_callout(
-                            super::CombatCalloutType::BossLowHealth,
-                        ));
-                        *boss_callout_sent = true;
+        // Impact sparks — radial burst in damage-type color.
+        super::effects::spawn_impact_sparks(
+            &mut commands,
+            enemy_pos,
+            damage_type,
+        );
+
+        // Crit punch — subtle screen flash + extra shake on crit hits.
+        if is_crit {
+            screen_flash.brief();
+            screen_shake.trigger(4.0, 0.05);
+        }
+
+        // Spawn floating damage number
+        super::effects::spawn_damage_number(
+            &mut commands,
+            enemy_pos,
+            final_damage,
+            is_crit,
+        );
+
+        // Apply burn DoT if projectile carries one
+        if let Some(dps) = burn_dps {
+            commands.entity(enemy_entity).insert(super::super::entities::projectile::BurnStatus {
+                dps,
+                remaining: 3.0,
+            });
+        }
+
+        // Pre-plan chain targets now (read-only grid), execute after
+        // we release the mutable borrow on enemy_stats below.
+        let chain_plan: Vec<(Entity, Vec2)> = if let Some(max_chains) = chain_targets {
+            let mut visited: Vec<Entity> = vec![enemy_entity];
+            let mut origin = enemy_pos;
+            let mut plan = Vec::new();
+            for _ in 0..max_chains {
+                let mut best: Option<(Entity, Vec2)> = None;
+                // Chain range boosted 220 → 320 for Vorton identity
+                let mut best_d = 320.0_f32;
+                for &(oe, opos) in grid.get_nearby_enemies(origin) {
+                    if visited.contains(&oe) {
+                        continue;
+                    }
+                    let d = origin.distance(opos);
+                    if d < best_d {
+                        best_d = d;
+                        best = Some((oe, opos));
                     }
                 }
+                let Some((tgt, tpos)) = best else { break };
+                plan.push((tgt, tpos));
+                visited.push(tgt);
+                origin = tpos;
+            }
+            plan
+        } else {
+            Vec::new()
+        };
 
-                // Add hit flash effect (white flash when damaged)
-                let original_color = sprite.map(|s| s.color).unwrap_or(Color::WHITE);
-                commands
-                    .entity(enemy_entity)
-                    .insert(super::effects::HitFlash::new(original_color));
+        // Pierce: decrement and keep projectile alive; else despawn
+        match pierce_remaining {
+            Some(n) if n > 0 => {
+                commands.entity(proj_entity).insert(Pierce(n - 1));
+            }
+            _ => {
+                commands.entity(proj_entity).despawn_recursive();
+            }
+        }
 
-                // Impact sparks — radial burst in damage-type color.
-                super::effects::spawn_impact_sparks(
+        // Check if enemy destroyed
+        if enemy_stats.health <= 0.0 {
+            // Calculate distance from player to enemy for salt miner
+            let player_distance = (player_pos - enemy_pos).length();
+
+            // Update score (with salt miner multiplier)
+            let base_score = enemy_stats.score_value;
+            let final_score = (base_score as f32 * salt_miner.score_mult()) as u64;
+            score.on_kill(final_score);
+
+            // Fill salt miner meter based on proximity (closer = more meter)
+            let meter_gained = salt_miner.on_kill_at_distance(player_distance);
+            if meter_gained > 0.0 && salt_miner.can_activate() {
+                info!(
+                    "SALT MINER READY! Press B to activate! (meter: {:.0}%)",
+                    salt_miner.meter
+                );
+            }
+
+            // Send events
+            destroy_events.send(EnemyDestroyedEvent {
+                position: enemy_pos,
+                enemy_type: enemy_stats.name.clone(),
+                score_value: enemy_stats.score_value,
+                was_boss: enemy_stats.is_boss,
+            });
+
+            // Faction-colored explosions based on enemy type
+            let explosion_color = match enemy_stats.type_id {
+                // Amarr enemies — golden
+                597 | 589 | 591 | 16236 | 624 | 625 | 24690 => Color::srgb(1.0, 0.85, 0.3),
+                // Triglavian enemies — red
+                47269..=47273 => Color::srgb(0.9, 0.2, 0.3),
+                // Default — orange
+                _ => Color::srgb(1.0, 0.5, 0.2),
+            };
+
+            explosion_events.send(ExplosionEvent {
+                position: enemy_pos,
+                size: if enemy_stats.is_boss {
+                    ExplosionSize::Massive
+                } else {
+                    ExplosionSize::Small
+                },
+                color: explosion_color,
+            });
+
+            // Screen shake, flash, zoom, and hitstop on kill
+            if enemy_stats.is_boss {
+                screen_shake.massive();
+                screen_flash.massive(); // Big white flash for boss kills
+                camera_zoom.boss_kill(); // Dramatic zoom pulse
+                hit_stop.trigger(0.08); // Longer freeze frame for boss kills
+                *boss_callout_sent = false; // Reset for next boss
+            } else {
+                screen_shake.trigger(3.0, 0.1); // Small shake for regular enemies
+                hit_stop.trigger(0.02); // Brief freeze frame on regular kills
+            }
+
+            // Spawn liberation pods
+            spawn_liberation_pods(&mut commands, enemy_pos, enemy_stats.liberation_value);
+
+            // 30% chance to drop powerup (100% for bosses)
+            let drop_chance = if enemy_stats.is_boss { 1.0 } else { 0.30 };
+            if fastrand::f32() < drop_chance {
+                spawn_smart_powerup(
                     &mut commands,
                     enemy_pos,
-                    proj_damage.damage_type,
+                    Some(&icon_cache),
+                    player_health,
                 );
+            }
 
-                // Crit punch — subtle screen flash + extra shake on crit hits.
-                if is_crit {
-                    screen_flash.brief();
-                    screen_shake.trigger(4.0, 0.05);
-                }
+            // Despawn enemy
+            commands.entity(enemy_entity).despawn_recursive();
+        }
 
-                // Spawn floating damage number
+        // Execute chain-lightning plan (primary enemy_stats borrow released).
+        // Chain damage bumped 0.65 → 0.9 so Vorton reads as devastating.
+        let chain_dmg = damage * 0.9;
+        let mut prev = enemy_pos;
+        for (tgt, tpos) in chain_plan {
+            if let Ok((mut tstats, _)) = enemy_query.get_mut(tgt) {
+                tstats.health -= chain_dmg;
                 super::effects::spawn_damage_number(
                     &mut commands,
-                    enemy_pos,
-                    final_damage,
-                    is_crit,
+                    tpos,
+                    chain_dmg,
+                    false,
                 );
-
-                // Apply burn DoT if projectile carries one
-                if let Some(b) = burn {
-                    commands
-                        .entity(enemy_entity)
-                        .insert(super::super::entities::projectile::BurnStatus {
-                            dps: b.0,
-                            remaining: 3.0,
-                        });
-                }
-
-                // Pre-plan chain targets now (read-only grid), execute after
-                // we release the mutable borrow on enemy_stats below.
-                let chain_plan: Vec<(Entity, Vec2)> = if let Some(c) = chain {
-                    let mut visited: Vec<Entity> = vec![enemy_entity];
-                    let mut origin = enemy_pos;
-                    let mut plan = Vec::new();
-                    for _ in 0..c.0 {
-                        let mut best: Option<(Entity, Vec2)> = None;
-                        // Chain range boosted 220 → 320 for Vorton identity
-                        let mut best_d = 320.0_f32;
-                        for &(oe, opos) in grid.get_nearby_enemies(origin) {
-                            if visited.contains(&oe) {
-                                continue;
-                            }
-                            let d = origin.distance(opos);
-                            if d < best_d {
-                                best_d = d;
-                                best = Some((oe, opos));
-                            }
-                        }
-                        let Some((tgt, tpos)) = best else { break };
-                        plan.push((tgt, tpos));
-                        visited.push(tgt);
-                        origin = tpos;
-                    }
-                    plan
-                } else {
-                    Vec::new()
-                };
-
-                // Pierce: decrement and keep projectile alive; else despawn
-                let should_despawn = match pierce.as_deref_mut() {
-                    Some(p) if p.0 > 0 => {
-                        p.0 -= 1;
-                        false
-                    }
-                    _ => true,
-                };
-                if should_despawn {
-                    commands.entity(proj_entity).despawn_recursive();
-                }
-
-                // Check if enemy destroyed
-                if enemy_stats.health <= 0.0 {
-                    // Calculate distance from player to enemy for salt miner
-                    let player_distance = (player_pos - enemy_pos).length();
-
-                    // Update score (with salt miner multiplier)
-                    let base_score = enemy_stats.score_value;
-                    let final_score = (base_score as f32 * salt_miner.score_mult()) as u64;
-                    score.on_kill(final_score);
-
-                    // Fill salt miner meter based on proximity (closer = more meter)
-                    let meter_gained = salt_miner.on_kill_at_distance(player_distance);
-                    if meter_gained > 0.0 && salt_miner.can_activate() {
-                        info!(
-                            "SALT MINER READY! Press B to activate! (meter: {:.0}%)",
-                            salt_miner.meter
-                        );
-                    }
-
-                    // Send events
+                if tstats.health <= 0.0 {
                     destroy_events.send(EnemyDestroyedEvent {
-                        position: enemy_pos,
-                        enemy_type: enemy_stats.name.clone(),
-                        score_value: enemy_stats.score_value,
-                        was_boss: enemy_stats.is_boss,
+                        position: tpos,
+                        enemy_type: tstats.name.clone(),
+                        score_value: tstats.score_value,
+                        was_boss: tstats.is_boss,
                     });
-
-                    // Faction-colored explosions based on enemy type
-                    let explosion_color = match enemy_stats.type_id {
-                        // Amarr enemies — golden
-                        597 | 589 | 591 | 16236 | 624 | 625 | 24690 => Color::srgb(1.0, 0.85, 0.3),
-                        // Triglavian enemies — red
-                        47269..=47273 => Color::srgb(0.9, 0.2, 0.3),
-                        // Default — orange
-                        _ => Color::srgb(1.0, 0.5, 0.2),
-                    };
-
-                    explosion_events.send(ExplosionEvent {
-                        position: enemy_pos,
-                        size: if enemy_stats.is_boss {
-                            ExplosionSize::Massive
-                        } else {
-                            ExplosionSize::Small
-                        },
-                        color: explosion_color,
-                    });
-
-                    // Screen shake, flash, zoom, and hitstop on kill
-                    if enemy_stats.is_boss {
-                        screen_shake.massive();
-                        screen_flash.massive(); // Big white flash for boss kills
-                        camera_zoom.boss_kill(); // Dramatic zoom pulse
-                        hit_stop.trigger(0.08); // Longer freeze frame for boss kills
-                        *boss_callout_sent = false; // Reset for next boss
-                    } else {
-                        screen_shake.trigger(3.0, 0.1); // Small shake for regular enemies
-                        hit_stop.trigger(0.02); // Brief freeze frame on regular kills
-                    }
-
-                    // Spawn liberation pods
-                    spawn_liberation_pods(&mut commands, enemy_pos, enemy_stats.liberation_value);
-
-                    // 30% chance to drop powerup (100% for bosses)
-                    let drop_chance = if enemy_stats.is_boss { 1.0 } else { 0.30 };
-                    if fastrand::f32() < drop_chance {
-                        spawn_smart_powerup(
-                            &mut commands,
-                            enemy_pos,
-                            Some(&icon_cache),
-                            player_health,
-                        );
-                    }
-
-                    // Despawn enemy
-                    commands.entity(enemy_entity).despawn_recursive();
+                    commands.entity(tgt).despawn_recursive();
                 }
-
-                // Execute chain-lightning plan (primary enemy_stats borrow released).
-                // Chain damage bumped 0.65 → 0.9 so Vorton reads as devastating.
-                let chain_dmg = proj_damage.damage * 0.9;
-                let mut prev = enemy_pos;
-                for (tgt, tpos) in chain_plan {
-                    if let Ok((mut tstats, _)) = enemy_query.get_mut(tgt) {
-                        tstats.health -= chain_dmg;
-                        super::effects::spawn_damage_number(
-                            &mut commands,
-                            tpos,
-                            chain_dmg,
-                            false,
-                        );
-                        if tstats.health <= 0.0 {
-                            destroy_events.send(EnemyDestroyedEvent {
-                                position: tpos,
-                                enemy_type: tstats.name.clone(),
-                                score_value: tstats.score_value,
-                                was_boss: tstats.is_boss,
-                            });
-                            commands.entity(tgt).despawn_recursive();
-                        }
-                    }
-                    spawn_chain_bolt(&mut commands, prev, tpos);
-                    prev = tpos;
-                }
-
-                break; // Projectile can only hit one enemy
             }
+            spawn_chain_bolt(&mut commands, prev, tpos);
+            prev = tpos;
         }
     }
 }
 
-/// Enemy projectiles hitting player
-fn enemy_projectile_player_collision(
+/// Enemy projectiles hitting player — consumes `ContactDetected` events
+/// produced by `detect_enemy_projectile_hits` in `src/simulation/detect_collisions.rs`.
+pub fn enemy_projectile_player_collision(
     mut commands: Commands,
-    projectile_query: Query<(Entity, &Transform, &ProjectileDamage), With<EnemyProjectile>>,
+    mut contact_events: EventReader<ContactDetected>,
     mut player_query: Query<
         (
             Entity,
@@ -500,119 +469,123 @@ fn enemy_projectile_player_collision(
     // Cooldown for health callouts (don't spam)
     *last_callout += time.delta_secs();
 
-    let Ok((player_entity, player_transform, mut player_stats, hitbox, powerups, maneuver, sprite)) =
+    let Ok((player_entity, player_transform, mut player_stats, _hitbox, powerups, maneuver, sprite)) =
         player_query.get_single_mut()
     else {
         return;
     };
 
     let player_pos = player_transform.translation.truncate();
-    let hit_radius_sq = (hitbox.radius + 4.0) * (hitbox.radius + 4.0);
 
-    for (proj_entity, proj_transform, proj_damage) in projectile_query.iter() {
-        let proj_pos = proj_transform.translation.truncate();
-        let dist_sq = (proj_pos - player_pos).length_squared();
+    for contact in contact_events.read() {
+        let ContactType::EnemyProjectilePlayer {
+            projectile: proj_entity,
+            player: _,
+            projectile_pos: proj_pos,
+            damage,
+            damage_type,
+        } = contact.contact_type
+        else {
+            continue;
+        };
 
-        if dist_sq < hit_radius_sq {
-            // Despawn projectile regardless
-            commands.entity(proj_entity).despawn_recursive();
+        // Despawn projectile regardless
+        commands.entity(proj_entity).despawn_recursive();
 
-            // Check invulnerability (powerups OR barrel roll i-frames)
-            if powerups.is_invulnerable() || maneuver.invincible {
-                continue;
-            }
+        // Check invulnerability (powerups OR barrel roll i-frames)
+        if powerups.is_invulnerable() || maneuver.invincible {
+            continue;
+        }
 
-            // Apply damage with layer tracking
-            let damage_result =
-                player_stats.take_damage_detailed(proj_damage.damage, proj_damage.damage_type);
+        // Apply damage with layer tracking
+        let damage_result = player_stats.take_damage_detailed(damage, damage_type);
 
-            // Calculate damage direction (from projectile to player)
-            let direction = (player_pos - proj_pos).normalize_or_zero();
+        // Calculate damage direction (from projectile to player)
+        let direction = (player_pos - proj_pos).normalize_or_zero();
 
-            // Send damage layer events for visual effects
-            if damage_result.shield_damage > 0.0 {
-                damage_layer_events.send(DamageLayerEvent {
-                    position: player_pos,
-                    layer: DamageLayer::Shield,
-                    damage: damage_result.shield_damage,
-                    direction,
-                });
-            }
-            if damage_result.armor_damage > 0.0 {
-                damage_layer_events.send(DamageLayerEvent {
-                    position: player_pos,
-                    layer: DamageLayer::Armor,
-                    damage: damage_result.armor_damage,
-                    direction,
-                });
-            }
-            if damage_result.hull_damage > 0.0 {
-                damage_layer_events.send(DamageLayerEvent {
-                    position: player_pos,
-                    layer: DamageLayer::Hull,
-                    damage: damage_result.hull_damage,
-                    direction,
-                });
-            }
+        // Send damage layer events for visual effects
+        if damage_result.shield_damage > 0.0 {
+            damage_layer_events.send(DamageLayerEvent {
+                position: player_pos,
+                layer: DamageLayer::Shield,
+                damage: damage_result.shield_damage,
+                direction,
+            });
+        }
+        if damage_result.armor_damage > 0.0 {
+            damage_layer_events.send(DamageLayerEvent {
+                position: player_pos,
+                layer: DamageLayer::Armor,
+                damage: damage_result.armor_damage,
+                direction,
+            });
+        }
+        if damage_result.hull_damage > 0.0 {
+            damage_layer_events.send(DamageLayerEvent {
+                position: player_pos,
+                layer: DamageLayer::Hull,
+                damage: damage_result.hull_damage,
+                direction,
+            });
+        }
 
-            // Add hit flash effect to player (red-white flash when hit)
-            let original_color = sprite.map(|s| s.color).unwrap_or(Color::WHITE);
-            commands
-                .entity(player_entity)
-                .insert(super::effects::HitFlash::with_duration(
-                    original_color,
-                    0.15,
+        // Add hit flash effect to player (red-white flash when hit)
+        let original_color = sprite.map(|s| s.color).unwrap_or(Color::WHITE);
+        commands
+            .entity(player_entity)
+            .insert(super::effects::HitFlash::with_duration(
+                original_color,
+                0.15,
+            ));
+
+        // Lost no-damage bonus
+        score.no_damage_bonus = false;
+
+        // Send events
+        damage_events.send(PlayerDamagedEvent {
+            damage,
+            damage_type,
+            source_position: proj_pos,
+        });
+
+        // Controller rumble on hit
+        rumble_events.send(super::RumbleRequest::player_hit());
+
+        // Screen shake on hit
+        screen_shake.small();
+
+        // Health callouts (with 8 second cooldown)
+        if *last_callout > 8.0 {
+            let total_hp = player_stats.shield + player_stats.armor + player_stats.hull;
+            let max_hp =
+                player_stats.max_shield + player_stats.max_armor + player_stats.max_hull;
+            let health_pct = total_hp / max_hp;
+            if health_pct < 0.2 {
+                dialogue_events.send(super::DialogueEvent::combat_callout(
+                    super::CombatCalloutType::NearDeath,
                 ));
+                *last_callout = 0.0;
+            } else if health_pct < 0.4 {
+                dialogue_events.send(super::DialogueEvent::combat_callout(
+                    super::CombatCalloutType::LowHealth,
+                ));
+                *last_callout = 0.0;
+            }
+        }
 
-            // Lost no-damage bonus
-            score.no_damage_bonus = false;
+        if damage_result.destroyed {
+            info!("Player destroyed!");
 
-            // Send events
-            damage_events.send(PlayerDamagedEvent {
-                damage: proj_damage.damage,
-                damage_type: proj_damage.damage_type,
-                source_position: proj_pos,
+            // Dramatic death effects
+            screen_shake.massive();
+            screen_flash.colored(Color::srgb(1.0, 0.2, 0.2), 0.9);
+            explosion_events.send(ExplosionEvent {
+                position: player_pos,
+                size: ExplosionSize::Massive,
+                color: Color::srgb(1.0, 0.4, 0.2),
             });
 
-            // Controller rumble on hit
-            rumble_events.send(super::RumbleRequest::player_hit());
-
-            // Screen shake on hit
-            screen_shake.small();
-
-            // Health callouts (with 8 second cooldown)
-            if *last_callout > 8.0 {
-                let total_hp = player_stats.shield + player_stats.armor + player_stats.hull;
-                let max_hp =
-                    player_stats.max_shield + player_stats.max_armor + player_stats.max_hull;
-                let health_pct = total_hp / max_hp;
-                if health_pct < 0.2 {
-                    dialogue_events.send(super::DialogueEvent::combat_callout(
-                        super::CombatCalloutType::NearDeath,
-                    ));
-                    *last_callout = 0.0;
-                } else if health_pct < 0.4 {
-                    dialogue_events.send(super::DialogueEvent::combat_callout(
-                        super::CombatCalloutType::LowHealth,
-                    ));
-                    *last_callout = 0.0;
-                }
-            }
-
-            if damage_result.destroyed {
-                info!("Player destroyed!");
-
-                // Dramatic death effects
-                screen_shake.massive();
-                screen_flash.colored(Color::srgb(1.0, 0.2, 0.2), 0.9);
-                explosion_events.send(ExplosionEvent {
-                    position: player_pos,
-                    size: ExplosionSize::Massive,
-                    color: Color::srgb(1.0, 0.4, 0.2),
-                });
-
-                next_state.set(GameState::GameOver);
-            }
+            next_state.set(GameState::GameOver);
         }
     }
 }
