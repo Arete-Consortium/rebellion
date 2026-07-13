@@ -786,6 +786,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_utils",
  "derive_more",
+ "serde",
  "smol_str",
 ]
 
@@ -4351,6 +4352,7 @@ version = "2.0.0"
 dependencies = [
  "bevy",
  "bevy_egui",
+ "bevy_input",
  "console_error_panic_hook",
  "criterion",
  "dirs",

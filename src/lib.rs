@@ -13,6 +13,7 @@ pub mod gameplay;
 pub mod games;
 pub mod platform;
 pub mod presentation;
+pub mod replay;
 pub mod simulation;
 pub mod systems;
 pub mod ui;
