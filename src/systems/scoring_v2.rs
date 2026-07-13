@@ -225,17 +225,8 @@ impl ComboHeatSystem {
     }
 }
 
-/// Plugin to register combo/heat system
-pub struct ScoringSystemPlugin;
-
-impl Plugin for ScoringSystemPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<ComboHeatSystem>()
-            .add_systems(FixedUpdate, update_combo_heat_system);
-    }
-}
-
-fn update_combo_heat_system(time: Res<Time>, mut system: ResMut<ComboHeatSystem>) {
+/// Update combo/heat system (called by ScoringPlugin).
+pub fn update_combo_heat_system(time: Res<Time>, mut system: ResMut<ComboHeatSystem>) {
     system.update(time.delta_secs());
 }
 

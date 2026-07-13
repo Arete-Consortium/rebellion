@@ -14,8 +14,7 @@ use crate::core::{
 };
 use crate::entities::{DronePlugin, EnemyPlugin, PlayerPlugin, WingmanPlugin};
 use crate::systems::{
-    AbilityPlugin, BossPlugin, CampaignPlugin, ManeuverPlugin, ScoringPlugin, ScoringSystemPlugin,
-    SpawningPlugin,
+    AbilityPlugin, BossPlugin, CampaignPlugin, ManeuverPlugin, ScoringPlugin, SpawningPlugin,
 };
 
 use combat_outcomes::{enemy_death_outcomes, player_damage_outcomes, player_death_outcome};
@@ -48,7 +47,6 @@ impl Plugin for GameplayPlugin {
                 ManeuverPlugin,
                 CampaignPlugin,
                 ScoringPlugin,
-                ScoringSystemPlugin,
             ))
             .add_systems(
                 FixedUpdate,

@@ -1,18 +1,26 @@
 //! Scoring System
 //!
-//! Handles score, multipliers, chain combos, and salt miner meter.
+//! Handles score, multipliers, chain combos, salt miner meter, combo/heat.
 
 use crate::core::*;
 use bevy::prelude::*;
 
-/// Scoring plugin
+// Combo/heat system lives in scoring_v2.rs; this plugin owns all scoring resources.
+use super::scoring_v2::{update_combo_heat_system, ComboHeatSystem};
+
+/// Scoring plugin — owns all score-mutating systems and resources.
 pub struct ScoringPlugin;
 
 impl Plugin for ScoringPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
+        app.init_resource::<ComboHeatSystem>().add_systems(
             FixedUpdate,
-            (update_score_system, update_salt_miner_system).run_if(in_state(GameState::Playing)),
+            (
+                update_score_system,
+                update_salt_miner_system,
+                update_combo_heat_system,
+            )
+                .run_if(in_state(GameState::Playing)),
         );
     }
 }
