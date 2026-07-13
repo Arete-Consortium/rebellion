@@ -6,9 +6,10 @@
 use bevy::prelude::*;
 
 use crate::core::{
-    ActCompleteEvent, BossSpawnEvent, GameState, MissionCompleteEvent, MissionStartEvent,
-    WaveCompleteEvent,
+    ActCompleteEvent, BossSpawnEvent, GameEventsPlugin, GameState, MissionCompleteEvent,
+    MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
+use crate::gameplay::GameplayPlugin;
 use crate::simulation::{SimulationPlugin, FIXED_TIMESTEP_SECS};
 
 /// Build a headless app for CI smoke tests.
@@ -16,8 +17,8 @@ use crate::simulation::{SimulationPlugin, FIXED_TIMESTEP_SECS};
 /// # Notes
 /// - Uses `MinimalPlugins` (no window, no render, no audio).
 /// - Adds `AssetPlugin` and `StatesPlugin` for game infrastructure.
-/// - Registers only `SimulationPlugin` to avoid asset-loading systems that
-///   depend on `bevy_render`.
+/// - Registers `SimulationPlugin` and `GameplayPlugin` for deterministic tests.
+/// - Stubs resources normally provided by presentation / platform plugins.
 pub fn build_headless_app() -> App {
     let mut app = App::new();
 
@@ -53,6 +54,30 @@ pub fn build_headless_app() -> App {
 
     // Core simulation (no presentation, no content loading)
     app.add_plugins(SimulationPlugin);
+
+    // Gameplay systems (deterministic, no rendering required)
+    app.add_plugins((GameplayPlugin, SavePlugin, GameEventsPlugin));
+
+    // Events added by gameplay sub-plugins (not covered by GameEventsPlugin)
+    app.add_event::<crate::systems::ability::AbilityActivatedEvent>()
+        .add_event::<crate::systems::ability::AbilityEndedEvent>()
+        .add_event::<crate::systems::boss::BossSpawnEvent>()
+        .add_event::<crate::systems::boss::BossDefeatedEvent>()
+        .add_event::<crate::systems::dialogue::DialogueEvent>()
+        .add_event::<crate::systems::joystick::RumbleRequest>()
+        .add_event::<crate::systems::joystick::BackButtonEvent>();
+
+    // Stub resources normally provided by presentation / platform plugins
+    app.init_resource::<crate::assets::ShipSpriteCache>()
+        .init_resource::<crate::assets::ShipModelCache>()
+        .init_resource::<crate::assets::PowerupIconCache>()
+        .init_resource::<crate::systems::JoystickState>()
+        .init_resource::<crate::systems::ScreenFlash>()
+        .init_resource::<crate::systems::ScreenShake>()
+        .init_resource::<crate::systems::SoundSettings>()
+        .init_resource::<crate::systems::RumbleSettings>()
+        .init_resource::<crate::systems::DialogueSystem>()
+        .init_resource::<crate::games::ActiveModule>();
 
     app
 }
