@@ -21,6 +21,9 @@ use combat_reactions::{
 };
 
 pub mod combat_reactions;
+pub mod rng;
+
+pub use rng::PresentationRng;
 
 /// Plugin that registers all presentation systems.
 pub struct PresentationPlugin;
@@ -28,6 +31,7 @@ pub struct PresentationPlugin;
 impl Plugin for PresentationPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AudioSettings>()
+            .init_resource::<PresentationRng>()
             .add_plugins((
                 EffectsPlugin,
                 AudioPlugin,

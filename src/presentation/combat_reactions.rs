@@ -224,9 +224,13 @@ pub fn player_death_reactions(
 // =============================================================================
 
 /// Spawn chain-lightning bolt sprites from simulation events.
-pub fn spawn_chain_bolts(mut commands: Commands, mut events: EventReader<ChainBoltSpawnEvent>) {
+pub fn spawn_chain_bolts(
+    mut commands: Commands,
+    mut events: EventReader<ChainBoltSpawnEvent>,
+    mut pres_rng: ResMut<crate::presentation::PresentationRng>,
+) {
     for event in events.read() {
-        spawn_chain_bolt(&mut commands, event.from, event.to);
+        spawn_chain_bolt(&mut commands, event.from, event.to, &mut pres_rng);
     }
 }
 
@@ -254,7 +258,12 @@ pub fn tick_chain_bolts(
 // ---------------------------------------------------------------------------
 // Helper: spawn a jagged chain-lightning arc between two points.
 // ---------------------------------------------------------------------------
-fn spawn_chain_bolt(commands: &mut Commands, from: Vec2, to: Vec2) {
+fn spawn_chain_bolt(
+    commands: &mut Commands,
+    from: Vec2,
+    to: Vec2,
+    pres_rng: &mut crate::presentation::PresentationRng,
+) {
     use crate::entities::projectile::ChainBolt;
     const SEGMENTS: usize = 5;
     let diff = to - from;
@@ -271,7 +280,7 @@ fn spawn_chain_bolt(commands: &mut Commands, from: Vec2, to: Vec2) {
     for i in 1..SEGMENTS {
         let t = i as f32 / SEGMENTS as f32;
         let base = from + diff * t;
-        let offset = (fastrand::f32() - 0.5) * 2.0 * jitter_amp;
+        let offset = (pres_rng.f32() - 0.5) * 2.0 * jitter_amp;
         points.push(base + perp * offset);
     }
     points.push(to);
