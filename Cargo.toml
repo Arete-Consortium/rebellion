@@ -161,3 +161,7 @@ inherits = "release"
 opt-level = "s"
 lto = true
 strip = "symbols"
+
+[features]
+default = []
+headless = []

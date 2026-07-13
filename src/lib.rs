@@ -3,6 +3,7 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::too_many_arguments)]
 
+pub mod app_builder;
 pub mod assets;
 pub mod content;
 pub mod core;
