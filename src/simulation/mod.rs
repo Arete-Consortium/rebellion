@@ -20,6 +20,7 @@ use resolve_damage::{
 };
 use resolve_deaths::resolve_enemy_deaths;
 use sim_id::assign_sim_ids;
+use state_hash::{compute_state_hash_system, SimStateHash};
 
 pub mod detect_collisions;
 pub mod fixed_step;
@@ -27,6 +28,7 @@ pub mod resolve_damage;
 pub mod resolve_deaths;
 pub mod rng;
 pub mod sim_id;
+pub mod state_hash;
 
 pub use fixed_step::{SimSet, FIXED_TIMESTEP_SECS};
 pub use rng::{MissionSeed, SimulationRng, DEFAULT_MISSION_SEED};
@@ -47,6 +49,7 @@ impl Plugin for SimulationPlugin {
             .init_resource::<MissionSeed>()
             .insert_resource(SimulationRng::from_seed(DEFAULT_MISSION_SEED))
             .init_resource::<SimIdGenerator>()
+            .init_resource::<SimStateHash>()
             .configure_sets(
                 FixedUpdate,
                 (CollisionPhase::Detection, CollisionPhase::Resolution).chain(),
@@ -78,6 +81,12 @@ impl Plugin for SimulationPlugin {
                 FixedUpdate,
                 assign_sim_ids
                     .after(CollisionPhase::Resolution)
+                    .run_if(in_state(crate::core::GameState::Playing)),
+            )
+            .add_systems(
+                FixedUpdate,
+                compute_state_hash_system
+                    .after(assign_sim_ids)
                     .run_if(in_state(crate::core::GameState::Playing)),
             )
             .add_plugins((CollisionPlugin, ProjectilePlugin, CollectiblePlugin));
