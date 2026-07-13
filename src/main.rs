@@ -27,7 +27,6 @@ mod simulation;
 mod systems;
 mod ui;
 
-use assets::AssetsPlugin;
 use content::ContentPlugin;
 use core::{
     AchievementPlugin, ActCompleteEvent, AnalyticsPlugin, AudioSettings, BossSpawnEvent,
@@ -98,7 +97,6 @@ fn main() {
             SavePlugin,
             AnalyticsPlugin,
             AchievementPlugin,
-            AssetsPlugin,
             GameEventsPlugin,
             EntitiesPlugin,
             SystemsPlugin,

@@ -9,11 +9,13 @@
 
 use bevy::prelude::*;
 
+use crate::assets::AssetsPlugin;
+
 /// Plugin that registers all content loading and validation systems.
 pub struct ContentPlugin;
 
 impl Plugin for ContentPlugin {
-    fn build(&self, _app: &mut App) {
-        // Empty shell for Mission 1 — systems will migrate here in later PRs.
+    fn build(&self, app: &mut App) {
+        app.add_plugins(AssetsPlugin);
     }
 }
