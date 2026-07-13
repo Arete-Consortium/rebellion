@@ -10,6 +10,7 @@ use crate::core::{
     MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
 use crate::gameplay::GameplayPlugin;
+use crate::replay::ReplayPlugin;
 use crate::simulation::{SimulationPlugin, FIXED_TIMESTEP_SECS};
 
 /// Build a headless app for CI smoke tests.
@@ -62,7 +63,7 @@ pub fn build_headless_app() -> App {
     app.add_plugins(SimulationPlugin);
 
     // Gameplay systems (deterministic, no rendering required)
-    app.add_plugins((GameplayPlugin, SavePlugin, GameEventsPlugin));
+    app.add_plugins((GameplayPlugin, SavePlugin, GameEventsPlugin, ReplayPlugin));
 
     // Events added by gameplay sub-plugins (not covered by GameEventsPlugin)
     app.add_event::<crate::systems::ability::AbilityActivatedEvent>()
