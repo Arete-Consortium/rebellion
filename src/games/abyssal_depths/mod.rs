@@ -186,6 +186,7 @@ impl Plugin for AbyssalDepthsPlugin {
                     handle_extraction,
                     abyssal_hud,
                 )
+                    .chain()
                     .run_if(in_state(GameState::Playing))
                     .run_if(is_abyssal),
             );
@@ -805,5 +806,108 @@ fn cleanup_abyssal(
     // Despawn gates
     for entity in gate_query.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn abyssal_state_default_values() {
+        let s = AbyssalState::default();
+        assert!(!s.active);
+        assert_eq!(s.room, AbyssalRoom::Room1);
+        assert_eq!(s.time_remaining, 600.0);
+        assert_eq!(s.total_time, 600.0);
+        assert_eq!(s.enemies_spawned, 0);
+        assert_eq!(s.enemies_killed, 0);
+        assert!(!s.room_cleared);
+        assert!(!s.gate_spawned);
+        assert!(!s.extracting);
+        assert_eq!(s.extraction_progress, 0.0);
+        assert_eq!(s.loot_collected, 0);
+        assert!(!s.extracted);
+    }
+
+    #[test]
+    fn abyssal_state_start_run() {
+        let mut s = AbyssalState::default();
+        s.room = AbyssalRoom::Room2;
+        s.time_remaining = 123.0;
+        s.start_run();
+        assert!(s.active);
+        assert_eq!(s.room, AbyssalRoom::Room1);
+        assert_eq!(s.time_remaining, 600.0);
+        assert_eq!(s.total_time, 600.0);
+        assert_eq!(s.enemies_spawned, 0);
+        assert_eq!(s.enemies_killed, 0);
+    }
+
+    #[test]
+    fn abyssal_state_advance_room() {
+        let mut s = AbyssalState::default();
+        s.start_run();
+        s.enemies_spawned = 8;
+        s.enemies_killed = 8;
+        s.room_cleared = true;
+        s.gate_spawned = true;
+
+        let advanced = s.advance_room();
+        assert!(advanced);
+        assert_eq!(s.room, AbyssalRoom::Room2);
+        assert_eq!(s.enemies_spawned, 0);
+        assert_eq!(s.enemies_killed, 0);
+        assert!(!s.room_cleared);
+        assert!(!s.gate_spawned);
+
+        let advanced2 = s.advance_room();
+        assert!(advanced2);
+        assert_eq!(s.room, AbyssalRoom::Room3);
+
+        let advanced3 = s.advance_room();
+        assert!(!advanced3);
+        assert_eq!(s.room, AbyssalRoom::Room3);
+    }
+
+    #[test]
+    fn abyssal_state_time_percent() {
+        let mut s = AbyssalState::default();
+        assert_eq!(s.time_percent(), 1.0);
+        s.time_remaining = 300.0;
+        assert_eq!(s.time_percent(), 0.5);
+        s.time_remaining = 0.0;
+        assert_eq!(s.time_percent(), 0.0);
+    }
+
+    #[test]
+    fn abyssal_state_is_final_room() {
+        let mut s = AbyssalState::default();
+        assert!(!s.is_final_room());
+        s.room = AbyssalRoom::Room2;
+        assert!(!s.is_final_room());
+        s.room = AbyssalRoom::Room3;
+        assert!(s.is_final_room());
+    }
+
+    #[test]
+    fn abyssal_room_next() {
+        assert_eq!(AbyssalRoom::Room1.next(), Some(AbyssalRoom::Room2));
+        assert_eq!(AbyssalRoom::Room2.next(), Some(AbyssalRoom::Room3));
+        assert_eq!(AbyssalRoom::Room3.next(), None);
+    }
+
+    #[test]
+    fn abyssal_room_enemy_count() {
+        assert_eq!(AbyssalRoom::Room1.enemy_count(), 8);
+        assert_eq!(AbyssalRoom::Room2.enemy_count(), 12);
+        assert_eq!(AbyssalRoom::Room3.enemy_count(), 15);
+    }
+
+    #[test]
+    fn abyssal_room_name() {
+        assert_eq!(AbyssalRoom::Room1.name(), "POCKET");
+        assert_eq!(AbyssalRoom::Room2.name(), "ESCALATION");
+        assert_eq!(AbyssalRoom::Room3.name(), "EXTRACTION");
     }
 }

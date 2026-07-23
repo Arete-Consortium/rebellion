@@ -1,0 +1,237 @@
+{
+  "moduleId": "abyssal_depths",
+  "displayName": "Abyssal Depths",
+  "subtitle": "Triglavian Extraction",
+  "description": "Enter the Abyss. Survive 3 rooms of escalating Triglavian opposition. Extract before time runs out.",
+  "version": "1.0.0",
+  "author": "EVE Rebellion Team",
+
+  "factions": [],
+
+  "shipPools": {
+    "cross_faction": {
+      "playerShips": [
+        {
+          "typeId": 54731,
+          "name": "Skybreaker",
+          "class": "Frigate",
+          "role": "EDENCOM Vorton Platform",
+          "unlocked": true,
+          "stats": {
+            "health": 90,
+            "speed": 330,
+            "fireRate": 6.5,
+            "damage": 12,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11400,
+          "name": "Jaguar",
+          "class": "Frigate",
+          "role": "Republic Assault Frigate",
+          "unlocked": true,
+          "stats": {
+            "health": 120,
+            "speed": 360,
+            "fireRate": 9.0,
+            "damage": 11,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11381,
+          "name": "Hawk",
+          "class": "Frigate",
+          "role": "Caldari Assault Frigate",
+          "unlocked": true,
+          "stats": {
+            "health": 120,
+            "speed": 320,
+            "fireRate": 7.0,
+            "damage": 13,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11393,
+          "name": "Retribution",
+          "class": "Frigate",
+          "role": "Imperial Assault Frigate",
+          "unlocked": true,
+          "stats": {
+            "health": 130,
+            "speed": 310,
+            "fireRate": 6.0,
+            "damage": 15,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 52250,
+          "name": "Nergal",
+          "class": "Frigate",
+          "role": "Triglavian-Derived AF",
+          "unlocked": true,
+          "stats": {
+            "health": 125,
+            "speed": 340,
+            "fireRate": 7.5,
+            "damage": 14,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 35683,
+          "name": "Jackdaw",
+          "class": "Destroyer",
+          "role": "Caldari T3 Tactical",
+          "unlocked": true,
+          "stats": {
+            "health": 180,
+            "speed": 290,
+            "fireRate": 6.0,
+            "damage": 17,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 34317,
+          "name": "Confessor",
+          "class": "Destroyer",
+          "role": "Amarr T3 Tactical",
+          "unlocked": true,
+          "stats": {
+            "health": 175,
+            "speed": 300,
+            "fireRate": 5.5,
+            "damage": 19,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 621,
+          "name": "Caracal",
+          "class": "Cruiser",
+          "role": "Caldari Missile Cruiser",
+          "unlocked": true,
+          "stats": {
+            "health": 260,
+            "speed": 240,
+            "fireRate": 5.0,
+            "damage": 22,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11993,
+          "name": "Muninn",
+          "class": "Cruiser",
+          "role": "Minmatar HAC",
+          "unlocked": true,
+          "stats": {
+            "health": 300,
+            "speed": 230,
+            "fireRate": 4.5,
+            "damage": 26,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 12019,
+          "name": "Sacrilege",
+          "class": "Cruiser",
+          "role": "Amarr HAC",
+          "unlocked": true,
+          "stats": {
+            "health": 320,
+            "speed": 210,
+            "fireRate": 4.0,
+            "damage": 28,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 17713,
+          "name": "Gila",
+          "class": "Cruiser",
+          "role": "Guristas Drone Cruiser",
+          "unlocked": true,
+          "stats": {
+            "health": 290,
+            "speed": 250,
+            "fireRate": 5.5,
+            "damage": 24,
+            "unlimitedThrust": false
+          }
+        }
+      ],
+      "enemyShips": [
+        {
+          "typeId": 47269,
+          "name": "Damavik",
+          "class": "Frigate",
+          "role": "Raznaborg Scout",
+          "spawnWeight": 60
+        },
+        {
+          "typeId": 49710,
+          "name": "Kikimora",
+          "class": "Destroyer",
+          "role": "Rapid Disintegrator",
+          "spawnWeight": 20
+        },
+        {
+          "typeId": 47270,
+          "name": "Vedmak",
+          "class": "Cruiser",
+          "role": "Harrowing Vedmak",
+          "spawnWeight": 15
+        },
+        {
+          "typeId": 49711,
+          "name": "Drekavac",
+          "class": "Battlecruiser",
+          "role": "Heavy Assault",
+          "spawnWeight": 5
+        }
+      ]
+    }
+  },
+
+  "rooms": [
+    {
+      "id": "ad_room1",
+      "name": "POCKET",
+      "description": "Entry pocket. Light Triglavian presence.",
+      "enemyCount": 8,
+      "enemyTypes": ["Damavik"],
+      "behaviors": ["Linear", "Zigzag", "Weaver"]
+    },
+    {
+      "id": "ad_room2",
+      "name": "ESCALATION",
+      "description": "Escalation pocket. Mixed Triglavian fleet.",
+      "enemyCount": 12,
+      "enemyTypes": ["Damavik", "Kikimora"],
+      "behaviors": ["Sniper", "Zigzag"]
+    },
+    {
+      "id": "ad_room3",
+      "name": "EXTRACTION",
+      "description": "Final pocket. Heavy Triglavian force with Drekavac boss.",
+      "enemyCount": 15,
+      "enemyTypes": ["Damavik", "Vedmak", "DrekavacBoss"],
+      "behaviors": ["Sniper", "Linear", "Tank"]
+    }
+  ],
+
+  "timeLimit": 600,
+  "extractionChannelTime": 2.0,
+  "boss": {
+    "name": "DREKAVAC OVERSEER",
+    "health": 800,
+    "phases": 3,
+    "typeId": 49711
+  }
+}
