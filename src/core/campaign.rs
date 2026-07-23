@@ -743,6 +743,31 @@ mod tests {
     }
 
     #[test]
+    fn campaign_state_start_mission_resets_bonus_complete() {
+        let mut state = CampaignState::default();
+        state.bonus_complete = true;
+        state.start_mission();
+
+        assert!(
+            !state.bonus_complete,
+            "bonus_complete should reset to false on mission start"
+        );
+    }
+
+    #[test]
+    fn campaign_state_complete_mission_preserves_bonus_complete() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.bonus_complete = true;
+
+        assert!(state.complete_mission());
+        assert!(
+            state.bonus_complete,
+            "bonus_complete should persist after complete_mission"
+        );
+    }
+
+    #[test]
     fn campaign_state_complete_act_advances() {
         let mut state = CampaignState {
             act: Act::Act1,
