@@ -94,8 +94,11 @@ unplayable boss fights — no input, no damage, no visuals.
   destroyer, 200 HP) and `Leshak` (siege disintegrator battleship, 600 HP) to
   `EnemyVariant`, wired into Triglavian campaign wave spawning. All 13 spawn
   unit tests green.
-- [ ] **Mission-specific objectives** — Currently missions only track "survive waves."
-  Could add escort, timed survival, or kill-count objectives.
+- [x] **Mission-specific objectives** — Fixed generic campaign objective tracking:
+  `no_damage_taken` now actually flips to false when player takes damage;
+  `bonus_complete` evaluated at mission end (no_damage_taken || souls_to_liberate
+  threshold met). No-boss missions (BossType::None) now correctly transition to
+  StageComplete instead of hanging at BossIntro.
 
 ---
 
