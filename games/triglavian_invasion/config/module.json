@@ -1,0 +1,401 @@
+{
+  "moduleId": "triglavian_invasion",
+  "displayName": "Triglavian Invasion",
+  "subtitle": "YC122 - The Flow of Vyraj",
+  "description": "Defend New Eden from the Triglavian Collective, or embrace the Flow and fight for Pochven.",
+  "version": "1.0.0",
+  "author": "EVE Rebellion Team",
+
+  "factions": [
+    {
+      "id": "edencom",
+      "name": "EDENCOM",
+      "emblem": "edencom_emblem.png",
+      "primaryColor": "#1a5a9a",
+      "secondaryColor": "#4a9aca",
+      "accentColor": "#7acafa",
+      "doctrine": ["Unified Defense", "Shield Tanking", "Coordinated Fire"],
+      "description": "The unified defense force of the four empires, standing against the Triglavian invasion."
+    },
+    {
+      "id": "triglavian",
+      "name": "Triglavian Collective",
+      "emblem": "triglavian_emblem.png",
+      "primaryColor": "#8a1a1a",
+      "secondaryColor": "#4a1a1a",
+      "accentColor": "#fa5a2a",
+      "doctrine": ["Entropic Disintegration", "Bioadaptation", "Proving"],
+      "description": "Ancient Jove descendants from Abyssal Deadspace, seeking to claim systems for Pochven."
+    }
+  ],
+
+  "shipPools": {
+    "edencom": {
+      "playerShips": [
+        {
+          "typeId": 54731,
+          "name": "Skybreaker",
+          "class": "Frigate",
+          "role": "Chain Lightning Platform",
+          "unlocked": true,
+          "stats": {
+            "health": 90,
+            "speed": 190,
+            "fireRate": 0.5,
+            "damage": 10,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 54733,
+          "name": "Thunderchild",
+          "class": "Cruiser",
+          "role": "Area Denial",
+          "unlocked": false,
+          "unlockMission": 3,
+          "stats": {
+            "health": 220,
+            "speed": 130,
+            "fireRate": 0.8,
+            "damage": 22,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 54732,
+          "name": "Stormbringer",
+          "class": "Battleship",
+          "role": "Superiority Firepower",
+          "unlocked": false,
+          "unlockMission": 6,
+          "stats": {
+            "health": 550,
+            "speed": 75,
+            "fireRate": 1.2,
+            "damage": 45,
+            "unlimitedThrust": false
+          }
+        }
+      ],
+      "enemyShips": [
+        {
+          "typeId": 587,
+          "name": "Rifter",
+          "class": "Frigate",
+          "role": "Minmatar Scout",
+          "spawnWeight": 15
+        },
+        {
+          "typeId": 603,
+          "name": "Merlin",
+          "class": "Frigate",
+          "role": "Caldari Scout",
+          "spawnWeight": 15
+        },
+        {
+          "typeId": 597,
+          "name": "Punisher",
+          "class": "Frigate",
+          "role": "Amarr Scout",
+          "spawnWeight": 10
+        },
+        {
+          "typeId": 592,
+          "name": "Incursus",
+          "class": "Frigate",
+          "role": "Gallente Scout",
+          "spawnWeight": 10
+        },
+        {
+          "typeId": 54731,
+          "name": "Skybreaker",
+          "class": "Frigate",
+          "role": "EDENCOM Vanguard",
+          "spawnWeight": 20
+        },
+        {
+          "typeId": 622,
+          "name": "Stabber",
+          "class": "Cruiser",
+          "role": "Minmatar Support",
+          "spawnWeight": 8
+        },
+        {
+          "typeId": 621,
+          "name": "Caracal",
+          "class": "Cruiser",
+          "role": "Caldari Support",
+          "spawnWeight": 8
+        },
+        {
+          "typeId": 54733,
+          "name": "Thunderchild",
+          "class": "Cruiser",
+          "role": "EDENCOM Commander",
+          "spawnWeight": 10
+        },
+        {
+          "typeId": 54732,
+          "name": "Stormbringer",
+          "class": "Battleship",
+          "role": "EDENCOM Dreadnought",
+          "spawnWeight": 4
+        }
+      ]
+    },
+    "triglavian": {
+      "playerShips": [
+        {
+          "typeId": 47269,
+          "name": "Damavik",
+          "class": "Frigate",
+          "role": "Disintegrator Platform",
+          "unlocked": true,
+          "stats": {
+            "health": 80,
+            "speed": 200,
+            "fireRate": 0.8,
+            "damage": 8,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 47270,
+          "name": "Vedmak",
+          "class": "Cruiser",
+          "role": "Heavy Disintegrator",
+          "unlocked": false,
+          "unlockMission": 3,
+          "stats": {
+            "health": 200,
+            "speed": 140,
+            "fireRate": 1.0,
+            "damage": 20,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 47271,
+          "name": "Leshak",
+          "class": "Battleship",
+          "role": "Siege Disintegrator",
+          "unlocked": false,
+          "unlockMission": 6,
+          "stats": {
+            "health": 600,
+            "speed": 70,
+            "fireRate": 1.5,
+            "damage": 50,
+            "unlimitedThrust": false
+          }
+        }
+      ],
+      "enemyShips": [
+        {
+          "typeId": 47269,
+          "name": "Damavik",
+          "class": "Frigate",
+          "role": "Raznaborg Scout",
+          "spawnWeight": 50
+        },
+        {
+          "typeId": 49710,
+          "name": "Kikimora",
+          "class": "Destroyer",
+          "role": "Rapid Disintegrator",
+          "spawnWeight": 25
+        },
+        {
+          "typeId": 47270,
+          "name": "Vedmak",
+          "class": "Cruiser",
+          "role": "Harrowing Vedmak",
+          "spawnWeight": 15
+        },
+        {
+          "typeId": 49711,
+          "name": "Drekavac",
+          "class": "Battlecruiser",
+          "role": "Heavy Assault",
+          "spawnWeight": 8
+        },
+        {
+          "typeId": 47271,
+          "name": "Leshak",
+          "class": "Battleship",
+          "role": "Siege Platform",
+          "spawnWeight": 2
+        }
+      ]
+    }
+  },
+
+  "missions": [
+    {
+      "id": "ti_m1_first_contact",
+      "name": "FIRST CONTACT",
+      "description": "Triglavian scouts have been spotted in Niarja. Intercept and eliminate.",
+      "primaryObjective": "Destroy all Triglavian scouts",
+      "bonusObjective": "Take no hull damage",
+      "waves": 3,
+      "isTutorial": true,
+      "boss": "RaznaborgVedmak"
+    },
+    {
+      "id": "ti_m2_stellar_transmuter",
+      "name": "STELLAR TRANSMUTER",
+      "description": "Prevent the Triglavians from deploying their stellar harvester in Raravoss.",
+      "primaryObjective": "Destroy the harvester escort",
+      "bonusObjective": "Destroy all harvester drones",
+      "waves": 4,
+      "boss": "PerunDrekavac"
+    },
+    {
+      "id": "ti_m3_liminality_rising",
+      "name": "LIMINALITY RISING",
+      "description": "The system of Sakenta is approaching Final Liminality. Hold the line.",
+      "primaryObjective": "Survive until reinforcements arrive",
+      "bonusObjective": "Destroy elite Triglavian squadron",
+      "waves": 4,
+      "boss": "VelesLeshak"
+    },
+    {
+      "id": "ti_m4_pochvens_edge",
+      "name": "POCHVEN'S EDGE",
+      "description": "Systems are falling to Pochven. Vale must not be lost.",
+      "primaryObjective": "Repel the invasion force",
+      "bonusObjective": "Protect civilian stations",
+      "waves": 5,
+      "boss": "SvarogIkitursa"
+    },
+    {
+      "id": "ti_m5_proving_ground",
+      "name": "PROVING GROUND",
+      "description": "The Collective seeks to prove their might in Kuharah. Show them ours.",
+      "primaryObjective": "Defeat the Proving force",
+      "bonusObjective": "Perfect victory",
+      "waves": 5,
+      "boss": "ProvingDrekavac"
+    },
+    {
+      "id": "ti_m6_gate_defense",
+      "name": "GATE DEFENSE",
+      "description": "Defend the Otela stargate from a full-scale Triglavian assault.",
+      "primaryObjective": "Hold the gate",
+      "bonusObjective": "Destroy the siege platforms",
+      "waves": 6,
+      "boss": "SiegeLeshak"
+    },
+    {
+      "id": "ti_m7_world_ark_assault",
+      "name": "WORLD ARK ASSAULT",
+      "description": "A Triglavian World Ark has been detected in Kino. This is our chance.",
+      "primaryObjective": "Breach the World Ark defenses",
+      "bonusObjective": "Destroy all escort squadrons",
+      "waves": 6,
+      "boss": "XordazhWorldArk"
+    },
+    {
+      "id": "ti_m8_zoryas_domain",
+      "name": "ZORYA'S DOMAIN",
+      "description": "Push into Pochven and strike at the heart of the invasion.",
+      "primaryObjective": "Survive the gauntlet",
+      "bonusObjective": "Destroy Zorya's Champion",
+      "waves": 7,
+      "boss": "ZoryasChampion"
+    },
+    {
+      "id": "ti_m9_final_proving",
+      "name": "THE FINAL PROVING",
+      "description": "End the invasion at the Triglavian Stronghold. Victory or death.",
+      "primaryObjective": "Defeat Zorya Triglav",
+      "bonusObjective": "Flawless victory",
+      "waves": 8,
+      "boss": "ZoryaTriglav"
+    }
+  ],
+
+  "epilogue": {
+    "edencom": {
+      "id": "ti_epilogue_victory",
+      "name": "VICTORY: NEW EDEN STANDS",
+      "description": "The Triglavian invasion has been repelled. For now.",
+      "type": "victory",
+      "status": "IMPLEMENTED",
+      "features": [
+        "Campaign completion screen",
+        "Unlock all EDENCOM ships",
+        "High score tracking"
+      ]
+    },
+    "triglavian": {
+      "id": "ti_epilogue_pochven",
+      "name": "POCHVEN RISES",
+      "description": "New Eden has fallen to the Flow. The Proving is complete.",
+      "type": "victory",
+      "status": "IMPLEMENTED",
+      "features": [
+        "Campaign completion screen",
+        "Unlock all Triglavian ships",
+        "High score tracking"
+      ]
+    }
+  },
+
+  "bosses": {
+    "RaznaborgVedmak": {
+      "name": "RAZNABORG VEDMAK",
+      "health": 400,
+      "phases": 2,
+      "typeId": 47270
+    },
+    "PerunDrekavac": {
+      "name": "PERUN DREKAVAC",
+      "health": 600,
+      "phases": 3,
+      "typeId": 49711
+    },
+    "VelesLeshak": {
+      "name": "VELES LESHAK",
+      "health": 1000,
+      "phases": 3,
+      "typeId": 47271
+    },
+    "SvarogIkitursa": {
+      "name": "SVAROG IKITURSA",
+      "health": 500,
+      "phases": 2,
+      "typeId": 52252
+    },
+    "ProvingDrekavac": {
+      "name": "PROVING DREKAVAC",
+      "health": 700,
+      "phases": 3,
+      "typeId": 49711
+    },
+    "SiegeLeshak": {
+      "name": "SIEGE LESHAK",
+      "health": 1200,
+      "phases": 3,
+      "typeId": 47271
+    },
+    "XordazhWorldArk": {
+      "name": "XORDAZH WORLD ARK",
+      "health": 3000,
+      "phases": 4,
+      "typeId": 56756
+    },
+    "ZoryasChampion": {
+      "name": "ZORYA'S CHAMPION",
+      "health": 1500,
+      "phases": 4,
+      "typeId": 47271
+    },
+    "ZoryaTriglav": {
+      "name": "ZORYA TRIGLAV",
+      "health": 2500,
+      "phases": 5,
+      "typeId": 47271
+    }
+  }
+}
