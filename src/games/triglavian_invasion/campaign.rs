@@ -745,3 +745,107 @@ pub fn check_trig_boss_defeated(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn edencom_missions_has_nine_entries() {
+        let missions = edencom_missions();
+        assert_eq!(missions.len(), 9);
+    }
+
+    #[test]
+    fn triglavian_missions_has_nine_entries() {
+        let missions = triglavian_missions();
+        assert_eq!(missions.len(), 9);
+    }
+
+    #[test]
+    fn campaign_state_resets_correctly() {
+        let mut state = TriglavianCampaignState::default();
+        state.current_mission = 5;
+        state.current_wave = 3;
+        state.waves_in_mission = 4;
+        state.enemies_remaining = 10;
+        state.mission_complete = true;
+        state.boss_spawned = true;
+
+        state.reset();
+
+        assert_eq!(state.current_mission, 0);
+        assert_eq!(state.current_wave, 0);
+        assert_eq!(state.waves_in_mission, 0);
+        assert_eq!(state.enemies_remaining, 0);
+        assert!(!state.mission_complete);
+        assert!(!state.boss_spawned);
+    }
+
+    #[test]
+    fn start_mission_sets_waves_based_on_difficulty() {
+        let mut state = TriglavianCampaignState::default();
+
+        // Early missions: 3 waves
+        state.start_mission(0);
+        assert_eq!(state.waves_in_mission, 3);
+        state.start_mission(2);
+        assert_eq!(state.waves_in_mission, 3);
+
+        // Mid missions: 4 waves
+        state.start_mission(3);
+        assert_eq!(state.waves_in_mission, 4);
+        state.start_mission(5);
+        assert_eq!(state.waves_in_mission, 4);
+
+        // Late missions: 5 waves
+        state.start_mission(6);
+        assert_eq!(state.waves_in_mission, 5);
+        state.start_mission(8);
+        assert_eq!(state.waves_in_mission, 5);
+    }
+
+    #[test]
+    fn mission_names_are_unique() {
+        let edencom = edencom_missions();
+        let triglavian = triglavian_missions();
+
+        let edencom_names: Vec<&str> = edencom.iter().map(|m| m.name).collect();
+        let triglavian_names: Vec<&str> = triglavian.iter().map(|m| m.name).collect();
+
+        // Within each faction, names should be unique
+        let mut unique = edencom_names.clone();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), edencom_names.len());
+
+        let mut unique = triglavian_names.clone();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), triglavian_names.len());
+    }
+
+    #[test]
+    fn boss_type_ids_are_valid() {
+        let edencom = edencom_missions();
+        let triglavian = triglavian_missions();
+
+        for mission in &edencom {
+            assert!(
+                get_ship_class_name(mission.boss_type_id) != "Unknown",
+                "Unknown boss type_id {} for mission {}",
+                mission.boss_type_id,
+                mission.name
+            );
+        }
+
+        for mission in &triglavian {
+            assert!(
+                get_ship_class_name(mission.boss_type_id) != "Unknown",
+                "Unknown boss type_id {} for mission {}",
+                mission.boss_type_id,
+                mission.name
+            );
+        }
+    }
+}

@@ -288,3 +288,67 @@ pub struct PlayerShip {
     pub name: &'static str,
     pub unlock_stage: u32,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn triglavian_stats_known_ships() {
+        let damavik = get_triglavian_stats(triglavian::DAMAVIK);
+        assert_eq!(damavik.health, 80.0);
+        assert_eq!(damavik.speed, 200.0);
+
+        let leshak = get_triglavian_stats(triglavian::LESHAK);
+        assert_eq!(leshak.health, 600.0);
+        assert_eq!(leshak.damage, 50.0);
+
+        let xordazh = get_triglavian_stats(triglavian::XORDAZH);
+        assert_eq!(xordazh.health, 2000.0);
+    }
+
+    #[test]
+    fn edencom_stats_known_ships() {
+        let skybreaker = get_edencom_stats(edencom::SKYBREAKER);
+        assert_eq!(skybreaker.health, 90.0);
+        assert_eq!(skybreaker.speed, 190.0);
+
+        let stormbringer = get_edencom_stats(edencom::STORMBRINGER);
+        assert_eq!(stormbringer.health, 550.0);
+        assert_eq!(stormbringer.damage, 45.0);
+    }
+
+    #[test]
+    fn default_stats_for_unknown_type_id() {
+        let stats = get_triglavian_stats(99999);
+        assert_eq!(stats.health, 100.0);
+        assert_eq!(stats.speed, 150.0);
+        assert_eq!(stats.fire_rate, 1.0);
+        assert_eq!(stats.damage, 10.0);
+    }
+
+    #[test]
+    fn spawn_weights_sum_to_nonzero() {
+        let trig = triglavian_spawn_weights();
+        let total: u32 = trig.iter().map(|(_, w)| w).sum();
+        assert!(total > 0);
+
+        let eden = edencom_spawn_weights();
+        let total: u32 = eden.iter().map(|(_, w)| w).sum();
+        assert!(total > 0);
+    }
+
+    #[test]
+    fn player_ship_progression_has_unlock_stages() {
+        let edencom_ships = edencom_player_ships();
+        let triglavian_ships = triglavian_player_ships();
+
+        assert_eq!(edencom_ships[0].unlock_stage, 0);
+        assert_eq!(edencom_ships[1].unlock_stage, 3);
+        assert_eq!(edencom_ships[2].unlock_stage, 6);
+
+        assert_eq!(triglavian_ships[0].unlock_stage, 0);
+        assert_eq!(triglavian_ships[1].unlock_stage, 3);
+        assert_eq!(triglavian_ships[2].unlock_stage, 6);
+    }
+}
