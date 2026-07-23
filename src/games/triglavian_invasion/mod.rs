@@ -77,6 +77,21 @@ impl Plugin for TriglavianInvasionPlugin {
             (update_trig_boss, check_trig_boss_defeated)
                 .run_if(in_state(GameState::BossFight))
                 .run_if(is_triglavian_invasion),
+        )
+        // Victory screen
+        .add_systems(
+            OnEnter(GameState::Victory),
+            spawn_trig_victory_screen.run_if(is_triglavian_invasion),
+        )
+        .add_systems(
+            Update,
+            trig_victory_input
+                .run_if(in_state(GameState::Victory))
+                .run_if(is_triglavian_invasion),
+        )
+        .add_systems(
+            OnExit(GameState::Victory),
+            despawn_trig_victory.run_if(is_triglavian_invasion),
         );
     }
 }
@@ -313,6 +328,123 @@ fn faction_select_input(
 
 /// Despawn faction select UI
 fn despawn_faction_select(mut commands: Commands, query: Query<Entity, With<TrigFactionSelectUI>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+// =============================================================================
+// VICTORY SCREEN
+// =============================================================================
+
+#[derive(Component)]
+struct TrigVictoryRoot;
+
+fn spawn_trig_victory_screen(
+    mut commands: Commands,
+    active: Res<super::ActiveModule>,
+    score: Res<crate::core::ScoreSystem>,
+) {
+    let (header, subtitle, quote, color) = match active.player_faction.as_deref() {
+        Some("edencom") => (
+            "NEW EDEN DEFENDED",
+            "The Invasion Has Been Repelled",
+            "\"We stood together. That was our strength.\"\n— EDENCOM Command",
+            Color::srgb(0.2, 0.6, 0.9),
+        ),
+        Some("triglavian") => (
+            "POCHVEN CLAIMED",
+            "The Flow Is Proven",
+            "\"Those who resist are unworthy. Those who prove are Clade.\"\n— Zorya Triglav",
+            Color::srgb(0.8, 0.2, 0.2),
+        ),
+        _ => (
+            "CAMPAIGN COMPLETE",
+            "Victory Achieved",
+            "\"Well fought.\"",
+            Color::WHITE,
+        ),
+    };
+
+    commands
+        .spawn((
+            TrigVictoryRoot,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(16.0),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.02, 0.05, 0.92)),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new(header),
+                TextFont {
+                    font_size: 44.0,
+                    ..default()
+                },
+                TextColor(color),
+            ));
+
+            parent.spawn((
+                Text::new(subtitle),
+                TextFont {
+                    font_size: 22.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+            ));
+
+            parent.spawn((
+                Text::new(quote),
+                TextFont {
+                    font_size: 16.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.5, 0.5, 0.5)),
+            ));
+
+            parent.spawn((
+                Text::new(format!("Final Score: {}", score.score)),
+                TextFont {
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.9, 0.8, 0.2)),
+            ));
+
+            parent.spawn((
+                Text::new("[SPACE] Continue  •  [ESC] Main Menu"),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+            ));
+        });
+}
+
+fn trig_victory_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    joystick: Res<crate::systems::JoystickState>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if keyboard.just_pressed(KeyCode::Space)
+        || keyboard.just_pressed(KeyCode::Enter)
+        || joystick.confirm()
+    {
+        next_state.set(GameState::MainMenu);
+    }
+    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+        next_state.set(GameState::MainMenu);
+    }
+}
+
+fn despawn_trig_victory(mut commands: Commands, query: Query<Entity, With<TrigVictoryRoot>>) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }

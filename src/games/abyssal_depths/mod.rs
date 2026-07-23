@@ -189,6 +189,21 @@ impl Plugin for AbyssalDepthsPlugin {
                     .chain()
                     .run_if(in_state(GameState::Playing))
                     .run_if(is_abyssal),
+            )
+            // Victory screen
+            .add_systems(
+                OnEnter(GameState::Victory),
+                spawn_abyssal_victory_screen.run_if(is_abyssal),
+            )
+            .add_systems(
+                Update,
+                abyssal_victory_input
+                    .run_if(in_state(GameState::Victory))
+                    .run_if(is_abyssal),
+            )
+            .add_systems(
+                OnExit(GameState::Victory),
+                despawn_abyssal_victory.run_if(is_abyssal),
             );
     }
 }
@@ -805,6 +820,92 @@ fn cleanup_abyssal(
 
     // Despawn gates
     for entity in gate_query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+// =============================================================================
+// VICTORY SCREEN
+// =============================================================================
+
+#[derive(Component)]
+struct AbyssalVictoryRoot;
+
+fn spawn_abyssal_victory_screen(
+    mut commands: Commands,
+    state: Res<AbyssalState>,
+) {
+    commands
+        .spawn((
+            AbyssalVictoryRoot,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(16.0),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.02, 0.05, 0.92)),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("EXTRACTION SUCCESSFUL"),
+                TextFont {
+                    font_size: 44.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.2, 1.0, 0.5)),
+            ));
+
+            parent.spawn((
+                Text::new("You survived the Abyss and extracted with your ship intact."),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+            ));
+
+            parent.spawn((
+                Text::new(format!("Loot: {} ISK", state.loot_collected)),
+                TextFont {
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.9, 0.8, 0.2)),
+            ));
+
+            parent.spawn((
+                Text::new("[SPACE] Continue  •  [ESC] Main Menu"),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.4, 0.4, 0.4)),
+            ));
+        });
+}
+
+fn abyssal_victory_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    joystick: Res<crate::systems::JoystickState>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if keyboard.just_pressed(KeyCode::Space)
+        || keyboard.just_pressed(KeyCode::Enter)
+        || joystick.confirm()
+    {
+        next_state.set(GameState::MainMenu);
+    }
+    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+        next_state.set(GameState::MainMenu);
+    }
+}
+
+fn despawn_abyssal_victory(mut commands: Commands, query: Query<Entity, With<AbyssalVictoryRoot>>) {
+    for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }
 }
