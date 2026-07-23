@@ -61,16 +61,28 @@ impl Plugin for TriglavianInvasionPlugin {
         // Boss systems
         app.add_systems(
             OnEnter(GameState::BossIntro),
-            spawn_trig_boss.run_if(is_triglavian_invasion),
+            (
+                spawn_trig_boss,
+                spawn_trig_boss_intro_ui,
+            )
+                .run_if(is_triglavian_invasion),
         )
         .add_systems(
             Update,
-            trig_boss_intro.run_if(in_state(GameState::BossIntro))
+            (
+                trig_boss_intro,
+                update_trig_boss_intro_ui,
+            )
+                .run_if(in_state(GameState::BossIntro))
                 .run_if(is_triglavian_invasion),
         )
         .add_systems(
             OnExit(GameState::BossIntro),
-            despawn_trig_boss_intro.run_if(is_triglavian_invasion),
+            (
+                despawn_trig_boss_intro,
+                despawn_trig_boss_intro_ui,
+            )
+                .run_if(is_triglavian_invasion),
         )
         .add_systems(
             Update,
@@ -328,6 +340,135 @@ fn faction_select_input(
 
 /// Despawn faction select UI
 fn despawn_faction_select(mut commands: Commands, query: Query<Entity, With<TrigFactionSelectUI>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+// =============================================================================
+// BOSS INTRO UI
+// =============================================================================
+
+#[derive(Component)]
+struct TrigBossIntroRoot;
+
+#[derive(Component)]
+struct TrigBossIntroWarning {
+    timer: f32,
+}
+
+fn spawn_trig_boss_intro_ui(
+    mut commands: Commands,
+    state: Res<TriglavianCampaignState>,
+    active: Res<super::ActiveModule>,
+) {
+    let Some(mission) = edencom_missions()
+        .into_iter()
+        .chain(triglavian_missions())
+        .nth(state.current_mission as usize)
+    else {
+        return;
+    };
+
+    let phase_text = match state.current_mission {
+        0..=2 => "Single Phase",
+        3..=5 => "Two Phases",
+        6..=7 => "Three Phases • Challenging",
+        _ => "Multi-Phase",
+    };
+
+    let color = if active.player_faction.as_deref() == Some("edencom") {
+        Color::srgb(0.2, 0.6, 0.9)
+    } else {
+        Color::srgb(0.8, 0.2, 0.2)
+    };
+
+    commands
+        .spawn((
+            TrigBossIntroRoot,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(12.0),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.85)),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("⚠ WARNING ⚠"),
+                TextFont {
+                    font_size: 28.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(1.0, 0.2, 0.2)),
+                TrigBossIntroWarning { timer: 0.0 },
+            ));
+
+            parent.spawn(Node {
+                height: Val::Px(15.0),
+                ..default()
+            });
+
+            parent.spawn((
+                Text::new(mission.boss_name),
+                TextFont {
+                    font_size: 56.0,
+                    ..default()
+                },
+                TextColor(color),
+            ));
+
+            parent.spawn((
+                Text::new(mission.name),
+                TextFont {
+                    font_size: 22.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+            ));
+
+            parent.spawn((
+                Text::new(phase_text),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.6, 0.6, 0.6)),
+            ));
+
+            parent.spawn(Node {
+                height: Val::Px(30.0),
+                ..default()
+            });
+
+            parent.spawn((
+                Text::new("Prepare for battle..."),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+            ));
+        });
+}
+
+fn update_trig_boss_intro_ui(
+    time: Res<Time>,
+    mut query: Query<(&mut TextColor, &mut TrigBossIntroWarning)>,
+) {
+    let dt = time.delta_secs();
+    for (mut color, mut warning) in query.iter_mut() {
+        warning.timer += dt * 4.0;
+        let pulse = (warning.timer.sin() * 0.3 + 0.7).clamp(0.4, 1.0);
+        color.0 = Color::srgb(1.0, 0.2 * pulse, 0.2 * pulse);
+    }
+}
+
+fn despawn_trig_boss_intro_ui(mut commands: Commands, query: Query<Entity, With<TrigBossIntroRoot>>) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }
