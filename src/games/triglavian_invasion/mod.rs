@@ -65,6 +65,15 @@ impl Plugin for TriglavianInvasionPlugin {
         )
         .add_systems(
             Update,
+            trig_boss_intro.run_if(in_state(GameState::BossIntro))
+                .run_if(is_triglavian_invasion),
+        )
+        .add_systems(
+            OnExit(GameState::BossIntro),
+            despawn_trig_boss_intro.run_if(is_triglavian_invasion),
+        )
+        .add_systems(
+            Update,
             (update_trig_boss, check_trig_boss_defeated)
                 .run_if(in_state(GameState::BossFight))
                 .run_if(is_triglavian_invasion),

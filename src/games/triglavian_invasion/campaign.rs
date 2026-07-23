@@ -4,8 +4,9 @@
 
 use super::ships::*;
 use crate::assets::ShipSpriteCache;
-use crate::core::{GameState, LAYER_ENEMIES};
+use crate::core::{DamageType, GameState, LAYER_ENEMIES};
 use crate::entities::boss::{Boss, BossAttack, BossData, BossMovement, BossState, MovementPattern};
+use crate::entities::projectile::ProjectilePhysics;
 use crate::entities::Hitbox;
 use crate::entities::{spawn_enemy, spawn_variant, EnemyBehavior, EnemyVariant};
 use bevy::prelude::*;
@@ -509,9 +510,220 @@ fn get_ship_class_name(type_id: u32) -> &'static str {
     }
 }
 
-/// Update boss behavior
-pub fn update_trig_boss() {
-    // Boss AI updates - placeholder for actual implementation
+// =============================================================================
+// BOSS INTRO SEQUENCE
+// =============================================================================
+
+/// Boss intro sequence — descend boss into position then start fight
+pub fn trig_boss_intro(
+    time: Res<Time>,
+    mut boss_query: Query<(&mut Transform, &mut BossState, &BossData), With<Boss>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    mut timer: Local<f32>,
+) {
+    let dt = time.delta_secs();
+    let mut boss_count = 0;
+
+    for (mut transform, mut state, data) in boss_query.iter_mut() {
+        boss_count += 1;
+
+        // Descend boss to battle position
+        let target_y = 200.0;
+        if transform.translation.y > target_y {
+            transform.translation.y -= 100.0 * dt;
+        }
+
+        // After 2 seconds, start fight
+        if *timer > 2.0 {
+            *timer = 0.0;
+            *state = BossState::Battle;
+            next_state.set(GameState::BossFight);
+            info!("Triglavian Boss battle started: {}", data.name);
+        }
+    }
+
+    if boss_count > 0 {
+        *timer += dt;
+    }
+}
+
+/// Despawn Triglavian boss intro UI (placeholder — no UI yet)
+pub fn despawn_trig_boss_intro(_commands: Commands) {
+    // Intentionally empty; intro UI will be added in future update
+}
+
+// =============================================================================
+// BOSS UPDATE
+// =============================================================================
+
+/// Update boss behavior during BossFight
+pub fn update_trig_boss(
+    time: Res<Time>,
+    mut boss_query: Query<
+        (
+            &mut Transform,
+            &mut BossData,
+            &mut BossMovement,
+            &mut BossAttack,
+            &mut BossState,
+        ),
+        With<Boss>,
+    >,
+    player_query: Query<&Transform, (With<crate::entities::Player>, Without<Boss>)>,
+    mut commands: Commands,
+) {
+    let player_pos = player_query
+        .get_single()
+        .map(|t| t.translation.truncate())
+        .unwrap_or(Vec2::ZERO);
+
+    for (mut transform, mut data, mut movement, mut attack, state) in boss_query.iter_mut() {
+        if *state != BossState::Battle {
+            continue;
+        }
+
+        let pos = transform.translation.truncate();
+        let dt = time.delta_secs();
+        let health_percent = data.health / data.max_health;
+
+        // -----------------------------------------------------------------
+        // PHASE TRANSITIONS
+        // -----------------------------------------------------------------
+        let phase_threshold = 1.0 - (data.current_phase as f32 / data.total_phases as f32);
+
+        if health_percent <= phase_threshold && data.current_phase < data.total_phases {
+            data.current_phase += 1;
+            movement.speed *= 1.2;
+            attack.fire_rate *= 0.85;
+            info!(
+                "{} entering phase {}!",
+                data.name, data.current_phase
+            );
+        }
+
+        // -----------------------------------------------------------------
+        // ENRAGE
+        // -----------------------------------------------------------------
+        if !data.is_enraged && health_percent <= data.enrage_threshold {
+            data.is_enraged = true;
+            movement.speed *= 1.5;
+            attack.fire_rate *= 0.6;
+            info!("{} is ENRAGED!", data.name);
+        }
+
+        // -----------------------------------------------------------------
+        // MOVEMENT
+        // -----------------------------------------------------------------
+        if data.stationary {
+            // World Ark stays in place
+            continue;
+        }
+
+        movement.timer += dt;
+        let _sweep_speed = movement.speed * (1.0 + data.current_phase as f32 * 0.15);
+        let offset = (movement.timer * 0.5).sin() * 200.0;
+        transform.translation.x = offset;
+
+        // Clamp to screen bounds
+        let half_screen = crate::core::SCREEN_WIDTH / 2.0 - 120.0;
+        transform.translation.x = transform.translation.x.clamp(-half_screen, half_screen);
+
+        // -----------------------------------------------------------------
+        // ATTACK
+        // -----------------------------------------------------------------
+        attack.fire_timer += dt;
+        if attack.fire_timer >= attack.fire_rate {
+            attack.fire_timer = 0.0;
+
+            let dir = (player_pos - pos).normalize_or_zero();
+            let phase = data.current_phase;
+            let is_enraged = data.is_enraged;
+
+            // Choose attack pattern based on boss type and phase
+            match data.type_id {
+                // World Ark — ring attack
+                triglavian::XORDAZH => {
+                    let count = 16 + (phase * 4) as usize;
+                    for i in 0..count {
+                        let angle = (i as f32 / count as f32) * std::f32::consts::TAU;
+                        let bullet_dir = Vec2::new(angle.cos(), angle.sin());
+                        spawn_trig_projectile(
+                            &mut commands,
+                            pos,
+                            bullet_dir,
+                            120.0,
+                            12.0 + phase as f32 * 3.0,
+                            Color::srgb(0.8, 0.2, 0.2),
+                        );
+                    }
+                }
+
+                // Leshak / Ikitursa — spread shot
+                triglavian::LESHAK | triglavian::IKITURSA => {
+                    let bullet_count = if is_enraged { 9 } else { 5 };
+                    let base_angle = dir.y.atan2(dir.x);
+                    for i in 0..bullet_count {
+                        let angle_offset = (i as f32 - (bullet_count - 1) as f32 / 2.0) * 0.2;
+                        let angle = base_angle + angle_offset;
+                        let bullet_dir = Vec2::new(angle.cos(), angle.sin());
+                        spawn_trig_projectile(
+                            &mut commands,
+                            pos + bullet_dir * 40.0,
+                            bullet_dir,
+                            220.0 + phase as f32 * 30.0,
+                            18.0 + phase as f32 * 4.0,
+                            Color::srgb(0.9, 0.3, 0.1),
+                        );
+                    }
+                }
+
+                // Vedmak / Drekavac — steady aimed shot
+                _ => {
+                    let projectile_speed = 250.0 + phase as f32 * 40.0;
+                    let damage = 15.0 + phase as f32 * 5.0;
+                    spawn_trig_projectile(
+                        &mut commands,
+                        pos + dir * 40.0,
+                        dir,
+                        projectile_speed,
+                        damage,
+                        Color::srgb(1.0, 0.5, 0.2),
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// Spawn a Triglavian boss projectile
+fn spawn_trig_projectile(
+    commands: &mut Commands,
+    pos: Vec2,
+    dir: Vec2,
+    speed: f32,
+    damage: f32,
+    color: Color,
+) {
+    commands.spawn((
+        crate::entities::EnemyProjectile,
+        crate::entities::ProjectileDamage {
+            damage,
+            damage_type: DamageType::Thermal,
+            crit_chance: 0.05,
+            crit_multiplier: 1.5,
+            ammo_type: crate::core::AmmoType::default(),
+        },
+        ProjectilePhysics {
+            velocity: dir * speed,
+            lifetime: 4.0,
+        },
+        Sprite {
+            color,
+            custom_size: Some(Vec2::new(8.0, 16.0)),
+            ..default()
+        },
+        Transform::from_xyz(pos.x, pos.y, 9.0),
+    ));
 }
 
 /// Check if boss is defeated
