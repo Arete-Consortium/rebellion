@@ -90,8 +90,10 @@ unplayable boss fights — no input, no damage, no visuals.
 - [x] **Elder Fleet module.json** — `games/elder_fleet/config/module.json` created
   with full Minmatar vs Amarr campaign: factions, ship pools, 5 missions, epilogues,
   4 bosses (SquadronLeader → ImperialAdmiral progression).
-- [ ] **Additional enemy variants** — `EnemyVariant` supports `BlindingVedmak`,
-  `StarvingDamavik`, etc. Could add more variety to Triglavian missions.
+- [x] **Additional enemy variants** — Added `Kikimora` (rapid disintegrator
+  destroyer, 200 HP) and `Leshak` (siege disintegrator battleship, 600 HP) to
+  `EnemyVariant`, wired into Triglavian campaign wave spawning. All 13 spawn
+  unit tests green.
 - [ ] **Mission-specific objectives** — Currently missions only track "survive waves."
   Could add escort, timed survival, or kill-count objectives.
 

@@ -146,7 +146,13 @@ fn spawn_next_wave(
 
     // Check if it's boss time
     if campaign.current_wave > mission.enemy_waves {
-        if !campaign.boss_spawned {
+        if mission.boss == BossType::None {
+            // No boss for this mission — complete immediately
+            campaign.primary_complete = true;
+            campaign.bonus_complete = campaign.no_damage_taken
+                || campaign.mission_souls >= mission.souls_to_liberate;
+            next_state.set(GameState::StageComplete);
+        } else if !campaign.boss_spawned {
             // Transition to boss intro
             next_state.set(GameState::BossIntro);
         }
@@ -387,6 +393,12 @@ fn check_boss_defeated(
             // Mark boss defeated
             campaign.boss_defeated = true;
             campaign.primary_complete = true;
+
+            // Evaluate bonus objective
+            if let Some(mission) = campaign.current_mission() {
+                campaign.bonus_complete = campaign.no_damage_taken
+                    || campaign.mission_souls >= mission.souls_to_liberate;
+            }
 
             // Send event
             boss_events.send(BossDefeatedEvent {

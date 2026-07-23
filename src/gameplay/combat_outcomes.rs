@@ -71,13 +71,15 @@ pub fn enemy_death_outcomes(
 // Player Damage Outcomes
 // =============================================================================
 
-/// Mark score as having lost the no-damage bonus when the player is hit.
+/// Mark score and campaign as having lost the no-damage bonus when the player is hit.
 pub fn player_damage_outcomes(
     mut player_damaged: EventReader<PlayerDamagedEvent>,
     mut score: ResMut<ScoreSystem>,
+    mut campaign: ResMut<crate::core::CampaignState>,
 ) {
     for _event in player_damaged.read() {
         score.no_damage_bonus = false;
+        campaign.no_damage_taken = false;
     }
 }
 
