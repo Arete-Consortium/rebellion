@@ -344,15 +344,17 @@ fn spawn_trig_victory_screen(
     mut commands: Commands,
     active: Res<super::ActiveModule>,
     score: Res<crate::core::ScoreSystem>,
+    mut save_data: ResMut<crate::core::SaveData>,
 ) {
-    let (header, subtitle, quote, color) = match active.player_faction.as_deref() {
-        Some("edencom") => (
+    let faction = active.player_faction.as_deref().unwrap_or("unknown");
+    let (header, subtitle, quote, color) = match faction {
+        "edencom" => (
             "NEW EDEN DEFENDED",
             "The Invasion Has Been Repelled",
             "\"We stood together. That was our strength.\"\n— EDENCOM Command",
             Color::srgb(0.2, 0.6, 0.9),
         ),
-        Some("triglavian") => (
+        "triglavian" => (
             "POCHVEN CLAIMED",
             "The Flow Is Proven",
             "\"Those who resist are unworthy. Those who prove are Clade.\"\n— Zorya Triglav",
@@ -365,6 +367,17 @@ fn spawn_trig_victory_screen(
             Color::WHITE,
         ),
     };
+
+    // Persist high score
+    let faction_key = format!("trig_{}", faction);
+    let enemy_key = format!(
+        "trig_{}",
+        active.enemy_faction.as_deref().unwrap_or("unknown")
+    );
+    let previous_high = save_data.get_high_score(&faction_key, &enemy_key);
+    if score.score > previous_high {
+        save_data.record_score(&faction_key, &enemy_key, score.score, 9);
+    }
 
     commands
         .spawn((

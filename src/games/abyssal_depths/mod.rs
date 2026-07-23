@@ -834,7 +834,15 @@ struct AbyssalVictoryRoot;
 fn spawn_abyssal_victory_screen(
     mut commands: Commands,
     state: Res<AbyssalState>,
+    score: Res<crate::core::ScoreSystem>,
+    mut save_data: ResMut<crate::core::SaveData>,
 ) {
+    // Persist high score
+    let previous_high = save_data.get_high_score("abyssal", "triglavian");
+    if score.score > previous_high {
+        save_data.record_score("abyssal", "triglavian", score.score, 3);
+    }
+
     commands
         .spawn((
             AbyssalVictoryRoot,
