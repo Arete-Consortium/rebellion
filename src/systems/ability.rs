@@ -256,7 +256,7 @@ impl Plugin for AbilityPlugin {
                     ability_end_effects,
                 )
                     .chain()
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
 }

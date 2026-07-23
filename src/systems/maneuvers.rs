@@ -25,7 +25,7 @@ impl Plugin for ManeuverPlugin {
                     update_maneuver_cooldowns,
                 )
                     .chain()
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
 }

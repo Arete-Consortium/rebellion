@@ -36,7 +36,7 @@ impl Plugin for AudioPlugin {
                     play_boss_spawn_sound,
                     play_ability_sounds,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
 }

@@ -65,10 +65,13 @@ impl Plugin for HudPlugin {
                 update_achievement_popup,
                 update_inventory_hud,
             )
-                .run_if(in_state(GameState::Playing))
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
                 .run_if(not_last_stand),
         )
-        .add_systems(OnExit(GameState::Playing), despawn_hud);
+        .add_systems(
+            OnExit(GameState::Playing),
+            despawn_hud.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+        );
     }
 }
 

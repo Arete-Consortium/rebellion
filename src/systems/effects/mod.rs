@@ -66,7 +66,7 @@ impl Plugin for EffectsPlugin {
                     screen_effects::update_camera_zoom,
                     explosions::handle_explosion_events,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             )
             .add_systems(
                 Update,
@@ -82,7 +82,7 @@ impl Plugin for EffectsPlugin {
                     abilities::spawn_ability_effects,
                     abilities::update_ability_effects,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             )
             .add_systems(
                 Update,
@@ -93,7 +93,7 @@ impl Plugin for EffectsPlugin {
                     damage_layers::update_armor_sparks,
                     damage_layers::update_hull_fire,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             )
             .add_systems(
                 Update,
@@ -104,7 +104,7 @@ impl Plugin for EffectsPlugin {
                     pickups::update_pickup_shockwaves,
                     pickups::update_pickup_particles,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             )
             .add_systems(
                 Update,
@@ -115,7 +115,7 @@ impl Plugin for EffectsPlugin {
                     buff_visuals::update_damage_boost_aura,
                     overlays::update_disintegrator_beams,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             )
             .add_systems(
                 OnExit(GameState::Playing),

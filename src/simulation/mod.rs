@@ -8,6 +8,7 @@
 
 use bevy::prelude::*;
 
+use crate::core::GameState;
 use crate::entities::{CollectiblePlugin, ProjectilePlugin};
 use crate::systems::collision::SpatialGrid;
 use crate::systems::CollisionPlugin;
@@ -40,6 +41,11 @@ pub enum CollisionPhase {
     Resolution,
 }
 
+/// Run condition: simulation runs during active gameplay and boss fights.
+fn simulation_active(state: Res<State<GameState>>) -> bool {
+    matches!(*state.get(), GameState::Playing | GameState::BossFight)
+}
+
 /// Plugin that registers all authoritative simulation systems.
 pub struct SimulationPlugin;
 
@@ -63,7 +69,7 @@ impl Plugin for SimulationPlugin {
                 )
                     .chain()
                     .in_set(CollisionPhase::Detection)
-                    .run_if(in_state(crate::core::GameState::Playing)),
+                    .run_if(simulation_active),
             )
             .add_systems(
                 FixedUpdate,
@@ -75,19 +81,19 @@ impl Plugin for SimulationPlugin {
                 )
                     .chain()
                     .in_set(CollisionPhase::Resolution)
-                    .run_if(in_state(crate::core::GameState::Playing)),
+                    .run_if(simulation_active),
             )
             .add_systems(
                 FixedUpdate,
                 assign_sim_ids
                     .after(CollisionPhase::Resolution)
-                    .run_if(in_state(crate::core::GameState::Playing)),
+                    .run_if(simulation_active),
             )
             .add_systems(
                 FixedUpdate,
                 compute_state_hash_system
                     .after(assign_sim_ids)
-                    .run_if(in_state(crate::core::GameState::Playing)),
+                    .run_if(simulation_active),
             )
             .add_plugins((CollisionPlugin, ProjectilePlugin, CollectiblePlugin));
     }

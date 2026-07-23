@@ -95,7 +95,7 @@ impl Plugin for WingmanPlugin {
                 wingman_shooting,
                 wingman_damage,
             )
-                .run_if(in_state(GameState::Playing)),
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
         );
     }
 }

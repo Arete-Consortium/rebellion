@@ -238,7 +238,7 @@ impl Plugin for CollectiblePlugin {
                 super::items::recompute_stats,
                 update_powerup_timers,
             )
-                .run_if(in_state(GameState::Playing)),
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
         );
     }
 }

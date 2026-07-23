@@ -24,8 +24,8 @@ impl Plugin for MusicPlugin {
                 Update,
                 (
                     manage_menu_music.run_if(in_state(GameState::MainMenu)),
-                    manage_gameplay_music.run_if(in_state(GameState::Playing)),
-                    update_music_intensity.run_if(in_state(GameState::Playing)),
+                    manage_gameplay_music.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+                    update_music_intensity.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
                     handle_state_music_transitions,
                 ),
             );

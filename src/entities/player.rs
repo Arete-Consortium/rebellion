@@ -321,10 +321,13 @@ impl Plugin for PlayerPlugin {
                     update_player_stats,
                     iframes_flash,
                 )
-                    .run_if(in_state(GameState::Playing))
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
                     .run_if(not_last_stand),
             )
-            .add_systems(OnExit(GameState::Playing), despawn_player);
+            .add_systems(
+                OnExit(GameState::Playing),
+                despawn_player.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+            );
     }
 }
 

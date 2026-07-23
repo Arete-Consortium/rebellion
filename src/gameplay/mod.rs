@@ -54,7 +54,7 @@ impl Plugin for GameplayPlugin {
                     player_death_outcome,
                 )
                     .after(crate::simulation::CollisionPhase::Resolution)
-                    .run_if(in_state(crate::core::GameState::Playing)),
+                    .run_if(in_state(crate::core::GameState::Playing).or(in_state(crate::core::GameState::BossFight))),
             );
     }
 }

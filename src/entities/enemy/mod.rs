@@ -55,7 +55,7 @@ impl Plugin for EnemyPlugin {
                 enemy_bounds_check,
                 apply_endless_scale_system,
             )
-                .run_if(in_state(GameState::Playing)),
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
         );
     }
 }

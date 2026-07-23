@@ -23,7 +23,7 @@ impl Plugin for ScoringPlugin {
                     update_salt_miner_system,
                     update_combo_heat_system,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
 }

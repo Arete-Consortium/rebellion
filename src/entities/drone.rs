@@ -89,7 +89,7 @@ impl Plugin for DronePlugin {
                 drone_take_damage,
                 drone_lifetime_despawn,
             )
-                .run_if(in_state(GameState::Playing)),
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
         );
     }
 }

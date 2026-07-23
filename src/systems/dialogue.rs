@@ -20,7 +20,7 @@ impl Plugin for DialoguePlugin {
             .add_systems(
                 Update,
                 (handle_dialogue_events, update_dialogue_timer)
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
 }

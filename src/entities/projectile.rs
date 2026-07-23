@@ -173,7 +173,7 @@ impl Plugin for ProjectilePlugin {
                 burn_tick,
             )
                 .chain()
-                .run_if(in_state(GameState::Playing)),
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
         );
     }
 }

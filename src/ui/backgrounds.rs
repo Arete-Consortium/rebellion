@@ -36,9 +36,12 @@ impl Plugin for BackgroundPlugin {
                     update_background_ship_spawning,
                     update_background_ships,
                 )
-                    .run_if(in_state(GameState::Playing)),
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             )
-            .add_systems(OnExit(GameState::Playing), despawn_starfield);
+            .add_systems(
+                OnExit(GameState::Playing),
+                despawn_starfield.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+            );
     }
 }
 

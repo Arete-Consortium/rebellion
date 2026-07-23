@@ -24,7 +24,7 @@ impl Plugin for CapacitorWheelPlugin {
             Update,
             (update_capacitor_animation, draw_capacitor_wheel)
                 .chain()
-                .run_if(in_state(GameState::Playing))
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
                 .after(bevy_egui::EguiSet::ProcessInput),
         );
     }
