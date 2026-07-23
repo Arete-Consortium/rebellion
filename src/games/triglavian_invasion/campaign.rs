@@ -460,6 +460,18 @@ pub fn spawn_trig_boss(
         BossAttack::default(),
         Hitbox { radius: size / 2.0 },
         Transform::from_xyz(0.0, spawn_y, LAYER_ENEMIES),
+        // Also mark as Enemy for collision system compatibility
+        crate::entities::Enemy,
+        crate::entities::EnemyStats {
+            type_id: info.boss_type_id,
+            name: info.boss_name.to_string(),
+            health,
+            max_health: health,
+            speed: 80.0,
+            score_value: score,
+            is_boss: true,
+            liberation_value: 10,
+        },
     ));
 
     // Add sprite
