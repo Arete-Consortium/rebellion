@@ -80,14 +80,16 @@ unplayable boss fights — no input, no damage, no visuals.
 ### P1 — Polish
 - [x] **Triglavian boss intro UI** — Boss intro screen with warning text, boss name,
   mission name, phase indicator, "Prepare for battle..." (commit `1897c32`).
-- [ ] **Caldari-Gallente BossFight validation** — CG also uses `BossIntro`/`BossFight`.
-  The core engine fix helps, but verify CG boss is actually playable now.
+- [x] **Caldari-Gallente BossFight validation** — `tests/cg_boss_phases.rs` added:
+  phase transitions (1→2→3 with speed/fire_rate multipliers), projectile spawning
+  during BossFight, and Carebear difficulty damage scaling. All green.
 - [x] **High score persistence** — Triglavian and Abyssal victory screens now
   persist scores to `SaveData` (matches CG pattern).
 
 ### P2 — Content Expansion
-- [ ] **Elder Fleet module.json** — Only campaign without a JSON config module.
-  Could add `games/elder_fleet/config/module.json` for consistency.
+- [x] **Elder Fleet module.json** — `games/elder_fleet/config/module.json` created
+  with full Minmatar vs Amarr campaign: factions, ship pools, 5 missions, epilogues,
+  4 bosses (SquadronLeader → ImperialAdmiral progression).
 - [ ] **Additional enemy variants** — `EnemyVariant` supports `BlindingVedmak`,
   `StarvingDamavik`, etc. Could add more variety to Triglavian missions.
 - [ ] **Mission-specific objectives** — Currently missions only track "survive waves."

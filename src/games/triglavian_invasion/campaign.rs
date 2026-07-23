@@ -335,6 +335,12 @@ pub fn spawn_trig_wave(
                 triglavian::VEDMAK => {
                     spawn_variant(&mut commands, EnemyVariant::Vedmak, pos, sprite, None);
                 }
+                triglavian::KIKIMORA => {
+                    spawn_variant(&mut commands, EnemyVariant::Kikimora, pos, sprite, None);
+                }
+                triglavian::LESHAK => {
+                    spawn_variant(&mut commands, EnemyVariant::Leshak, pos, sprite, None);
+                }
                 _ => {
                     // Generic enemy spawn for other Triglavian ships
                     spawn_enemy(

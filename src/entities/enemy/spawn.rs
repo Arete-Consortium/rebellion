@@ -266,6 +266,8 @@ pub enum EnemyVariant {
     StarvingDamavik,
     Vedmak,
     BlindingVedmak,
+    Kikimora,
+    Leshak,
     DrekavacBoss,
 }
 
@@ -412,6 +414,34 @@ impl EnemyVariant {
                 disintegrator: Some(DisintegratorRamp::new(7.0, 2.0, 6.0)),
                 remove_weapon: true,
             },
+            Self::Kikimora => EnemyVariantConfig {
+                type_id: triglavian::KIKIMORA,
+                behavior: EnemyBehavior::Disintegrator,
+                name: "Rapid Kikimora",
+                health: 200.0,
+                speed: 85.0,
+                score_value: 280,
+                is_boss: false,
+                liberation_value: 3,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: Some(DisintegratorRamp::new(6.0, 1.5, 5.0)),
+                remove_weapon: true,
+            },
+            Self::Leshak => EnemyVariantConfig {
+                type_id: triglavian::LESHAK,
+                behavior: EnemyBehavior::Disintegrator,
+                name: "Siege Leshak",
+                health: 600.0,
+                speed: 40.0,
+                score_value: 500,
+                is_boss: false,
+                liberation_value: 8,
+                weapon_override: None,
+                spawner: None,
+                disintegrator: Some(DisintegratorRamp::new(12.0, 2.5, 10.0)),
+                remove_weapon: true,
+            },
             Self::DrekavacBoss => EnemyVariantConfig {
                 type_id: triglavian::DREKAVAC,
                 behavior: EnemyBehavior::Disintegrator,
@@ -517,6 +547,8 @@ mod tests {
             EnemyVariant::StarvingDamavik,
             EnemyVariant::Vedmak,
             EnemyVariant::BlindingVedmak,
+            EnemyVariant::Kikimora,
+            EnemyVariant::Leshak,
             EnemyVariant::DrekavacBoss,
         ]
     }
@@ -599,6 +631,8 @@ mod tests {
             EnemyVariant::StarvingDamavik,
             EnemyVariant::Vedmak,
             EnemyVariant::BlindingVedmak,
+            EnemyVariant::Kikimora,
+            EnemyVariant::Leshak,
             EnemyVariant::DrekavacBoss,
         ];
         for variant in trig_variants {
