@@ -2,8 +2,8 @@
 
 **Branch**: `feat/triglavian-campaign-20260723`  
 **Date**: 2026-07-23  
-**Status**: Active — all tests passing (303 unit + 9 integration), clippy clean  
-**Last commit**: `dda7cc0` — High score persistence for Triglavian and Abyssal victory screens
+**Status**: Active — all tests passing (303 unit + 15 integration), clippy clean  
+**Last commit**: `dbda8f2` — Abyssal Depths room progression integration tests
 
 ---
 
@@ -16,7 +16,6 @@
     enemy spawn weights, mission definitions, boss stat blocks, epilogue text.
 - **`campaign.rs`** — Boss mechanics fully implemented:
   - `trig_boss_intro()`: Boss descends to y=200, transitions to BossFight after 2s.
-  - `despawn_trig_boss_intro()`: Placeholder (no UI yet — acceptable).
   - `update_trig_boss()`: Sweep movement, 3-phase transitions, enrage at 20% health.
   - Attack patterns: 360° ring (XORDAZH), spread shot (LESHAK/IKITURSA), aimed single.
   - `spawn_trig_projectile()` helper with `EnemyProjectile` + `ProjectileDamage`.
@@ -24,8 +23,14 @@
 - **`mod.rs`** — Victory screen wired:
   - `spawn_trig_victory_screen` with faction-specific content (EDENCOM blue / Triglavian red).
   - Input handling (Space/ESC → MainMenu).
+  - Boss intro UI with pulsing warning text, boss name card, phase indicator.
 - **`ships.rs`** — 5 unit tests for stats, spawn weights, progression.
 - **`mod.rs`** — High score persistence wired into victory screen (matches CG pattern).
+- **`tests/triglavian_boss_phases.rs`** (NEW) — Integration tests:
+  - `trig_boss_phase_transition_and_enrage`: Phase 1→2→3 at correct thresholds,
+    speed increases (×1.2 per phase), enrage at 20% (×1.5).
+  - `trig_boss_spawns_projectiles_during_boss_fight`: Leshak fires 5-bullet spread.
+  - `trig_boss_does_not_fire_when_not_in_battle_state`: Intro state suppresses firing.
 
 ### 2. Abyssal Depths Campaign (`src/games/abyssal_depths/`)
 
@@ -38,6 +43,11 @@
   - 8 unit tests for `AbyssalState` and `AbyssalRoom`.
   - Victory screen wired: extraction success with loot display.
 - High score persistence wired into victory screen (matches CG pattern).
+- **`tests/abyssal_room_progression.rs`** (NEW) — Integration tests:
+  - `abyssal_room1_clears_and_spawns_transition_gate`: Room clear detection + gate spawn.
+  - `abyssal_room3_extraction_gate_triggers_victory`: Extraction channeling accumulates
+    progress and marks `extracted = true`.
+  - `abyssal_timer_runs_out_triggers_game_over`: Timer expiry transitions to `GameOver`.
 
 ### 3. Core Engine Fix — BossFight State Damage Gap
 
@@ -63,17 +73,13 @@ unplayable boss fights — no input, no damage, no visuals.
 ## Known Issues / Next Steps
 
 ### P0 — Must Fix Before Merge
-- [x] **Integration test for BossFight state** — `tests/boss_fight_e2e.rs` added
-  with two tests: projectile damage during BossFight + player movement during
-  BossFight. Validates the core engine fix.
-- [ ] **Integration test for Triglavian boss phases** — spawn boss, advance timer,
-  assert phase transitions and projectile spawning.
-- [ ] **Integration test for Abyssal Depths room progression** — verify enemy
-  spawn counts per room and extraction gate logic.
+- [x] **Integration test for BossFight state** — `tests/boss_fight_e2e.rs` added.
+- [x] **Integration test for Triglavian boss phases** — `tests/triglavian_boss_phases.rs` added.
+- [x] **Integration test for Abyssal Depths room progression** — `tests/abyssal_room_progression.rs` added.
 
 ### P1 — Polish
-- [ ] **Triglavian boss intro UI** — `despawn_trig_boss_intro` is a placeholder.
-  Add boss name card animation (follow Elder Fleet `boss_intro.rs` pattern).
+- [x] **Triglavian boss intro UI** — Boss intro screen with warning text, boss name,
+  mission name, phase indicator, "Prepare for battle..." (commit `1897c32`).
 - [ ] **Caldari-Gallente BossFight validation** — CG also uses `BossIntro`/`BossFight`.
   The core engine fix helps, but verify CG boss is actually playable now.
 - [x] **High score persistence** — Triglavian and Abyssal victory screens now
@@ -109,3 +115,6 @@ cargo test && cargo clippy -- -D warnings
   `platform/mod.rs` already).
 - Default path for Abyssal Depths (`AbyssalState::default()`) uses Room1 with
   600s timer — confirmed in tests.
+- Headless test note: `ButtonInput::just_pressed` never auto-clears without
+  Bevy's input plugin. Use `clear_just_pressed` manually or avoid asserting
+  state transitions that depend on `just_pressed` in headless mode.

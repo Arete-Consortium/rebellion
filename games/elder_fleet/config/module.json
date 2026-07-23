@@ -1,0 +1,350 @@
+{
+  "moduleId": "elder_fleet",
+  "displayName": "Elder Fleet Invasion",
+  "subtitle": "Minmatar vs Amarr",
+  "description": "The Minmatar Rebellion rises. Strike back against centuries of Amarr oppression, or crush the insurrection and restore divine order.",
+  "version": "1.0.0",
+  "author": "EVE Rebellion Team",
+
+  "factions": [
+    {
+      "id": "minmatar",
+      "name": "Minmatar Republic",
+      "emblem": "minmatar_emblem.png",
+      "primaryColor": "#b56433",
+      "secondaryColor": "#8c592b",
+      "accentColor": "#ff9633",
+      "doctrine": ["Projectiles", "Speed", "Guerrilla"],
+      "description": "In Rust We Trust. Your ancestors were enslaved. Today, you strike back."
+    },
+    {
+      "id": "amarr",
+      "name": "Amarr Empire",
+      "emblem": "amarr_emblem.png",
+      "primaryColor": "#ffd500",
+      "secondaryColor": "#cc9933",
+      "accentColor": "#fff299",
+      "doctrine": ["Lasers", "Armor", "Divine Right"],
+      "description": "Crush the rebel insurrection. Restore order through strength."
+    }
+  ],
+
+  "shipPools": {
+    "minmatar": {
+      "playerShips": [
+        {
+          "typeId": 587,
+          "name": "Rifter",
+          "class": "Frigate",
+          "role": "Balanced Brawler",
+          "unlocked": true,
+          "stats": {
+            "health": 100,
+            "speed": 350,
+            "fireRate": 8.0,
+            "damage": 10,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 585,
+          "name": "Slasher",
+          "class": "Frigate",
+          "role": "Fast Interceptor",
+          "unlocked": true,
+          "stats": {
+            "health": 70,
+            "speed": 420,
+            "fireRate": 10.0,
+            "damage": 7,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 598,
+          "name": "Breacher",
+          "class": "Frigate",
+          "role": "Rocket Specialist",
+          "unlocked": true,
+          "stats": {
+            "health": 110,
+            "speed": 320,
+            "fireRate": 4.0,
+            "damage": 18,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11371,
+          "name": "Wolf",
+          "class": "Assault Frigate",
+          "role": "Heavy Autocannon",
+          "unlocked": false,
+          "unlockMission": 4,
+          "stats": {
+            "health": 150,
+            "speed": 340,
+            "fireRate": 12.0,
+            "damage": 15,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11400,
+          "name": "Jaguar",
+          "class": "Assault Frigate",
+          "role": "Rocket Swarm",
+          "unlocked": false,
+          "unlockMission": 9,
+          "stats": {
+            "health": 140,
+            "speed": 380,
+            "fireRate": 3.0,
+            "damage": 25,
+            "unlimitedThrust": false
+          }
+        }
+      ],
+      "enemyShips": [
+        {
+          "typeId": 589,
+          "name": "Executioner",
+          "class": "Frigate",
+          "role": "Laser Interceptor",
+          "spawnWeight": 30
+        },
+        {
+          "typeId": 597,
+          "name": "Punisher",
+          "class": "Frigate",
+          "role": "Armored Brawler",
+          "spawnWeight": 25
+        },
+        {
+          "typeId": 591,
+          "name": "Tormentor",
+          "class": "Frigate",
+          "role": "Drone Support",
+          "spawnWeight": 20
+        },
+        {
+          "typeId": 16236,
+          "name": "Coercer",
+          "class": "Destroyer",
+          "role": "Laser Platform",
+          "spawnWeight": 15
+        },
+        {
+          "typeId": 24690,
+          "name": "Harbinger",
+          "class": "Battlecruiser",
+          "role": "Heavy Laser",
+          "spawnWeight": 5
+        }
+      ]
+    },
+    "amarr": {
+      "playerShips": [
+        {
+          "typeId": 589,
+          "name": "Executioner",
+          "class": "Frigate",
+          "role": "Laser Interceptor",
+          "unlocked": true,
+          "stats": {
+            "health": 90,
+            "speed": 380,
+            "fireRate": 6.0,
+            "damage": 12,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 597,
+          "name": "Punisher",
+          "class": "Frigate",
+          "role": "Armored Brawler",
+          "unlocked": true,
+          "stats": {
+            "health": 140,
+            "speed": 300,
+            "fireRate": 5.0,
+            "damage": 14,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 591,
+          "name": "Tormentor",
+          "class": "Frigate",
+          "role": "Drone Support",
+          "unlocked": true,
+          "stats": {
+            "health": 100,
+            "speed": 340,
+            "fireRate": 7.0,
+            "damage": 10,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11186,
+          "name": "Crusader",
+          "class": "Interceptor",
+          "role": "Fast Strike",
+          "unlocked": false,
+          "unlockMission": 4,
+          "stats": {
+            "health": 80,
+            "speed": 450,
+            "fireRate": 10.0,
+            "damage": 8,
+            "unlimitedThrust": false
+          }
+        },
+        {
+          "typeId": 11184,
+          "name": "Malediction",
+          "class": "Interceptor",
+          "role": "Rocket Interceptor",
+          "unlocked": false,
+          "unlockMission": 9,
+          "stats": {
+            "health": 75,
+            "speed": 440,
+            "fireRate": 5.0,
+            "damage": 15,
+            "unlimitedThrust": false
+          }
+        }
+      ],
+      "enemyShips": [
+        {
+          "typeId": 587,
+          "name": "Rifter",
+          "class": "Frigate",
+          "role": "Minmatar Scout",
+          "spawnWeight": 30
+        },
+        {
+          "typeId": 585,
+          "name": "Slasher",
+          "class": "Frigate",
+          "role": "Fast Interceptor",
+          "spawnWeight": 25
+        },
+        {
+          "typeId": 598,
+          "name": "Breacher",
+          "class": "Frigate",
+          "role": "Rocket Specialist",
+          "spawnWeight": 20
+        }
+      ]
+    }
+  },
+
+  "missions": [
+    {
+      "id": "ef_m1_first_blood",
+      "name": "FIRST BLOOD",
+      "description": "The rebellion begins. Strike the first blow against Amarr patrols.",
+      "primaryObjective": "Destroy enemy patrol ships",
+      "bonusObjective": "Take no damage",
+      "waves": 3,
+      "isTutorial": true,
+      "boss": null
+    },
+    {
+      "id": "ef_m2_supply_raid",
+      "name": "SUPPLY RAID",
+      "description": "Amarr supply convoys are undefended. Seize what you need.",
+      "primaryObjective": "Destroy the convoy",
+      "bonusObjective": "Destroy all escorts first",
+      "waves": 4,
+      "boss": "SquadronLeader"
+    },
+    {
+      "id": "ef_m3_freedom_fighters",
+      "name": "FREEDOM FIGHTERS",
+      "description": "Minmatar slaves are staging an uprising. Protect them from reprisal.",
+      "primaryObjective": "Defend the slave compound",
+      "bonusObjective": "No friendly losses",
+      "waves": 4,
+      "boss": "WingCommander"
+    },
+    {
+      "id": "ef_m4_sacred_relic",
+      "name": "SACRED RELIC",
+      "description": "An Amarr cathedral-ship carries artifacts of oppression. Destroy it.",
+      "primaryObjective": "Destroy the cathedral-ship",
+      "bonusObjective": "Destroy all defense turrets",
+      "waves": 5,
+      "unlocks": ["assault_frigate"],
+      "boss": "FleetCommander"
+    },
+    {
+      "id": "ef_m5_empires_end",
+      "name": "EMPIRE'S END",
+      "description": "The final assault on the Amarr fleet. Victory or death.",
+      "primaryObjective": "Destroy the Amarr flagship",
+      "bonusObjective": "Flawless victory",
+      "waves": 6,
+      "boss": "ImperialAdmiral"
+    }
+  ],
+
+  "epilogue": {
+    "minmatar": {
+      "id": "ef_epilogue_liberation",
+      "name": "LIBERATION",
+      "description": "The Amarr fleet lies in ruins. The Republic stands defiant.",
+      "type": "victory",
+      "status": "IMPLEMENTED",
+      "features": [
+        "Campaign completion screen",
+        "Unlock all Minmatar ships",
+        "High score tracking"
+      ]
+    },
+    "amarr": {
+      "id": "ef_epilogue_divine_order",
+      "name": "DIVINE ORDER RESTORED",
+      "description": "The rebellion is crushed. Order is restored. The Empire endures eternal.",
+      "type": "victory",
+      "status": "IMPLEMENTED",
+      "features": [
+        "Campaign completion screen",
+        "Unlock all Amarr ships",
+        "High score tracking"
+      ]
+    }
+  },
+
+  "bosses": {
+    "SquadronLeader": {
+      "name": "SQUADRON LEADER",
+      "health": 300,
+      "phases": 2,
+      "typeId": 589
+    },
+    "WingCommander": {
+      "name": "WING COMMANDER",
+      "health": 500,
+      "phases": 3,
+      "typeId": 597
+    },
+    "FleetCommander": {
+      "name": "FLEET COMMANDER",
+      "health": 800,
+      "phases": 3,
+      "typeId": 11186
+    },
+    "ImperialAdmiral": {
+      "name": "IMPERIAL ADMIRAL",
+      "health": 1200,
+      "phases": 4,
+      "typeId": 24690
+    }
+  }
+}
