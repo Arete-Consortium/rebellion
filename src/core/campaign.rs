@@ -349,6 +349,8 @@ pub struct CampaignState {
     pub primary_complete: bool,
     /// Bonus objective complete
     pub bonus_complete: bool,
+    /// Enemies killed this mission
+    pub enemies_killed: u32,
 }
 
 impl Default for CampaignState {
@@ -366,6 +368,7 @@ impl Default for CampaignState {
             no_damage_taken: true,
             primary_complete: false,
             bonus_complete: false,
+            enemies_killed: 0,
         }
     }
 }
@@ -389,6 +392,7 @@ impl CampaignState {
         self.no_damage_taken = true;
         self.primary_complete = false;
         self.bonus_complete = false;
+        self.enemies_killed = 0;
     }
 
     /// Complete current mission and advance
@@ -726,6 +730,14 @@ mod tests {
         assert!(!state.boss_spawned);
         assert!(!state.boss_defeated);
         assert!(state.no_damage_taken);
+    }
+
+    #[test]
+    fn campaign_state_start_mission_resets_enemies_killed() {
+        let mut state = CampaignState::default();
+        state.enemies_killed = 42;
+        state.start_mission();
+        assert_eq!(state.enemies_killed, 0, "enemies_killed should reset on mission start");
     }
 
     #[test]

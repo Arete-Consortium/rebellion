@@ -81,6 +81,15 @@ pub fn spawn_hud(mut commands: Commands, mobile: Res<crate::systems::touch_joyst
                             },
                             TextColor(Color::srgb(0.4, 0.7, 1.0)), // Blue for souls
                         ));
+                        left.spawn((
+                            KillCountText,
+                            Text::new(""),
+                            TextFont {
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(1.0, 0.6, 0.3)), // Orange for kills
+                        ));
                     });
 
                     // Center: Combo kills and tier with timer bar

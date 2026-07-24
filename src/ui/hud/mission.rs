@@ -53,6 +53,16 @@ pub fn update_mission_display(
             With<SoulsText>,
             Without<MissionNameText>,
             Without<ObjectiveText>,
+            Without<KillCountText>,
+        ),
+    >,
+    mut kill_query: Query<
+        &mut Text,
+        (
+            With<KillCountText>,
+            Without<MissionNameText>,
+            Without<ObjectiveText>,
+            Without<SoulsText>,
         ),
     >,
 ) {
@@ -98,6 +108,15 @@ pub fn update_mission_display(
                 ""
             };
             **text = format!("SOULS LIBERATED: {}{}", score.souls_liberated, bonus);
+        } else {
+            **text = String::new();
+        }
+    }
+
+    // Update enemies killed
+    for mut text in kill_query.iter_mut() {
+        if campaign.in_mission {
+            **text = format!("ENEMIES DEFEATED: {}", campaign.enemies_killed);
         } else {
             **text = String::new();
         }

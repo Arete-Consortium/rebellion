@@ -74,10 +74,16 @@ pub fn build_headless_app() -> App {
         .add_event::<BossDefeatedEvent>() // core::events variant used by check_boss_defeated
         .add_event::<crate::systems::dialogue::DialogueEvent>()
         .add_event::<crate::systems::joystick::RumbleRequest>()
-        .add_event::<crate::systems::joystick::BackButtonEvent>();
+        .add_event::<crate::systems::joystick::BackButtonEvent>()
+        .add_event::<crate::core::EnemyDestroyedEvent>();
 
     // Stub resources normally provided by presentation / platform plugins
-    app.init_resource::<ButtonInput<KeyCode>>()
+    app.insert_resource(crate::simulation::SimulationRng::from_seed(
+        crate::simulation::DEFAULT_MISSION_SEED,
+    ))
+    .init_resource::<crate::core::ScoreSystem>()
+    .init_resource::<crate::core::SaltMinerSystem>()
+    .init_resource::<ButtonInput<KeyCode>>()
         .init_resource::<crate::assets::ShipSpriteCache>()
         .init_resource::<crate::assets::ShipModelCache>()
         .init_resource::<crate::assets::PowerupIconCache>()

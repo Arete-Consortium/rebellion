@@ -82,3 +82,49 @@ fn start_mission_resets_no_damage_taken_true() {
         "no_damage_taken should reset to true on mission start"
     );
 }
+
+#[test]
+fn enemy_death_increments_enemies_killed() {
+    let mut app = build_headless_app();
+
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Playing);
+    app.update();
+
+    // Start mission to set in_mission = true
+    {
+        let mut campaign = app.world_mut().resource_mut::<CampaignState>();
+        campaign.start_mission();
+    }
+
+    // Verify starting count is 0
+    {
+        let campaign = app.world().resource::<CampaignState>();
+        assert_eq!(campaign.enemies_killed, 0, "enemies_killed should start at 0");
+    }
+
+    // Player entity is spawned automatically by PlayerPlugin on OnEnter(Playing)
+
+    // Send an EnemyDestroyedEvent
+    app.world_mut()
+        .resource_mut::<Events<rebellion::core::EnemyDestroyedEvent>>()
+        .send(rebellion::core::EnemyDestroyedEvent {
+            enemy: Entity::PLACEHOLDER,
+            position: Vec2::ZERO,
+            enemy_type: "Test Enemy".to_string(),
+            score_value: 100,
+            was_boss: false,
+            liberation_value: 1,
+            type_id: 587,
+        });
+
+    // Run one update to process the event
+    app.update();
+
+    let campaign = app.world().resource::<CampaignState>();
+    assert_eq!(
+        campaign.enemies_killed, 1,
+        "enemies_killed should increment when enemy destroyed event is processed"
+    );
+}

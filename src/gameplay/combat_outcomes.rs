@@ -23,6 +23,7 @@ pub fn enemy_death_outcomes(
     mut destroy_events: EventReader<EnemyDestroyedEvent>,
     mut score: ResMut<ScoreSystem>,
     mut salt_miner: ResMut<SaltMinerSystem>,
+    mut campaign: ResMut<crate::core::CampaignState>,
     player_query: Query<(&Transform, &ShipStats), With<Player>>,
     icon_cache: Res<crate::assets::PowerupIconCache>,
     mut sim_rng: ResMut<crate::simulation::SimulationRng>,
@@ -34,6 +35,9 @@ pub fn enemy_death_outcomes(
     let player_health = Some(PlayerHealthState::from_stats(player_stats));
 
     for event in destroy_events.read() {
+        // Track enemy kills for mission objectives
+        campaign.enemies_killed += 1;
+
         // Calculate distance from player to enemy for salt miner
         let player_distance = (player_pos - event.position).length();
 

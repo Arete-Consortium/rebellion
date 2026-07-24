@@ -56,6 +56,10 @@ pub struct ObjectiveText;
 #[derive(Component)]
 pub struct SoulsText;
 
+/// Enemies killed counter text
+#[derive(Component)]
+pub struct KillCountText;
+
 /// Powerup indicator container
 #[derive(Component)]
 pub struct PowerupIndicator;
