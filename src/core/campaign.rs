@@ -79,6 +79,8 @@ pub struct Mission {
     pub boss: BossType,
     pub enemy_waves: u32,
     pub souls_to_liberate: u32,
+    /// Timed survival target in seconds; 0.0 means no timed objective
+    pub timed_survival_seconds: f32,
 }
 
 /// Boss types for each mission
@@ -191,6 +193,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         boss: BossType::TransportOverseer,
         enemy_waves: 3,
         souls_to_liberate: 10,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m2_patrol_ambush",
@@ -201,6 +204,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         boss: BossType::PatrolCommander,
         enemy_waves: 4,
         souls_to_liberate: 5,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m3_station_raid",
@@ -211,6 +215,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         boss: BossType::StationBattery,
         enemy_waves: 5,
         souls_to_liberate: 30,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m4_holder_escape",
@@ -221,6 +226,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         boss: BossType::HolderEscort,
         enemy_waves: 4,
         souls_to_liberate: 20,
+        timed_survival_seconds: 0.0,
     },
 ];
 
@@ -235,6 +241,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         boss: BossType::CustomsCommandant,
         enemy_waves: 5,
         souls_to_liberate: 15,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m6_inquisition",
@@ -245,6 +252,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         boss: BossType::InquisitorVessel,
         enemy_waves: 6,
         souls_to_liberate: 25,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m7_navy_battle",
@@ -255,6 +263,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         boss: BossType::HarbingerStrike,
         enemy_waves: 6,
         souls_to_liberate: 20,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m8_stargate",
@@ -265,6 +274,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         boss: BossType::StargateDefense,
         enemy_waves: 7,
         souls_to_liberate: 30,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m9_battlestation",
@@ -275,6 +285,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         boss: BossType::BattlestationCore,
         enemy_waves: 8,
         souls_to_liberate: 50,
+        timed_survival_seconds: 0.0,
     },
 ];
 
@@ -289,6 +300,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         boss: BossType::AbaddonBattleship,
         enemy_waves: 8,
         souls_to_liberate: 40,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m11_titan_escort",
@@ -299,6 +311,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         boss: BossType::TitanEscort,
         enemy_waves: 9,
         souls_to_liberate: 50,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m12_champion",
@@ -309,6 +322,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         boss: BossType::EmpressChampion,
         enemy_waves: 7,
         souls_to_liberate: 30,
+        timed_survival_seconds: 0.0,
     },
     Mission {
         id: "m13_avatar",
@@ -319,6 +333,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         boss: BossType::AvatarTitan,
         enemy_waves: 10,
         souls_to_liberate: 100,
+        timed_survival_seconds: 0.0,
     },
 ];
 
@@ -792,6 +807,7 @@ mod tests {
             boss: BossType::None,
             enemy_waves: 3,
             souls_to_liberate: 0,
+            timed_survival_seconds: 0.0,
         };
 
         let next = state.evaluate_post_wave(&mission);
@@ -817,6 +833,7 @@ mod tests {
             boss: BossType::None,
             enemy_waves: 3,
             souls_to_liberate: 10,
+            timed_survival_seconds: 0.0,
         };
 
         let next = state.evaluate_post_wave(&mission);

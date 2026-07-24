@@ -28,6 +28,7 @@ impl Plugin for CampaignPlugin {
             FixedUpdate,
             (
                 update_mission_timer,
+                check_timed_survival,
                 check_wave_complete,
                 spawn_next_wave,
             )
@@ -111,6 +112,31 @@ fn start_mission(
 fn update_mission_timer(time: Res<Time>, mut campaign: ResMut<CampaignState>) {
     if campaign.in_mission {
         campaign.mission_timer += time.delta_secs();
+    }
+}
+
+/// Check if timed survival objective is complete
+fn check_timed_survival(
+    campaign: Res<CampaignState>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if !campaign.in_mission {
+        return;
+    }
+
+    let Some(mission) = campaign.current_mission() else {
+        return;
+    };
+
+    if mission.timed_survival_seconds > 0.0
+        && campaign.mission_timer >= mission.timed_survival_seconds
+        && !campaign.primary_complete
+    {
+        info!(
+            "Timed survival complete: {:.1}s / {:.1}s",
+            campaign.mission_timer, mission.timed_survival_seconds
+        );
+        next_state.set(GameState::StageComplete);
     }
 }
 

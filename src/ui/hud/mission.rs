@@ -12,7 +12,10 @@ pub fn update_wave_display(
 ) {
     for mut text in query.iter_mut() {
         if let Some(mission) = campaign.current_mission() {
-            if campaign.is_boss_wave() {
+            if mission.timed_survival_seconds > 0.0 {
+                let remaining = (mission.timed_survival_seconds - campaign.mission_timer).max(0.0);
+                **text = format!("SURVIVE: {:.1}s", remaining);
+            } else if campaign.is_boss_wave() {
                 **text = format!(
                     "WAVE {}/{} - BOSS",
                     campaign.current_wave,
