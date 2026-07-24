@@ -269,6 +269,9 @@ pub enum EnemyVariant {
     Kikimora,
     Leshak,
     DrekavacBoss,
+    ExecutionerElite,
+    PunisherTank,
+    RifterBerserker,
 }
 
 impl EnemyVariant {
@@ -456,6 +459,69 @@ impl EnemyVariant {
                 disintegrator: Some(DisintegratorRamp::new(14.0, 2.5, 10.0)),
                 remove_weapon: true,
             },
+            Self::ExecutionerElite => EnemyVariantConfig {
+                type_id: 589, // Executioner
+                behavior: EnemyBehavior::Homing,
+                name: "Elite Executioner",
+                health: 40.0,
+                speed: 150.0,
+                score_value: 200,
+                is_boss: false,
+                liberation_value: 1,
+                weapon_override: Some(EnemyWeapon {
+                    weapon_type: WeaponType::Laser,
+                    fire_rate: 0.6,
+                    damage: 18.0,
+                    bullet_speed: 300.0,
+                    cooldown: 0.3 + fastrand::f32() * 0.5,
+                    pattern: FiringPattern::Single,
+                }),
+                spawner: None,
+                disintegrator: None,
+                remove_weapon: false,
+            },
+            Self::PunisherTank => EnemyVariantConfig {
+                type_id: 597, // Punisher
+                behavior: EnemyBehavior::Tank,
+                name: "Heavy Punisher",
+                health: 220.0,
+                speed: 30.0,
+                score_value: 300,
+                is_boss: false,
+                liberation_value: 2,
+                weapon_override: Some(EnemyWeapon {
+                    weapon_type: WeaponType::Laser,
+                    fire_rate: 1.2,
+                    damage: 15.0,
+                    bullet_speed: 280.0,
+                    cooldown: 0.5 + fastrand::f32() * 1.0,
+                    pattern: FiringPattern::Single,
+                }),
+                spawner: None,
+                disintegrator: None,
+                remove_weapon: false,
+            },
+            Self::RifterBerserker => EnemyVariantConfig {
+                type_id: 587, // Rifter
+                behavior: EnemyBehavior::Zigzag,
+                name: "Berserker Rifter",
+                health: 60.0,
+                speed: 140.0,
+                score_value: 180,
+                is_boss: false,
+                liberation_value: 1,
+                weapon_override: Some(EnemyWeapon {
+                    weapon_type: WeaponType::Autocannon,
+                    fire_rate: 1.8,
+                    damage: 12.0,
+                    bullet_speed: 260.0,
+                    cooldown: 0.2 + fastrand::f32() * 0.3,
+                    pattern: FiringPattern::Single,
+                }),
+                spawner: None,
+                disintegrator: None,
+                remove_weapon: false,
+            },
         }
     }
 }
@@ -550,6 +616,9 @@ mod tests {
             EnemyVariant::Kikimora,
             EnemyVariant::Leshak,
             EnemyVariant::DrekavacBoss,
+            EnemyVariant::ExecutionerElite,
+            EnemyVariant::PunisherTank,
+            EnemyVariant::RifterBerserker,
         ]
     }
 
@@ -659,6 +728,9 @@ mod tests {
             EnemyVariant::Sniper,
             EnemyVariant::Spawner,
             EnemyVariant::Tank,
+            EnemyVariant::ExecutionerElite,
+            EnemyVariant::PunisherTank,
+            EnemyVariant::RifterBerserker,
         ];
         for variant in standard {
             let config = variant.config();
@@ -669,6 +741,35 @@ mod tests {
             );
             assert!(!config.remove_weapon);
         }
+    }
+
+    #[test]
+    fn executioner_elite_is_fast_with_laser() {
+        let config = EnemyVariant::ExecutionerElite.config();
+        assert!(config.speed > 100.0, "Elite Executioner should be fast");
+        assert!(config.health > 25.0, "Elite Executioner should be tougher than base");
+        let weapon = config.weapon_override.expect("should have weapon override");
+        assert_eq!(weapon.weapon_type, WeaponType::Laser);
+        assert!(weapon.damage > 10.0, "laser should be strong");
+    }
+
+    #[test]
+    fn punisher_tank_is_slow_and_tanky() {
+        let config = EnemyVariant::PunisherTank.config();
+        assert!(config.health >= 200.0, "Heavy Punisher should be very tanky");
+        assert!(config.speed <= 35.0, "Heavy Punisher should be slow");
+        let weapon = config.weapon_override.expect("should have weapon override");
+        assert_eq!(weapon.weapon_type, WeaponType::Laser);
+    }
+
+    #[test]
+    fn rifter_berserker_is_fast_with_autocannon() {
+        let config = EnemyVariant::RifterBerserker.config();
+        assert!(config.speed > 100.0, "Berserker Rifter should be fast");
+        assert!(config.health > 35.0, "Berserker should be tougher than base Rifter");
+        let weapon = config.weapon_override.expect("should have weapon override");
+        assert_eq!(weapon.weapon_type, WeaponType::Autocannon);
+        assert!(weapon.fire_rate > 1.0, "autocannon should fire fast");
     }
 
     #[test]
