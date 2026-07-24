@@ -12,7 +12,7 @@ use crate::core::{
     CampaignState, CurrentStage, Difficulty, EndlessMode, GameProgress, GameSession, SelectedShip,
     ShipUnlocks,
 };
-use crate::entities::{DronePlugin, EnemyPlugin, PlayerPlugin, WingmanPlugin};
+use crate::entities::{DronePlugin, EnemyPlugin, EscortPlugin, PlayerPlugin, WingmanPlugin};
 use crate::systems::{
     AbilityPlugin, BossPlugin, CampaignPlugin, ManeuverPlugin, ScoringPlugin, SpawningPlugin,
 };
@@ -39,6 +39,7 @@ impl Plugin for GameplayPlugin {
                 EnemyPlugin,
                 WingmanPlugin,
                 DronePlugin,
+                EscortPlugin,
                 AbilityPlugin,
                 SpawningPlugin,
                 BossPlugin,

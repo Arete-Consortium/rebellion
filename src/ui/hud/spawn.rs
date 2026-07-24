@@ -90,6 +90,15 @@ pub fn spawn_hud(mut commands: Commands, mobile: Res<crate::systems::touch_joyst
                             },
                             TextColor(Color::srgb(1.0, 0.6, 0.3)), // Orange for kills
                         ));
+                        left.spawn((
+                            EscortText,
+                            Text::new(""),
+                            TextFont {
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(0.3, 0.8, 1.0)), // Cyan for escort
+                        ));
                     });
 
                     // Center: Combo kills and tier with timer bar

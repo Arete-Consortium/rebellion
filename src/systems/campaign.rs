@@ -5,7 +5,7 @@
 use crate::assets::{ShipModelCache, ShipSpriteCache};
 use crate::core::events::BossDefeatedEvent;
 use crate::core::*;
-use crate::entities::{spawn_boss, spawn_enemy, spawn_variant, Boss, BossData, BossState, Enemy, EnemyBehavior, EnemyVariant};
+use crate::entities::{spawn_boss, spawn_enemy, spawn_variant, Boss, BossData, BossState, Enemy, EnemyBehavior, EnemyVariant, EscortData, Friendly};
 use crate::games::ActiveModule;
 use bevy::ecs::schedule::common_conditions::not;
 use bevy::prelude::*;
@@ -31,6 +31,7 @@ impl Plugin for CampaignPlugin {
                 update_mission_timer,
                 check_timed_survival,
                 check_kill_count,
+                check_escort_survival,
                 check_wave_complete,
                 spawn_next_wave,
             )
@@ -129,7 +130,7 @@ fn update_mission_timer(time: Res<Time>, mut campaign: ResMut<CampaignState>) {
 
 /// Check if timed survival objective is complete
 pub(crate) fn check_timed_survival(
-    campaign: Res<CampaignState>,
+    mut campaign: ResMut<CampaignState>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     if !campaign.in_mission {
@@ -148,13 +149,14 @@ pub(crate) fn check_timed_survival(
             "Timed survival complete: {:.1}s / {:.1}s",
             campaign.mission_timer, mission.timed_survival_seconds
         );
+        campaign.primary_complete = true;
         next_state.set(GameState::StageComplete);
     }
 }
 
 /// Check if kill-count objective is complete
 pub(crate) fn check_kill_count(
-    campaign: Res<CampaignState>,
+    mut campaign: ResMut<CampaignState>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     if !campaign.in_mission {
@@ -173,7 +175,32 @@ pub(crate) fn check_kill_count(
             "Kill count objective complete: {}/{} enemies destroyed",
             campaign.enemies_killed, mission.kill_count_target
         );
+        campaign.primary_complete = true;
         next_state.set(GameState::StageComplete);
+    }
+}
+
+/// Check if escort survived; if escort dies, mark mission as failed (escort_alive = false)
+pub(crate) fn check_escort_survival(
+    mut campaign: ResMut<CampaignState>,
+    escort_query: Query<&EscortData, With<Friendly>>,
+) {
+    if !campaign.in_mission {
+        return;
+    }
+
+    let Some(mission) = campaign.current_mission() else {
+        return;
+    };
+
+    if !mission.escort_must_survive {
+        return;
+    }
+
+    // Check if any escort is still alive (health > 0)
+    let any_alive = escort_query.iter().any(|e| e.health > 0.0);
+    if !any_alive {
+        campaign.escort_alive = false;
     }
 }
 
@@ -560,5 +587,37 @@ fn check_mission_complete(
     // Mission complete when boss is defeated and no boss entities remain
     if campaign.boss_defeated && boss_query.iter().count() == 0 {
         // Already handled in check_boss_defeated
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::CampaignState;
+    use crate::entities::{EscortData, Friendly};
+
+    #[test]
+    fn check_escort_survival_ignores_when_not_in_mission() {
+        let mut world = World::new();
+        world.insert_resource(CampaignState {
+            in_mission: false,
+            ..Default::default()
+        });
+        world.insert_resource(NextState::<GameState>::Pending(GameState::Playing));
+
+        let mut state = bevy::ecs::system::SystemState::<(
+            ResMut<CampaignState>,
+            Query<&EscortData, With<Friendly>>,
+        )>::new(
+            &mut world
+        );
+        let (campaign, escort_query) = state.get_mut(&mut world);
+        check_escort_survival(campaign, escort_query);
+
+        let campaign = world.resource::<CampaignState>();
+        assert!(
+            campaign.escort_alive,
+            "escort_alive should remain true when not in mission"
+        );
     }
 }

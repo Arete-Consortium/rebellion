@@ -24,6 +24,7 @@ fn test_no_boss_mission() -> Mission {
         souls_to_liberate: 0,
         timed_survival_seconds: 0.0,
         kill_count_target: 0,
+        escort_must_survive: false,
     }
 }
 

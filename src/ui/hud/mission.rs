@@ -2,6 +2,7 @@
 
 use super::common::*;
 use crate::core::*;
+use crate::entities::{EscortData, Friendly};
 use crate::systems::DialogueSystem;
 use bevy::prelude::*;
 
@@ -34,12 +35,14 @@ pub fn update_wave_display(
 pub fn update_mission_display(
     campaign: Res<CampaignState>,
     score: Res<ScoreSystem>,
+    escort_query: Query<&EscortData, With<Friendly>>,
     mut mission_query: Query<
         &mut Text,
         (
             With<MissionNameText>,
             Without<ObjectiveText>,
             Without<SoulsText>,
+            Without<EscortText>,
         ),
     >,
     mut objective_query: Query<
@@ -48,6 +51,7 @@ pub fn update_mission_display(
             With<ObjectiveText>,
             Without<MissionNameText>,
             Without<SoulsText>,
+            Without<EscortText>,
         ),
     >,
     mut souls_query: Query<
@@ -57,6 +61,7 @@ pub fn update_mission_display(
             Without<MissionNameText>,
             Without<ObjectiveText>,
             Without<KillCountText>,
+            Without<EscortText>,
         ),
     >,
     mut kill_query: Query<
@@ -66,6 +71,17 @@ pub fn update_mission_display(
             Without<MissionNameText>,
             Without<ObjectiveText>,
             Without<SoulsText>,
+            Without<EscortText>,
+        ),
+    >,
+    mut escort_query_text: Query<
+        (&mut Text, &mut TextColor),
+        (
+            With<EscortText>,
+            Without<MissionNameText>,
+            Without<ObjectiveText>,
+            Without<SoulsText>,
+            Without<KillCountText>,
         ),
     >,
 ) {
@@ -132,6 +148,35 @@ pub fn update_mission_display(
                     );
                 } else {
                     **text = format!("ENEMIES DEFEATED: {}", campaign.enemies_killed);
+                }
+            } else {
+                **text = String::new();
+            }
+        } else {
+            **text = String::new();
+        }
+    }
+
+    // Update escort status
+    for (mut text, mut color) in escort_query_text.iter_mut() {
+        if campaign.in_mission {
+            if let Some(mission) = campaign.current_mission() {
+                if mission.escort_must_survive {
+                    if let Ok(escort) = escort_query.get_single() {
+                        let hp_pct = (escort.health_fraction() * 100.0) as u32;
+                        if escort.health <= 0.0 {
+                            **text = "ESCORT: DESTROYED".to_string();
+                            color.0 = Color::srgb(1.0, 0.2, 0.2); // Red
+                        } else {
+                            **text = format!("ESCORT: {}%", hp_pct);
+                            color.0 = Color::srgb(0.3, 0.8, 1.0); // Cyan
+                        }
+                    } else {
+                        **text = "ESCORT: DESTROYED".to_string();
+                        color.0 = Color::srgb(1.0, 0.2, 0.2);
+                    }
+                } else {
+                    **text = String::new();
                 }
             } else {
                 **text = String::new();

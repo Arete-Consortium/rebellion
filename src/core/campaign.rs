@@ -83,6 +83,8 @@ pub struct Mission {
     pub timed_survival_seconds: f32,
     /// Kill count target; 0 means no kill-count primary objective
     pub kill_count_target: u32,
+    /// If true, mission requires a friendly escort to survive
+    pub escort_must_survive: bool,
 }
 
 /// Boss types for each mission
@@ -197,6 +199,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         enemy_waves: 3,
         souls_to_liberate: 10,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -209,6 +212,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         enemy_waves: 4,
         souls_to_liberate: 5,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -221,6 +225,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         enemy_waves: 5,
         souls_to_liberate: 30,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -233,6 +238,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         enemy_waves: 4,
         souls_to_liberate: 20,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
 ];
 
@@ -249,6 +255,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         enemy_waves: 5,
         souls_to_liberate: 15,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -261,6 +268,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         enemy_waves: 6,
         souls_to_liberate: 25,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -273,6 +281,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         enemy_waves: 6,
         souls_to_liberate: 20,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -285,6 +294,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         enemy_waves: 7,
         souls_to_liberate: 30,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -297,6 +307,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         enemy_waves: 8,
         souls_to_liberate: 50,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
 ];
 
@@ -313,6 +324,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         enemy_waves: 8,
         souls_to_liberate: 40,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -325,6 +337,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         enemy_waves: 9,
         souls_to_liberate: 50,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -337,6 +350,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         enemy_waves: 7,
         souls_to_liberate: 30,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
     Mission {
     kill_count_target: 0,
@@ -349,6 +363,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         enemy_waves: 10,
         souls_to_liberate: 100,
         timed_survival_seconds: 0.0,
+        escort_must_survive: false,
     },
 ];
 
@@ -381,6 +396,8 @@ pub struct CampaignState {
     pub bonus_complete: bool,
     /// Enemies killed this mission
     pub enemies_killed: u32,
+    /// Escort survived this mission
+    pub escort_alive: bool,
 }
 
 impl Default for CampaignState {
@@ -399,6 +416,7 @@ impl Default for CampaignState {
             primary_complete: false,
             bonus_complete: false,
             enemies_killed: 0,
+            escort_alive: true,
         }
     }
 }
@@ -423,6 +441,7 @@ impl CampaignState {
         self.primary_complete = false;
         self.bonus_complete = false;
         self.enemies_killed = 0;
+        self.escort_alive = true;
     }
 
     /// Complete current mission and advance
@@ -450,6 +469,22 @@ impl CampaignState {
     /// Evaluate what happens after all enemy waves are cleared.
     /// Returns the next GameState if a transition should occur.
     pub fn evaluate_post_wave(&mut self, mission: &Mission) -> Option<GameState> {
+        // Escort failure blocks any completion
+        if mission.escort_must_survive && !self.escort_alive {
+            return None;
+        }
+
+        // Kill-count and timed-survival objectives are evaluated by their own systems;
+        // only transition here if primary_complete was already set.
+        if mission.kill_count_target > 0 || mission.timed_survival_seconds > 0.0 {
+            if self.primary_complete {
+                self.bonus_complete = self.no_damage_taken
+                    || self.mission_souls >= mission.souls_to_liberate;
+                return Some(GameState::StageComplete);
+            }
+            return None;
+        }
+
         if self.current_wave > mission.enemy_waves {
             if mission.boss == BossType::None {
                 self.primary_complete = true;
@@ -826,6 +861,7 @@ mod tests {
             souls_to_liberate: 0,
             timed_survival_seconds: 0.0,
             kill_count_target: 0,
+            escort_must_survive: false,
         };
 
         let next = state.evaluate_post_wave(&mission);
@@ -853,6 +889,7 @@ mod tests {
             souls_to_liberate: 10,
             timed_survival_seconds: 0.0,
             kill_count_target: 0,
+            escort_must_survive: false,
         };
 
         let next = state.evaluate_post_wave(&mission);
@@ -881,6 +918,113 @@ mod tests {
         let mission = state.current_mission().unwrap();
         let next = state.evaluate_post_wave(mission);
         assert_eq!(next, None, "should return None when waves remain");
+    }
+
+    #[test]
+    fn evaluate_post_wave_kill_count_ignores_wave_clear_until_target_met() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 5; // past waves
+        state.enemies_killed = 2;
+
+        let mission = Mission {
+            id: "test_kill",
+            name: "Kill Mission",
+            description: "Kill 5 enemies",
+            primary_objective: "Kill 5 enemies",
+            bonus_objective: None,
+            boss: BossType::None,
+            enemy_waves: 3,
+            souls_to_liberate: 0,
+            timed_survival_seconds: 0.0,
+            kill_count_target: 5,
+            escort_must_survive: false,
+        };
+
+        // Not enough kills — should not transition
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(next, None, "should not transition when kill target not met");
+
+        // Reach kill target + set primary_complete
+        state.enemies_killed = 5;
+        state.primary_complete = true;
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(
+            next,
+            Some(GameState::StageComplete),
+            "should transition when kill target met and primary_complete set"
+        );
+    }
+
+    #[test]
+    fn evaluate_post_wave_timed_survival_ignores_wave_clear_until_timer_expires() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 5;
+        state.mission_timer = 1.0;
+
+        let mission = Mission {
+            id: "test_timed",
+            name: "Timed Mission",
+            description: "Survive 10s",
+            primary_objective: "Survive 10 seconds",
+            bonus_objective: None,
+            boss: BossType::None,
+            enemy_waves: 3,
+            souls_to_liberate: 0,
+            timed_survival_seconds: 10.0,
+            kill_count_target: 0,
+            escort_must_survive: false,
+        };
+
+        // Timer not expired — should not transition
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(next, None, "should not transition when timer not expired");
+
+        // Timer expired + primary_complete set
+        state.mission_timer = 10.0;
+        state.primary_complete = true;
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(
+            next,
+            Some(GameState::StageComplete),
+            "should transition when timer expired and primary_complete set"
+        );
+    }
+
+    #[test]
+    fn evaluate_post_wave_escort_death_blocks_completion() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 5;
+        state.escort_alive = false;
+
+        let mission = Mission {
+            id: "test_escort",
+            name: "Escort Mission",
+            description: "Protect the transport",
+            primary_objective: "Escort survives",
+            bonus_objective: None,
+            boss: BossType::None,
+            enemy_waves: 3,
+            souls_to_liberate: 0,
+            timed_survival_seconds: 0.0,
+            kill_count_target: 0,
+            escort_must_survive: true,
+        };
+
+        // Escort dead — should block completion even if waves cleared
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(next, None, "should not transition when escort is dead");
+
+        // Escort alive — should complete
+        state.escort_alive = true;
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(
+            next,
+            Some(GameState::StageComplete),
+            "should transition when escort is alive and waves cleared"
+        );
     }
 
     #[test]

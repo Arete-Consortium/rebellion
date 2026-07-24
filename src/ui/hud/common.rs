@@ -60,6 +60,10 @@ pub struct SoulsText;
 #[derive(Component)]
 pub struct KillCountText;
 
+/// Escort health/status text
+#[derive(Component)]
+pub struct EscortText;
+
 /// Powerup indicator container
 #[derive(Component)]
 pub struct PowerupIndicator;
