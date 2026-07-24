@@ -4,6 +4,7 @@
 
 use super::campaign::{CGBossType, CGCampaignState, ShiigeruNightmare};
 use crate::core::{DamageType, Difficulty, Faction, GameSession, GameState};
+use crate::entities::enemy::EnemyBehavior;
 use crate::entities::projectile::ProjectilePhysics;
 use bevy::prelude::*;
 
@@ -172,12 +173,7 @@ pub fn spawn_cg_wave(
         // Vary spawn positions by wave for visual interest and readability
         let (x, y) = cg_spawn_position(i, count, wave);
 
-        let behavior = match fastrand::u32(0..4) {
-            0 => EnemyBehavior::Linear,
-            1 => EnemyBehavior::Zigzag,
-            2 => EnemyBehavior::Homing,
-            _ => EnemyBehavior::Weaver,
-        };
+        let behavior = cg_behavior_for_mission(cg_campaign.mission_index);
 
         let entity = spawn_enemy(
             &mut commands,
@@ -223,6 +219,40 @@ fn cg_spawn_position(i: usize, count: usize, wave: u32) -> (f32, f32) {
             let x = base_x + (col as f32 / 3.0) * spread + fastrand::f32() * 30.0 - 15.0;
             let y = 280.0 + row as f32 * 50.0 + fastrand::f32() * 30.0;
             (x, y)
+        }
+    }
+}
+
+/// Pick an enemy behavior weighted by mission index.
+/// Mission 1 (tutorial): mostly Linear (easy to hit, predictable).
+/// Mission 2: more Zigzag and Homing (requires leading shots).
+/// Mission 3+: emphasis on Weaver and Homing (harassment, spread pressure).
+fn cg_behavior_for_mission(mission_index: usize) -> EnemyBehavior {
+    match mission_index {
+        0 => {
+            // Tutorial: 70% linear, 30% zigzag — easy patterns
+            match fastrand::u32(0..10) {
+                0..=6 => EnemyBehavior::Linear,
+                _ => EnemyBehavior::Zigzag,
+            }
+        }
+        1 => {
+            // Mission 2: 40% zigzag, 30% homing, 20% linear, 10% weaver
+            match fastrand::u32(0..10) {
+                0..=3 => EnemyBehavior::Zigzag,
+                4..=6 => EnemyBehavior::Homing,
+                7..=8 => EnemyBehavior::Linear,
+                _ => EnemyBehavior::Weaver,
+            }
+        }
+        _ => {
+            // Mission 3+: 35% weaver, 30% homing, 25% zigzag, 10% linear
+            match fastrand::u32(0..20) {
+                0..=6 => EnemyBehavior::Weaver,
+                7..=12 => EnemyBehavior::Homing,
+                13..=17 => EnemyBehavior::Zigzag,
+                _ => EnemyBehavior::Linear,
+            }
         }
     }
 }
