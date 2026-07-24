@@ -127,7 +127,7 @@ pub fn spawn_cg_wave(
     boss_query: Query<Entity, With<CGBoss>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    use crate::entities::enemy::{spawn_enemy, EnemyBehavior};
+    use crate::entities::enemy::spawn_enemy;
 
     // Only spawn if no enemies remain
     if enemy_query.iter().count() > 0 || boss_query.iter().count() > 0 {
@@ -281,12 +281,14 @@ fn apply_cg_mission_scaling(
     };
 
     let (name, base_hp, speed, score) = match type_id {
-        583 => ("Condor", 25.0, 130.0, 75),
-        602 => ("Kestrel", 30.0, 100.0, 90),
-        603 => ("Merlin", 45.0, 70.0, 100),
-        593 => ("Tristan", 35.0, 90.0, 100),
-        594 => ("Incursus", 40.0, 85.0, 95),
-        608 => ("Atron", 25.0, 130.0, 75),
+        // NOTE: These base HP values MUST stay in sync with spawn.rs.
+        // When buffing base stats, update BOTH tables.
+        583 => ("Condor", 35.0, 130.0, 75),
+        602 => ("Kestrel", 40.0, 100.0, 90),
+        603 => ("Merlin", 55.0, 70.0, 100),
+        593 => ("Tristan", 40.0, 90.0, 100),
+        594 => ("Incursus", 50.0, 85.0, 95),
+        608 => ("Atron", 35.0, 130.0, 75),
         _ => return,
     };
 
