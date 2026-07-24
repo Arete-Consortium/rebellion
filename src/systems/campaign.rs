@@ -15,12 +15,13 @@ pub struct CampaignPlugin;
 
 impl Plugin for CampaignPlugin {
     fn build(&self, app: &mut App) {
-        // These systems run only when NOT in Caldari/Gallente or Abyssal modules
-        // (those modules have their own campaign/spawning systems)
+        // These systems run only for campaigns without custom handlers
+        // (CG, Triglavian, and Abyssal have their own campaign/spawning systems)
         app.add_systems(
             OnEnter(GameState::Playing),
             start_mission
                 .run_if(not(is_cg_module))
+                .run_if(not(is_triglavian_module))
                 .run_if(not(is_abyssal_module)),
         )
         .add_systems(
@@ -29,18 +30,30 @@ impl Plugin for CampaignPlugin {
                 update_mission_timer,
                 check_wave_complete,
                 spawn_next_wave,
+            )
+                .run_if(in_state(GameState::Playing))
+                .run_if(not(is_cg_module))
+                .run_if(not(is_triglavian_module))
+                .run_if(not(is_abyssal_module)),
+        )
+        .add_systems(
+            FixedUpdate,
+            (
+                update_mission_timer,
                 update_boss_behavior,
                 check_boss_defeated,
                 check_mission_complete,
             )
-                .run_if(in_state(GameState::Playing))
+                .run_if(in_state(GameState::BossFight))
                 .run_if(not(is_cg_module))
+                .run_if(not(is_triglavian_module))
                 .run_if(not(is_abyssal_module)),
         )
         .add_systems(
             OnEnter(GameState::BossIntro),
             spawn_mission_boss
                 .run_if(not(is_cg_module))
+                .run_if(not(is_triglavian_module))
                 .run_if(not(is_abyssal_module)),
         )
         .add_systems(
@@ -48,12 +61,14 @@ impl Plugin for CampaignPlugin {
             boss_intro_sequence
                 .run_if(in_state(GameState::BossIntro))
                 .run_if(not(is_cg_module))
+                .run_if(not(is_triglavian_module))
                 .run_if(not(is_abyssal_module)),
         )
         .add_systems(
             OnEnter(GameState::BossFight),
             start_boss_fight
                 .run_if(not(is_cg_module))
+                .run_if(not(is_triglavian_module))
                 .run_if(not(is_abyssal_module)),
         );
     }
@@ -67,6 +82,11 @@ fn is_cg_module(active_module: Res<ActiveModule>) -> bool {
 /// Run condition: is Abyssal Depths module active?
 fn is_abyssal_module(abyssal: Option<Res<crate::games::abyssal_depths::AbyssalState>>) -> bool {
     abyssal.map(|a| a.active).unwrap_or(false)
+}
+
+/// Run condition: is Triglavian Invasion module active?
+fn is_triglavian_module(active_module: Res<ActiveModule>) -> bool {
+    active_module.is_triglavian_invasion()
 }
 
 /// Start mission when entering Playing state

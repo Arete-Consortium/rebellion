@@ -7,7 +7,9 @@ use bevy::prelude::*;
 
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::{CampaignState, GameState};
-use rebellion::entities::Enemy;
+use rebellion::entities::{
+    Boss, BossAttack, BossData, BossMovement, BossState, Enemy, Hitbox,
+};
 
 #[test]
 fn generic_campaign_spawns_enemies_on_wave_start() {
@@ -84,5 +86,71 @@ fn generic_campaign_spawns_boss_after_waves() {
         "Campaign should spawn boss or transition to BossIntro/BossFight after waves, got state={:?} boss_spawned={}",
         state,
         campaign.boss_spawned
+    );
+}
+
+#[test]
+fn generic_campaign_bonus_complete_when_no_damage_taken() {
+    let mut app = build_headless_app();
+
+    // Transition to BossFight
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::BossFight);
+    app.update();
+
+    // Set campaign state for boss fight with no damage taken
+    {
+        let mut campaign = app.world_mut().resource_mut::<CampaignState>();
+        campaign.in_mission = true;
+        campaign.boss_spawned = true;
+        campaign.no_damage_taken = true;
+        campaign.boss_defeated = false;
+        campaign.primary_complete = false;
+        campaign.bonus_complete = false;
+    }
+
+    // Spawn a dead boss entity so check_boss_defeated triggers immediately
+    app.world_mut().spawn((
+        Boss,
+        BossData {
+            id: 1,
+            stage: 1,
+            name: "Test Boss".to_string(),
+            title: "Test Boss".to_string(),
+            ship_class: "Frigate".to_string(),
+            type_id: 0,
+            max_health: 100.0,
+            health: 0.0, // already dead
+            current_phase: 1,
+            total_phases: 2,
+            score_value: 1000,
+            liberation_value: 10,
+            stationary: false,
+            dialogue_intro: "".to_string(),
+            dialogue_defeat: "".to_string(),
+            is_enraged: false,
+            enrage_threshold: 0.2,
+        },
+        BossState::Battle,
+        BossMovement::default(),
+        BossAttack::default(),
+        Hitbox { radius: 10.0 },
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    ));
+
+    // Run updates to let check_boss_defeated process the dead boss
+    for _ in 0..5 {
+        app.update();
+    }
+
+    let campaign = app.world().resource::<CampaignState>();
+    assert!(
+        campaign.primary_complete,
+        "primary_complete should be true after boss defeat"
+    );
+    assert!(
+        campaign.bonus_complete,
+        "bonus_complete should be true when no_damage_taken is true"
     );
 }

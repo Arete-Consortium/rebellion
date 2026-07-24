@@ -9,6 +9,7 @@ use crate::core::{
     ActCompleteEvent, BossSpawnEvent, GameEventsPlugin, GameState, MissionCompleteEvent,
     MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
+use crate::core::events::BossDefeatedEvent;
 use crate::gameplay::GameplayPlugin;
 use crate::replay::ReplayPlugin;
 use crate::simulation::{SimulationPlugin, FIXED_TIMESTEP_SECS};
@@ -70,6 +71,7 @@ pub fn build_headless_app() -> App {
         .add_event::<crate::systems::ability::AbilityEndedEvent>()
         .add_event::<crate::systems::boss::BossSpawnEvent>()
         .add_event::<crate::systems::boss::BossDefeatedEvent>()
+        .add_event::<BossDefeatedEvent>() // core::events variant used by check_boss_defeated
         .add_event::<crate::systems::dialogue::DialogueEvent>()
         .add_event::<crate::systems::joystick::RumbleRequest>()
         .add_event::<crate::systems::joystick::BackButtonEvent>();

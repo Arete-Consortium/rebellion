@@ -10,6 +10,7 @@ use rebellion::app_builder::build_headless_app;
 use rebellion::core::GameState;
 use rebellion::entities::boss::{Boss, BossAttack, BossData, BossMovement, BossState, MovementPattern};
 use rebellion::entities::EnemyProjectile;
+use rebellion::games::ActiveModule;
 
 /// Spawns a player entity at the origin.
 fn spawn_test_player(world: &mut World) {
@@ -62,6 +63,11 @@ fn spawn_test_boss(commands: &mut Commands, health: f32, fire_timer: f32, fire_r
 #[test]
 fn trig_boss_phase_transition_and_enrage() {
     let mut app = build_headless_app();
+
+    // Mark Triglavian module active so generic campaign systems don't interfere
+    app.world_mut()
+        .resource_mut::<ActiveModule>()
+        .set_module("triglavian_invasion");
 
     // Transition to BossFight so the system can run
     app.world_mut()
@@ -160,6 +166,10 @@ fn trig_boss_spawns_projectiles_during_boss_fight() {
     let mut app = build_headless_app();
 
     app.world_mut()
+        .resource_mut::<ActiveModule>()
+        .set_module("triglavian_invasion");
+
+    app.world_mut()
         .resource_mut::<NextState<GameState>>()
         .set(GameState::BossFight);
     app.update();
@@ -197,6 +207,10 @@ fn trig_boss_spawns_projectiles_during_boss_fight() {
 #[test]
 fn trig_boss_does_not_fire_when_not_in_battle_state() {
     let mut app = build_headless_app();
+
+    app.world_mut()
+        .resource_mut::<ActiveModule>()
+        .set_module("triglavian_invasion");
 
     app.world_mut()
         .resource_mut::<NextState<GameState>>()
