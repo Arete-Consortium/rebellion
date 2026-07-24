@@ -182,6 +182,7 @@ impl Plugin for AbyssalDepthsPlugin {
                 (
                     update_abyssal_timer,
                     check_room_clear,
+                    update_hazards,
                     update_gate,
                     handle_extraction,
                     abyssal_hud,
@@ -362,6 +363,27 @@ pub struct AbyssalGate {
 #[derive(Component)]
 pub struct AbyssalHud;
 
+/// Environmental hazard in Abyssal Deadspace (Room 2)
+#[derive(Component, Debug, Clone)]
+pub struct AbyssalHazard {
+    /// Damage dealt per second while player is inside
+    pub damage_per_second: f32,
+    /// Radius of the hazard area
+    pub radius: f32,
+    /// Accumulated damage timer
+    pub damage_timer: f32,
+}
+
+impl Default for AbyssalHazard {
+    fn default() -> Self {
+        Self {
+            damage_per_second: 8.0,
+            radius: 60.0,
+            damage_timer: 0.0,
+        }
+    }
+}
+
 /// Setup abyssal run when entering Playing state
 fn setup_abyssal(
     mut state: ResMut<AbyssalState>,
@@ -454,6 +476,13 @@ fn spawn_room_enemies(
                     );
                 }
             }
+
+            // Bioadaptive clouds — environmental hazard unique to Abyssal Deadspace
+            for _ in 0..3 {
+                let hx = fastrand::f32() * SCREEN_WIDTH * 0.6 - SCREEN_WIDTH * 0.3;
+                let hy = fastrand::f32() * SCREEN_HEIGHT * 0.4 - SCREEN_HEIGHT * 0.1;
+                spawn_abyssal_hazard(commands, Vec2::new(hx, hy));
+            }
         }
         AbyssalRoom::Room3 => {
             // Full Triglavian force — heavy Vedmaks with fast Damavik escorts
@@ -505,6 +534,62 @@ fn spawn_room_enemies(
         count + extra,
         state.room
     );
+}
+
+/// Spawn a bioadaptive hazard cloud in Abyssal Deadspace.
+/// Damages any player who remains inside its radius.
+fn spawn_abyssal_hazard(commands: &mut Commands, position: Vec2) {
+    commands.spawn((
+        AbyssalHazard::default(),
+        Sprite {
+            color: Color::srgba(0.6, 0.2, 0.8, 0.35), // Purple mist
+            custom_size: Some(Vec2::splat(120.0)),
+            ..default()
+        },
+        Transform::from_xyz(position.x, position.y, LAYER_HAZARDS),
+    ));
+}
+
+/// Apply hazard damage to player when inside hazard radius.
+fn update_hazards(
+    time: Res<Time>,
+    mut hazard_query: Query<(&mut AbyssalHazard,
+        &Transform,
+    )>,
+    mut player_query: Query<(&Transform,
+        &mut crate::entities::ShipStats,
+    ), With<Player>>,
+) {
+    let dt = time.delta_secs();
+
+    for (mut hazard, hazard_transform) in hazard_query.iter_mut() {
+        let hazard_pos = hazard_transform.translation.truncate();
+
+        for (player_transform, mut stats) in player_query.iter_mut() {
+            let player_pos = player_transform.translation.truncate();
+            let distance = (player_pos - hazard_pos).length();
+
+            if distance < hazard.radius {
+                hazard.damage_timer += dt;
+
+                // Apply damage every 0.25s (tick-based DoT)
+                while hazard.damage_timer >= 0.25 {
+                    hazard.damage_timer -= 0.25;
+                    let tick_damage = hazard.damage_per_second * 0.25;
+
+                    // Use take_damage for proper overflow + shield-recharge-delay logic
+                    stats.take_damage(tick_damage, DamageType::Thermal);
+                }
+            }
+        }
+    }
+}
+
+/// Despawn all hazard entities.
+fn despawn_hazards(commands: &mut Commands, query: Query<Entity, With<AbyssalHazard>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
 }
 
 /// Spawn the abyssal HUD overlay
@@ -607,8 +692,8 @@ fn check_room_clear(
         info!("Room {:?} CLEARED!", state.room);
     }
 
-    // Mark enemies as spawned after first frame
-    if state.enemies_spawned == 0 {
+    // Mark enemies as spawned after first frame only when enemies actually exist
+    if state.enemies_spawned == 0 && enemy_count > 0 {
         state.enemies_spawned = state.room.enemy_count();
     }
 }
@@ -618,6 +703,7 @@ fn update_gate(
     mut commands: Commands,
     mut state: ResMut<AbyssalState>,
     gate_query: Query<(Entity, &Transform, &AbyssalGate)>,
+    hazard_query: Query<Entity, With<AbyssalHazard>>,
     player_query: Query<&Transform, With<Player>>,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<JoystickState>,
@@ -691,9 +777,10 @@ fn update_gate(
                         commands.entity(entity).despawn_recursive();
                     }
 
-                    // Spawn new enemies
-                    // (will be spawned next frame via a separate system)
-                    info!("Transitioning to room {:?}", state.room);
+                    // Despawn hazards from previous room
+                    for entity in hazard_query.iter() {
+                        commands.entity(entity).despawn_recursive();
+                    }
                 }
             } else {
                 state.extracting = false;
@@ -810,6 +897,7 @@ fn cleanup_abyssal(
     mut state: ResMut<AbyssalState>,
     hud_query: Query<Entity, With<AbyssalHud>>,
     gate_query: Query<Entity, With<AbyssalGate>>,
+    hazard_query: Query<Entity, With<AbyssalHazard>>,
 ) {
     state.active = false;
 
@@ -820,6 +908,11 @@ fn cleanup_abyssal(
 
     // Despawn gates
     for entity in gate_query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+
+    // Despawn hazards
+    for entity in hazard_query.iter() {
         commands.entity(entity).despawn_recursive();
     }
 }

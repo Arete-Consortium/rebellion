@@ -99,6 +99,30 @@ unplayable boss fights — no input, no damage, no visuals.
   `bonus_complete` evaluated at mission end (no_damage_taken || souls_to_liberate
   threshold met). No-boss missions (BossType::None) now correctly transition to
   StageComplete instead of hanging at BossIntro.
+- [x] **Enemy kill tracking** — `CampaignState.enemies_killed` tracks kills per
+  mission, displayed on HUD as "ENEMIES DEFEATED: N". Reset on mission start.
+  Integration test: `enemy_death_increments_enemies_killed`.
+- [x] **Timed survival objective** — `Mission.timed_survival_seconds` field.
+  `check_timed_survival` system transitions to `StageComplete` when timer reaches
+  target. HUD shows countdown: "SURVIVE: X.Ys".
+- [x] **Kill count objective** — `Mission.kill_count_target` field.
+  `check_kill_count` system transitions to `StageComplete` when `enemies_killed`
+  reaches target. HUD shows "KILLS: X/Y ✓" with completion checkmark.
+- [x] **Headless app fixes** — Added missing resources (`SimulationRng`,
+  `ScoreSystem`, `SaltMinerSystem`) and `EnemyDestroyedEvent` registration to
+  `build_headless_app()`, preventing systems from being silently skipped in tests.
+- [x] **Abyssal Depths bioadaptive hazards** — `AbyssalHazard` component with
+  tick-based DoT (0.25s intervals), shield→armor→hull damage priority using
+  `ShipStats::take_damage` for proper overflow and recharge-delay logic.
+  3 hazards spawn in Room 2 (ESCAlATION). `update_hazards` wired into Update
+  chain. Cleanup on room transition. Integration tests:
+  `abyssal_room2_spawns_hazards` (3 hazards) and
+  `abyssal_hazard_deals_damage_to_player` (hull decreases after exposure).
+- [x] **Abyssal room transition bugfix** — `check_room_clear` was setting
+  `enemies_spawned = room.enemy_count()` even when `enemy_count == 0`, causing
+  `handle_extraction` to skip spawning for subsequent rooms. Fixed with
+  `&& enemy_count > 0` guard. This was a pre-existing bug blocking Room 2+
+  progression.
 
 ---
 

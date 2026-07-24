@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::{GameState, SCREEN_HEIGHT};
 use rebellion::entities::Enemy;
-use rebellion::games::abyssal_depths::{AbyssalGate, AbyssalRoom, AbyssalState};
+use rebellion::games::abyssal_depths::{AbyssalGate, AbyssalHazard, AbyssalRoom, AbyssalState};
 use rebellion::games::ActiveModule;
 
 /// Despawn all entities with the `Enemy` component.
@@ -35,6 +35,14 @@ fn enemy_count(app: &mut App) -> usize {
 fn gate_count(app: &mut App) -> usize {
     app.world_mut()
         .query::<(Entity, &AbyssalGate)>()
+        .iter(app.world())
+        .count()
+}
+
+/// Count hazard entities.
+fn hazard_count(app: &mut App) -> usize {
+    app.world_mut()
+        .query::<(Entity, &AbyssalHazard)>()
         .iter(app.world())
         .count()
 }
@@ -218,4 +226,142 @@ fn abyssal_timer_runs_out_triggers_game_over() {
 
     let current = *app.world().resource::<State<GameState>>().get();
     assert_eq!(current, GameState::GameOver, "Should transition to GameOver");
+}
+
+#[test]
+fn abyssal_room2_spawns_hazards() {
+    let mut app = build_headless_app();
+    app.init_resource::<rebellion::games::ModuleRegistry>();
+    app.add_plugins(rebellion::games::abyssal_depths::AbyssalDepthsPlugin);
+
+    app.world_mut()
+        .resource_mut::<ActiveModule>()
+        .set_module("abyssal_depths");
+
+    // Start in Playing to trigger Room1 setup
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Playing);
+    app.update();
+
+    // Despawn Room1 enemies so Room2 can spawn
+    despawn_all_enemies(&mut app);
+
+    // Fast-forward to Room2
+    {
+        let mut state = app.world_mut().resource_mut::<AbyssalState>();
+        state.advance_room(); // Room1 → Room2
+        state.room_cleared = false;
+        state.gate_spawned = false;
+        state.enemies_spawned = 0;
+        state.enemies_killed = 0;
+    }
+
+    // Trigger Room2 enemy/hazard spawn via handle_extraction
+    app.update();
+
+    let state = app.world().resource::<AbyssalState>();
+    assert_eq!(state.room, AbyssalRoom::Room2);
+
+    let hazards = hazard_count(&mut app);
+    assert!(
+        hazards > 0,
+        "Room2 should spawn bioadaptive hazards, found {}",
+        hazards
+    );
+}
+
+#[test]
+fn abyssal_hazard_deals_damage_to_player() {
+    let mut app = build_headless_app();
+    app.init_resource::<rebellion::games::ModuleRegistry>();
+    app.add_plugins(rebellion::games::abyssal_depths::AbyssalDepthsPlugin);
+
+    app.world_mut()
+        .resource_mut::<ActiveModule>()
+        .set_module("abyssal_depths");
+
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Playing);
+    app.update(); // Spawns player + Room1 entities
+
+    // Spawn a hazard directly on top of the player
+    let player_pos = {
+        let mut q = app
+            .world_mut()
+            .query_filtered::<&Transform, With<rebellion::entities::Player>>();
+        q.get_single(app.world())
+            .map(|t| t.translation.truncate())
+            .unwrap_or(Vec2::ZERO)
+    };
+
+    app.world_mut().spawn((
+        AbyssalHazard {
+            damage_per_second: 400.0, // High enough to burn through shield+armor and hit hull
+            radius: 100.0,
+            damage_timer: 0.0,
+        },
+        Transform::from_xyz(player_pos.x, player_pos.y, 0.0),
+    ));
+
+    // Verify hazard exists and is positioned on player
+    assert_eq!(hazard_count(&mut app), 1, "Hazard should be spawned");
+    {
+        let mut q_player = app
+            .world_mut()
+            .query_filtered::<&Transform, With<rebellion::entities::Player>>();
+        let player_pos = q_player
+            .get_single(app.world())
+            .map(|t| t.translation.truncate())
+            .unwrap_or(Vec2::ZERO);
+        let mut q_hazard = app
+            .world_mut()
+            .query_filtered::<&Transform, With<AbyssalHazard>>();
+        let hazard_pos = q_hazard
+            .get_single(app.world())
+            .map(|t| t.translation.truncate())
+            .unwrap_or(Vec2::ONE);
+        assert!(
+            (player_pos - hazard_pos).length() < 1.0,
+            "Hazard should be on player: player={:?}, hazard={:?}",
+            player_pos,
+            hazard_pos
+        );
+    }
+
+    // Record starting hull
+    let start_hull = {
+        let mut q = app
+            .world_mut()
+            .query_filtered::<&rebellion::entities::ShipStats, With<rebellion::entities::Player>>();
+        q.get_single(app.world()).map(|s| s.hull).unwrap_or(0.0)
+    };
+    assert!(start_hull > 0.0, "Player should spawn with positive hull");
+
+    // Run many frames to accumulate hazard damage (tick every 0.25s, dt ≈ 0.0167s)
+    // 60 frames ≈ 1.0s real time → 4 damage ticks at 80 DPS = 80 damage total
+    for _ in 0..60 {
+        app.update();
+    }
+
+    let end_hull = {
+        let mut q = app
+            .world_mut()
+            .query_filtered::<&rebellion::entities::ShipStats, With<rebellion::entities::Player>>();
+        q.get_single(app.world()).map(|s| s.hull).unwrap_or(0.0)
+    };
+
+    // Verify hazard system ran: timer cycles back to 0 after tick(s)
+    let _hazard_timer = {
+        let mut q = app.world_mut().query::<&AbyssalHazard>();
+        q.iter(app.world()).next().map(|h| h.damage_timer).unwrap_or(-1.0)
+    };
+
+    assert!(
+        end_hull < start_hull,
+        "Player hull should decrease after standing in hazard: start={}, end={}",
+        start_hull,
+        end_hull
+    );
 }
