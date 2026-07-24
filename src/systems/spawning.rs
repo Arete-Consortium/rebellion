@@ -393,8 +393,8 @@ fn wave_spawning(
     boss_query: Query<Entity, With<crate::entities::Boss>>,
     carrier_query: Query<&Transform, With<EnemyCarrier>>,
     mut wave_events: EventWriter<SpawnWaveEvent>,
-    mut boss_spawn_events: EventWriter<super::boss::BossSpawnEvent>,
-    mut boss_defeated_events: EventReader<super::boss::BossDefeatedEvent>,
+    mut boss_spawn_events: EventWriter<super::boss::BossEntitySpawned>,
+    mut boss_defeated_events: EventReader<super::boss::BossEntityDefeated>,
     mut dialogue_events: EventWriter<DialogueEvent>,
     sprite_cache: Res<crate::assets::ShipSpriteCache>,
     model_cache: Res<ShipModelCache>,
@@ -492,7 +492,7 @@ fn wave_spawning(
                     manager.mini_boss_active = true;
                     // Spawn a mini-boss (use stage-based boss with scaled stats)
                     let mini_boss_stage = ((endless.wave / 10) % 13).max(1);
-                    boss_spawn_events.send(super::boss::BossSpawnEvent {
+                    boss_spawn_events.send(super::boss::BossEntitySpawned {
                         stage: mini_boss_stage,
                     });
                     info!("ENDLESS Wave {} - MINI-BOSS incoming!", endless.wave);
@@ -520,7 +520,7 @@ fn wave_spawning(
             // CAMPAIGN MODE: Check if time for boss
             if manager.wave > manager.waves_per_stage {
                 manager.boss_active = true;
-                boss_spawn_events.send(super::boss::BossSpawnEvent {
+                boss_spawn_events.send(super::boss::BossEntitySpawned {
                     stage: manager.current_stage,
                 });
                 info!("WARNING: Boss incoming!");
@@ -546,7 +546,7 @@ fn wave_spawning(
             });
 
             // Wave incoming callout on significant waves (every 5th or last before boss)
-            if manager.wave.is_multiple_of(5) || manager.wave == manager.waves_per_stage {
+            if manager.wave % 5 == 0 || manager.wave == manager.waves_per_stage {
                 dialogue_events.send(DialogueEvent::combat_callout(
                     super::CombatCalloutType::WaveIncoming,
                 ));

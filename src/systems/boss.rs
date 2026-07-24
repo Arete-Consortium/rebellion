@@ -22,8 +22,8 @@ pub struct BossPlugin;
 impl Plugin for BossPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<BossEncounter>()
-            .add_event::<BossSpawnEvent>()
-            .add_event::<BossDefeatedEvent>()
+            .add_event::<BossEntitySpawned>()
+            .add_event::<BossEntityDefeated>()
             .add_systems(
                 FixedUpdate,
                 (
@@ -55,15 +55,15 @@ pub struct BossEncounter {
     pub defeat_timer: f32,
 }
 
-/// Event to spawn a boss
+/// Command to spawn a boss entity at a specific stage.
 #[derive(Event)]
-pub struct BossSpawnEvent {
+pub struct BossEntitySpawned {
     pub stage: u32,
 }
 
-/// Event when boss is defeated
+/// Event when a boss entity is defeated.
 #[derive(Event)]
-pub struct BossDefeatedEvent {
+pub struct BossEntityDefeated {
     pub boss_name: String,
     pub score: u64,
     pub liberation_value: u32,
@@ -119,7 +119,7 @@ pub enum DroneSpawnPattern {
 /// Handle boss spawn events
 fn handle_boss_spawn(
     mut commands: Commands,
-    mut spawn_events: EventReader<BossSpawnEvent>,
+    mut spawn_events: EventReader<BossEntitySpawned>,
     mut encounter: ResMut<BossEncounter>,
     session: Res<crate::core::GameSession>,
     sprite_cache: Res<crate::assets::ShipSpriteCache>,
@@ -898,7 +898,7 @@ fn boss_damage(
     mut score: ResMut<ScoreSystem>,
     mut heat_system: ResMut<ComboHeatSystem>,
     mut encounter: ResMut<BossEncounter>,
-    mut defeated_events: EventWriter<BossDefeatedEvent>,
+    mut defeated_events: EventWriter<BossEntityDefeated>,
     mut explosion_events: EventWriter<ExplosionEvent>,
     mut dialogue_events: EventWriter<DialogueEvent>,
     mut screen_shake: ResMut<ScreenShake>,
@@ -932,7 +932,7 @@ fn boss_damage(
                     score.score += final_score;
                     heat_system.souls_liberated += data.liberation_value;
 
-                    defeated_events.send(BossDefeatedEvent {
+                    defeated_events.send(BossEntityDefeated {
                         boss_name: data.name.clone(),
                         score: final_score,
                         liberation_value: data.liberation_value,

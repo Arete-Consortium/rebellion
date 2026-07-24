@@ -104,7 +104,7 @@ pub(crate) fn spawn_endless_wave_announcements(
 pub(crate) fn spawn_endless_miniboss_announcement(
     mut commands: Commands,
     endless: Res<crate::core::EndlessMode>,
-    mut boss_events: EventReader<crate::core::BossSpawnEvent>,
+    mut boss_events: EventReader<crate::core::CampaignBossSpawned>,
 ) {
     // Only in endless mode for mini-bosses
     if !endless.active {

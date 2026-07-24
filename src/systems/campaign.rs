@@ -333,7 +333,7 @@ fn spawn_mission_boss(
     session: Res<crate::core::GameSession>,
     sprite_cache: Res<ShipSpriteCache>,
     model_cache: Res<ShipModelCache>,
-    mut boss_events: EventWriter<BossSpawnEvent>,
+    mut boss_events: EventWriter<CampaignBossSpawned>,
 ) {
     let Some(mission) = campaign.current_mission() else {
         return;
@@ -350,7 +350,7 @@ fn spawn_mission_boss(
         Some(&model_cache),
     ) {
         campaign.boss_spawned = true;
-        boss_events.send(BossSpawnEvent {
+        boss_events.send(CampaignBossSpawned {
             boss_type: mission.boss,
         });
         info!("Boss spawned: {:?}", mission.boss);

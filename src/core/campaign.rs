@@ -580,7 +580,7 @@ pub struct WaveCompleteEvent {
 }
 
 #[derive(Event)]
-pub struct BossSpawnEvent {
+pub struct CampaignBossSpawned {
     pub boss_type: BossType,
 }
 

@@ -5,7 +5,7 @@
 use bevy::audio::{PlaybackMode, Volume};
 use bevy::prelude::*;
 
-use crate::core::{BossSpawnEvent, WaveCompleteEvent, *};
+use crate::core::{CampaignBossSpawned, WaveCompleteEvent, *};
 use crate::systems::ability::{AbilityActivatedEvent, AbilityType};
 
 use super::{SoundAssets, SoundSettings, WarningState};
@@ -335,7 +335,7 @@ pub fn play_wave_complete_sound(
 /// Play boss spawn sound
 pub fn play_boss_spawn_sound(
     mut commands: Commands,
-    mut boss_events: EventReader<BossSpawnEvent>,
+    mut boss_events: EventReader<CampaignBossSpawned>,
     sounds: Res<SoundAssets>,
     settings: Res<SoundSettings>,
 ) {
