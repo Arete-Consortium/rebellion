@@ -5,7 +5,7 @@
 use crate::assets::{ShipModelCache, ShipSpriteCache};
 use crate::core::events::BossDefeatedEvent;
 use crate::core::*;
-use crate::entities::{spawn_boss, spawn_enemy, Boss, BossData, BossState, Enemy, EnemyBehavior};
+use crate::entities::{spawn_boss, spawn_enemy, spawn_variant, Boss, BossData, BossState, Enemy, EnemyBehavior, EnemyVariant};
 use crate::games::ActiveModule;
 use bevy::ecs::schedule::common_conditions::not;
 use bevy::prelude::*;
@@ -159,25 +159,61 @@ fn spawn_next_wave(
 
     // Use faction-appropriate enemies from session
     for i in 0..count {
-        let enemy_def = session.random_enemy();
-        let type_id = enemy_def.type_id;
         let x = (i as f32 - count as f32 / 2.0) * 80.0;
         let y = SCREEN_HEIGHT / 2.0 + 50.0 + (i as f32 * 20.0);
 
-        // Get sprite from cache if available
-        let sprite_handle = sprite_cache.get(type_id);
-
-        spawn_enemy(
-            &mut commands,
-            type_id,
-            Vec2::new(x, y),
-            EnemyBehavior::Linear,
-            sprite_handle,
-            Some(&model_cache),
-        );
+        // Chance to spawn a specialized variant instead of base enemy
+        if let Some(variant) = try_pick_variant(session.enemy_faction) {
+            let type_id = variant.config().type_id;
+            let sprite_handle = sprite_cache.get(type_id);
+            spawn_variant(
+                &mut commands,
+                variant,
+                Vec2::new(x, y),
+                sprite_handle,
+                Some(&model_cache),
+            );
+        } else {
+            let enemy_def = session.random_enemy();
+            let type_id = enemy_def.type_id;
+            let sprite_handle = sprite_cache.get(type_id);
+            spawn_enemy(
+                &mut commands,
+                type_id,
+                Vec2::new(x, y),
+                EnemyBehavior::Linear,
+                sprite_handle,
+                Some(&model_cache),
+            );
+        }
     }
 
     campaign.current_wave += 1;
+}
+
+/// Try to pick a specialized variant based on enemy faction and random chance.
+fn try_pick_variant(enemy_faction: crate::core::Faction) -> Option<EnemyVariant> {
+    match enemy_faction {
+        crate::core::Faction::Amarr => {
+            let roll = fastrand::u32(0..100);
+            if roll < 8 {
+                Some(EnemyVariant::ExecutionerElite)
+            } else if roll < 16 {
+                Some(EnemyVariant::PunisherTank)
+            } else {
+                None
+            }
+        }
+        crate::core::Faction::Minmatar => {
+            let roll = fastrand::u32(0..100);
+            if roll < 12 {
+                Some(EnemyVariant::RifterBerserker)
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
 }
 
 /// Spawn boss for current mission
