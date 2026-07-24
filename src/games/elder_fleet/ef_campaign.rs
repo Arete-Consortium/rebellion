@@ -396,6 +396,41 @@ pub fn spawn_ef_boss(
     ));
 }
 
+/// Boss intro sequence — descend boss into position then start fight
+pub fn ef_boss_intro(
+    time: Res<Time>,
+    mut boss_query: Query<(&mut Transform,
+        &mut BossState,
+        &BossData,
+    ), With<Boss>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    mut timer: Local<f32>,
+) {
+    let dt = time.delta_secs();
+    let mut boss_count = 0;
+
+    for (mut transform, mut state, _data) in boss_query.iter_mut() {
+        boss_count += 1;
+
+        // Descend boss to battle position
+        let target_y = 200.0;
+        if transform.translation.y > target_y {
+            transform.translation.y -= 100.0 * dt;
+        }
+
+        // After 2 seconds, start fight
+        if *timer > 2.0 {
+            *timer = 0.0;
+            *state = BossState::Battle;
+            next_state.set(GameState::BossFight);
+        }
+    }
+
+    if boss_count > 0 {
+        *timer += dt;
+    }
+}
+
 /// Update Elder Fleet boss behaviour during BossFight
 pub fn update_ef_boss(
     time: Res<Time>,

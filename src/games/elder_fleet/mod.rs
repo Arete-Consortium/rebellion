@@ -47,6 +47,12 @@ impl Plugin for ElderFleetPlugin {
         )
         .add_systems(
             Update,
+            ef_campaign::ef_boss_intro
+                .run_if(in_state(GameState::BossIntro))
+                .run_if(is_elder_fleet),
+        )
+        .add_systems(
+            Update,
             (
                 ef_campaign::update_ef_boss,
                 ef_campaign::check_ef_boss_defeated,
