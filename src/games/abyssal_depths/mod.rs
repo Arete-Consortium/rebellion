@@ -1034,9 +1034,11 @@ mod tests {
 
     #[test]
     fn abyssal_state_start_run() {
-        let mut s = AbyssalState::default();
-        s.room = AbyssalRoom::Room2;
-        s.time_remaining = 123.0;
+        let mut s = AbyssalState {
+            room: AbyssalRoom::Room2,
+            time_remaining: 123.0,
+            ..Default::default()
+        };
         s.start_run();
         assert!(s.active);
         assert_eq!(s.room, AbyssalRoom::Room1);

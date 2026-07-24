@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::GameState;
-use rebellion::entities::Enemy;
+use rebellion::entities::{BossData, BossState, Enemy};
 use rebellion::games::elder_fleet::ef_campaign::ElderFleetCampaignState;
 use rebellion::games::ActiveModule;
 
@@ -138,4 +138,58 @@ fn elder_fleet_amarr_campaign_spawns_minmatar_enemies() {
         "Amarr campaign should spawn Minmatar enemies, got {}",
         enemy_count
     );
+}
+
+#[test]
+fn elder_fleet_boss_intro_transitions_to_boss_fight() {
+    let mut app = build_headless_app();
+    app.init_resource::<rebellion::games::ModuleRegistry>();
+    app.init_resource::<ActiveModule>();
+    app.add_plugins(rebellion::games::elder_fleet::ElderFleetPlugin);
+
+    {
+        let mut active = app.world_mut().resource_mut::<ActiveModule>();
+        active.set_module("elder_fleet");
+        active.player_faction = Some("minmatar".to_string());
+    }
+
+    // Transition to BossIntro
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::BossIntro);
+    app.update(); // OnEnter(BossIntro) spawns boss
+
+    // Verify boss spawned in Intro state
+    {
+        let mut q = app.world_mut().query::<(&BossData,
+            &BossState,
+        )>();
+        let (data, state) = q.get_single(app.world()).expect("boss should spawn");
+        assert_eq!(*state, BossState::Intro, "Boss should start in Intro state");
+        assert!(
+            data.name.contains("Squadron Leader"),
+            "Expected first mission boss, got {}",
+            data.name
+        );
+    }
+
+    // Run updates to let ef_boss_intro transition to BossFight
+    for _ in 0..130 {
+        app.update(); // ~2s at fixed timestep 1/60
+    }
+
+    let game_state = app.world().resource::<State<GameState>>().get();
+    assert_eq!(
+        *game_state,
+        GameState::BossFight,
+        "BossIntro should transition to BossFight after intro timer, got {:?}",
+        game_state
+    );
+
+    // Verify boss is now in Battle state
+    {
+        let mut q = app.world_mut().query::<&BossState>();
+        let state = q.get_single(app.world()).expect("boss should exist");
+        assert_eq!(*state, BossState::Battle, "Boss should be in Battle state");
+    }
 }

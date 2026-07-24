@@ -764,8 +764,10 @@ mod tests {
 
     #[test]
     fn campaign_state_start_mission_resets_enemies_killed() {
-        let mut state = CampaignState::default();
-        state.enemies_killed = 42;
+        let mut state = CampaignState {
+            enemies_killed: 42,
+            ..Default::default()
+        };
         state.start_mission();
         assert_eq!(state.enemies_killed, 0, "enemies_killed should reset on mission start");
     }
@@ -893,8 +895,10 @@ mod tests {
 
     #[test]
     fn campaign_state_start_mission_resets_bonus_complete() {
-        let mut state = CampaignState::default();
-        state.bonus_complete = true;
+        let mut state = CampaignState {
+            bonus_complete: true,
+            ..Default::default()
+        };
         state.start_mission();
 
         assert!(

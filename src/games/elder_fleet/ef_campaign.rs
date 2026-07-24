@@ -621,10 +621,12 @@ mod tests {
 
     #[test]
     fn campaign_state_resets_correctly() {
-        let mut state = ElderFleetCampaignState::default();
-        state.current_mission = 3;
-        state.current_wave = 4;
-        state.boss_spawned = true;
+        let mut state = ElderFleetCampaignState {
+            current_mission: 3,
+            current_wave: 4,
+            boss_spawned: true,
+            ..Default::default()
+        };
 
         state.reset();
 

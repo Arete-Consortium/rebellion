@@ -782,13 +782,14 @@ mod tests {
 
     #[test]
     fn campaign_state_resets_correctly() {
-        let mut state = TriglavianCampaignState::default();
-        state.current_mission = 5;
-        state.current_wave = 3;
-        state.waves_in_mission = 4;
-        state.enemies_remaining = 10;
-        state.mission_complete = true;
-        state.boss_spawned = true;
+        let mut state = TriglavianCampaignState {
+            current_mission: 5,
+            current_wave: 3,
+            waves_in_mission: 4,
+            enemies_remaining: 10,
+            mission_complete: true,
+            boss_spawned: true,
+        };
 
         state.reset();
 
