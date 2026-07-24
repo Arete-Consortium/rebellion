@@ -2,7 +2,7 @@
   "moduleId": "elder_fleet",
   "displayName": "Elder Fleet Invasion",
   "subtitle": "Minmatar vs Amarr",
-  "description": "The Minmatar Rebellion rises. Strike back against centuries of Amarr oppression, or crush the insurrection and restore divine order.",
+  "description": "The Minmatar Rebellion rises. Strike back against centuries of Amarr oppression, or crush the insurrection and restore divine order. 13 missions across 3 acts.",
   "version": "1.0.0",
   "author": "EVE Rebellion Team",
 
@@ -244,53 +244,145 @@
     }
   },
 
-  "missions": [
+  "acts": [
     {
-      "id": "ef_m1_first_blood",
-      "name": "FIRST BLOOD",
-      "description": "The rebellion begins. Strike the first blow against Amarr patrols.",
-      "primaryObjective": "Destroy enemy patrol ships",
-      "bonusObjective": "Take no damage",
-      "waves": 3,
-      "isTutorial": true,
-      "boss": null
+      "id": "act1",
+      "name": "THE CALL",
+      "description": "The rebellion begins. Small strikes against Amarr oppression.",
+      "missions": [
+        {
+          "id": "ef_m1_first_blood",
+          "name": "FIRST BLOOD",
+          "description": "Intercept a slave transport in the Arzad corridor.",
+          "primaryObjective": "Destroy the slave transport",
+          "bonusObjective": "Liberate 10+ slaves",
+          "waves": 3,
+          "isTutorial": true,
+          "boss": "TransportOverseer"
+        },
+        {
+          "id": "ef_m2_hunter_hunted",
+          "name": "HUNTER HUNTED",
+          "description": "Amarr patrols hunt our scouts. Turn the tables.",
+          "primaryObjective": "Destroy all patrol ships",
+          "bonusObjective": "No damage taken",
+          "waves": 4,
+          "boss": "PatrolCommander"
+        },
+        {
+          "id": "ef_m3_station_raid",
+          "name": "STATION RAID",
+          "description": "Disable orbital station defenses for extraction teams.",
+          "primaryObjective": "Destroy defense turrets",
+          "bonusObjective": "Liberate 30+ slaves",
+          "waves": 5,
+          "boss": "StationBattery"
+        },
+        {
+          "id": "ef_m4_holders_flight",
+          "name": "THE HOLDER'S FLIGHT",
+          "description": "A slave lord flees with his 'property.' End his escape.",
+          "primaryObjective": "Destroy the Holder's escort",
+          "bonusObjective": "Complete in under 3 minutes",
+          "waves": 4,
+          "boss": "HolderEscort"
+        }
+      ]
     },
     {
-      "id": "ef_m2_supply_raid",
-      "name": "SUPPLY RAID",
-      "description": "Amarr supply convoys are undefended. Seize what you need.",
-      "primaryObjective": "Destroy the convoy",
-      "bonusObjective": "Destroy all escorts first",
-      "waves": 4,
-      "boss": "SquadronLeader"
+      "id": "act2",
+      "name": "THE STORM",
+      "description": "Escalation. The Empire sends heavier forces.",
+      "missions": [
+        {
+          "id": "ef_m5_customs_clearance",
+          "name": "CUSTOMS CLEARANCE",
+          "description": "Imperial Customs bleeds our supply lines. Remove them.",
+          "primaryObjective": "Destroy the Customs station",
+          "bonusObjective": "Destroy all cargo pods",
+          "waves": 5,
+          "boss": "CustomsCommandant"
+        },
+        {
+          "id": "ef_m6_divine_judgment",
+          "name": "DIVINE JUDGMENT",
+          "description": "The Inquisition sends a vessel to 'cleanse' liberated systems.",
+          "primaryObjective": "Destroy the Inquisitor vessel",
+          "bonusObjective": "No allied losses",
+          "waves": 6,
+          "boss": "InquisitorVessel"
+        },
+        {
+          "id": "ef_m7_breaking_the_line",
+          "name": "BREAKING THE LINE",
+          "description": "A Navy Harbinger strike group threatens our liberation fleet.",
+          "primaryObjective": "Destroy the strike lead",
+          "bonusObjective": "Destroy all escorts first",
+          "waves": 6,
+          "boss": "HarbingerStrike"
+        },
+        {
+          "id": "ef_m8_gate_crashers",
+          "name": "GATE CRASHERS",
+          "description": "The stargate to Arzad Prime is heavily fortified.",
+          "primaryObjective": "Disable the gate defenses",
+          "bonusObjective": "Under 4 minutes",
+          "waves": 7,
+          "boss": "StargateDefense"
+        },
+        {
+          "id": "ef_m9_puritys_light",
+          "name": "PURITY'S LIGHT",
+          "description": "An Amarr battlestation guards the slave processing hub.",
+          "primaryObjective": "Destroy the battlestation core",
+          "bonusObjective": "Liberate 50+ slaves",
+          "waves": 8,
+          "boss": "BattlestationCore"
+        }
+      ]
     },
     {
-      "id": "ef_m3_freedom_fighters",
-      "name": "FREEDOM FIGHTERS",
-      "description": "Minmatar slaves are staging an uprising. Protect them from reprisal.",
-      "primaryObjective": "Defend the slave compound",
-      "bonusObjective": "No friendly losses",
-      "waves": 4,
-      "boss": "WingCommander"
-    },
-    {
-      "id": "ef_m4_sacred_relic",
-      "name": "SACRED RELIC",
-      "description": "An Amarr cathedral-ship carries artifacts of oppression. Destroy it.",
-      "primaryObjective": "Destroy the cathedral-ship",
-      "bonusObjective": "Destroy all defense turrets",
-      "waves": 5,
-      "unlocks": ["assault_frigate"],
-      "boss": "FleetCommander"
-    },
-    {
-      "id": "ef_m5_empires_end",
-      "name": "EMPIRE'S END",
-      "description": "The final assault on the Amarr fleet. Victory or death.",
-      "primaryObjective": "Destroy the Amarr flagship",
-      "bonusObjective": "Flawless victory",
-      "waves": 6,
-      "boss": "ImperialAdmiral"
+      "id": "act3",
+      "name": "LIBERATION",
+      "description": "The final push. Face the Empire's might and free our people.",
+      "missions": [
+        {
+          "id": "ef_m10_golden_fleet",
+          "name": "GOLDEN FLEET",
+          "description": "The Amarr Navy deploys Abaddon battleships to stop our advance.",
+          "primaryObjective": "Destroy the Abaddon flagship",
+          "bonusObjective": "No damage taken in phase 1",
+          "waves": 8,
+          "boss": "AbaddonBattleship"
+        },
+        {
+          "id": "ef_m11_titans_shadow",
+          "name": "TITAN'S SHADOW",
+          "description": "The Avatar titan's escort fleet blocks the approach.",
+          "primaryObjective": "Clear the escort fleet",
+          "bonusObjective": "Destroy all in one chain",
+          "waves": 9,
+          "boss": "TitanEscort"
+        },
+        {
+          "id": "ef_m12_imperial_champion",
+          "name": "IMPERIAL CHAMPION",
+          "description": "The Empress's personal champion challenges you.",
+          "primaryObjective": "Defeat the champion",
+          "bonusObjective": "Perfect no-damage victory",
+          "waves": 7,
+          "boss": "EmpressChampion"
+        },
+        {
+          "id": "ef_m13_avatar",
+          "name": "AVATAR",
+          "description": "The Avatar titan. The symbol of Amarr oppression. End it.",
+          "primaryObjective": "Destroy the Avatar",
+          "bonusObjective": "Complete the liberation",
+          "waves": 10,
+          "boss": "AvatarTitan"
+        }
+      ]
     }
   ],
 
@@ -322,29 +414,122 @@
   },
 
   "bosses": {
-    "SquadronLeader": {
-      "name": "SQUADRON LEADER",
-      "health": 300,
-      "phases": 2,
-      "typeId": 589
-    },
-    "WingCommander": {
-      "name": "WING COMMANDER",
+    "TransportOverseer": {
+      "name": "SLAVE TRANSPORT OVERSEER",
+      "title": "Convoy Master Krador",
       "health": 500,
-      "phases": 3,
-      "typeId": 597
+      "phases": 2,
+      "typeId": 1944,
+      "shipClass": "Bestower",
+      "stationary": false
     },
-    "FleetCommander": {
-      "name": "FLEET COMMANDER",
+    "PatrolCommander": {
+      "name": "PATROL COMMANDER",
+      "title": "Commander Sarevok",
       "health": 800,
-      "phases": 3,
-      "typeId": 11186
+      "phases": 2,
+      "typeId": 2006,
+      "shipClass": "Navy Omen",
+      "stationary": false
     },
-    "ImperialAdmiral": {
-      "name": "IMPERIAL ADMIRAL",
+    "StationBattery": {
+      "name": "STATION DEFENSE BATTERY",
+      "title": "Holding Facility Defense Grid",
       "health": 1200,
+      "phases": 3,
+      "typeId": 0,
+      "shipClass": "Orbital Platform",
+      "stationary": true
+    },
+    "HolderEscort": {
+      "name": "HOLDER'S ESCORT FLEET",
+      "title": "Lord Holder Arzad's Guard",
+      "health": 1500,
+      "phases": 3,
+      "typeId": 624,
+      "shipClass": "Mixed",
+      "stationary": false
+    },
+    "CustomsCommandant": {
+      "name": "IMPERIAL CUSTOMS COMMANDANT",
+      "title": "Commandant Torash",
+      "health": 2000,
+      "phases": 3,
+      "typeId": 630,
+      "shipClass": "Prophecy",
+      "stationary": false
+    },
+    "InquisitorVessel": {
+      "name": "INQUISITOR VESSEL",
+      "title": "Inquisitor Malkov",
+      "health": 2500,
+      "phases": 3,
+      "typeId": 630,
+      "shipClass": "Prophecy Variant",
+      "stationary": false
+    },
+    "HarbingerStrike": {
+      "name": "NAVY HARBINGER STRIKE GROUP",
+      "title": "Strike Commander Venak",
+      "health": 3000,
+      "phases": 3,
+      "typeId": 24696,
+      "shipClass": "Harbinger",
+      "stationary": false
+    },
+    "StargateDefense": {
+      "name": "STARGATE DEFENSE GRID",
+      "title": "Gate Control: Sahtogas",
+      "health": 4000,
       "phases": 4,
-      "typeId": 24690
+      "typeId": 0,
+      "shipClass": "Infrastructure",
+      "stationary": true
+    },
+    "BattlestationCore": {
+      "name": "AMARR BATTLESTATION CORE",
+      "title": "Holding Facility Theta-7",
+      "health": 6000,
+      "phases": 5,
+      "typeId": 0,
+      "shipClass": "Station",
+      "stationary": true
+    },
+    "AbaddonBattleship": {
+      "name": "IMPERIAL NAVY ARMAGEDDON",
+      "title": "Admiral Karsoth's Hammer",
+      "health": 8000,
+      "phases": 3,
+      "typeId": 643,
+      "shipClass": "Armageddon",
+      "stationary": false
+    },
+    "TitanEscort": {
+      "name": "AMARR CARRIER",
+      "title": "Carrier Divine Providence",
+      "health": 10000,
+      "phases": 4,
+      "typeId": 23757,
+      "shipClass": "Archon",
+      "stationary": false
+    },
+    "EmpressChampion": {
+      "name": "LORD ADMIRAL'S APOCALYPSE",
+      "title": "Lord Admiral Vanir",
+      "health": 12000,
+      "phases": 4,
+      "typeId": 24690,
+      "shipClass": "Apocalypse Navy Issue",
+      "stationary": false
+    },
+    "AvatarTitan": {
+      "name": "AVATAR-CLASS TITAN",
+      "title": "Imperial Titan Empress's Wrath",
+      "health": 25000,
+      "phases": 5,
+      "typeId": 11567,
+      "shipClass": "Avatar",
+      "stationary": false
     }
   }
 }
