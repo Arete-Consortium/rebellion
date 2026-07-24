@@ -2,7 +2,7 @@
 
 **Branch**: `feat/triglavian-campaign-20260723`  
 **Date**: 2026-07-23  
-**Status**: Active — all tests passing (303 unit + 18 integration), clippy clean  
+**Status**: Active — all tests passing (319 unit + 21 integration), clippy clean  
 **Last commit**: `dba5d8c` — Abyssal Depths bioadaptive hazard system
 
 ---
@@ -127,6 +127,18 @@ unplayable boss fights — no input, no damage, no visuals.
   `handle_extraction` to skip spawning for subsequent rooms. Fixed with
   `&& enemy_count > 0` guard. This was a pre-existing bug blocking Room 2+
   progression.
+- [x] **Elder Fleet custom campaign** — `ef_campaign.rs` created with
+  `ElderFleetCampaignState` resource, replacing generic campaign for Elder Fleet
+  (added `.run_if(not(is_elder_fleet_module))` to generic `CampaignPlugin`).
+  5 missions per faction: Minmatar (First Blood → Empire's End) and Amarr
+  (Insurrection Suppression → Purity Restored). Custom spawning with faction-
+  specific enemy pools (Amarr: Punisher/Executioner/Maller + variants;
+  Minmatar: Rifter/Slasher/Stabber + variants). Boss spawning with phase
+  transitions (2–4 phases), enrage at 25%, spread-shot attack pattern.
+  4 unit tests (mission counts, state reset, wave counts, ship class mapping).
+  3 integration tests: `elder_fleet_spawns_enemies_on_wave_start`,
+  `elder_fleet_spawns_boss_after_waves`,
+  `elder_fleet_amarr_campaign_spawns_minmatar_enemies`.
 
 ---
 

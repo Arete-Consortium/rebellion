@@ -22,7 +22,8 @@ impl Plugin for CampaignPlugin {
             start_mission
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
-                .run_if(not(is_abyssal_module)),
+                .run_if(not(is_abyssal_module))
+                .run_if(not(is_elder_fleet_module)),
         )
         .add_systems(
             FixedUpdate,
@@ -36,7 +37,8 @@ impl Plugin for CampaignPlugin {
                 .run_if(in_state(GameState::Playing))
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
-                .run_if(not(is_abyssal_module)),
+                .run_if(not(is_abyssal_module))
+                .run_if(not(is_elder_fleet_module)),
         )
         .add_systems(
             FixedUpdate,
@@ -49,14 +51,16 @@ impl Plugin for CampaignPlugin {
                 .run_if(in_state(GameState::BossFight))
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
-                .run_if(not(is_abyssal_module)),
+                .run_if(not(is_abyssal_module))
+                .run_if(not(is_elder_fleet_module)),
         )
         .add_systems(
             OnEnter(GameState::BossIntro),
             spawn_mission_boss
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
-                .run_if(not(is_abyssal_module)),
+                .run_if(not(is_abyssal_module))
+                .run_if(not(is_elder_fleet_module)),
         )
         .add_systems(
             Update,
@@ -64,14 +68,16 @@ impl Plugin for CampaignPlugin {
                 .run_if(in_state(GameState::BossIntro))
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
-                .run_if(not(is_abyssal_module)),
+                .run_if(not(is_abyssal_module))
+                .run_if(not(is_elder_fleet_module)),
         )
         .add_systems(
             OnEnter(GameState::BossFight),
             start_boss_fight
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
-                .run_if(not(is_abyssal_module)),
+                .run_if(not(is_abyssal_module))
+                .run_if(not(is_elder_fleet_module)),
         );
     }
 }
@@ -89,6 +95,11 @@ fn is_abyssal_module(abyssal: Option<Res<crate::games::abyssal_depths::AbyssalSt
 /// Run condition: is Triglavian Invasion module active?
 fn is_triglavian_module(active_module: Res<ActiveModule>) -> bool {
     active_module.is_triglavian_invasion()
+}
+
+/// Run condition: is Elder Fleet module active?
+fn is_elder_fleet_module(active_module: Res<ActiveModule>) -> bool {
+    active_module.is_elder_fleet()
 }
 
 /// Start mission when entering Playing state

@@ -256,6 +256,7 @@ pub struct EnemyVariantConfig {
 }
 
 /// Predefined enemy variants
+#[derive(Clone, Copy)]
 pub enum EnemyVariant {
     Kamikaze,
     Weaver,

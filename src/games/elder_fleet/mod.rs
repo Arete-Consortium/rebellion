@@ -4,10 +4,13 @@
 //! The original Rebellion campaign - 13 missions across 3 acts.
 
 use super::{ActiveModule, FactionInfo, GameModuleInfo, ModuleRegistry};
+use crate::core::GameState;
 use bevy::prelude::*;
 
+pub mod ef_campaign;
 pub mod ships;
 
+pub use ef_campaign::*;
 pub use ships::ElderFleetShips;
 
 /// Elder Fleet module plugin
@@ -20,6 +23,37 @@ impl Plugin for ElderFleetPlugin {
 
         // Initialize resources
         app.init_resource::<ElderFleetShips>();
+        app.init_resource::<ElderFleetCampaignState>();
+
+        // Elder Fleet campaign systems — run instead of generic campaign
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            ef_campaign::start_ef_mission.run_if(is_elder_fleet),
+        )
+        .add_systems(
+            Update,
+            (
+                ef_campaign::update_ef_mission,
+                ef_campaign::check_ef_wave_complete,
+                ef_campaign::spawn_ef_wave,
+            )
+                .chain()
+                .run_if(in_state(GameState::Playing))
+                .run_if(is_elder_fleet),
+        )
+        .add_systems(
+            OnEnter(GameState::BossIntro),
+            ef_campaign::spawn_ef_boss.run_if(is_elder_fleet),
+        )
+        .add_systems(
+            Update,
+            (
+                ef_campaign::update_ef_boss,
+                ef_campaign::check_ef_boss_defeated,
+            )
+                .run_if(in_state(GameState::BossFight))
+                .run_if(is_elder_fleet),
+        );
     }
 }
 
