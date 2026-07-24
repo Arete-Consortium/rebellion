@@ -5,6 +5,7 @@
 #![allow(dead_code)]
 
 use bevy::prelude::*;
+use crate::core::GameState;
 
 /// Campaign acts - progression through the story
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -412,6 +413,25 @@ impl CampaignState {
         }
     }
 
+    /// Evaluate what happens after all enemy waves are cleared.
+    /// Returns the next GameState if a transition should occur.
+    pub fn evaluate_post_wave(&mut self, mission: &Mission) -> Option<GameState> {
+        if self.current_wave > mission.enemy_waves {
+            if mission.boss == BossType::None {
+                self.primary_complete = true;
+                self.bonus_complete = self.no_damage_taken
+                    || self.mission_souls >= mission.souls_to_liberate;
+                Some(GameState::StageComplete)
+            } else if !self.boss_spawned {
+                Some(GameState::BossIntro)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
     /// Check if current wave is the boss wave
     pub fn is_boss_wave(&self) -> bool {
         if let Some(mission) = self.current_mission() {
@@ -505,6 +525,7 @@ pub struct ActCompleteEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::GameState;
 
     // ==================== Act Tests ====================
 
@@ -730,6 +751,88 @@ mod tests {
 
         state.current_wave = 4;
         assert!(state.is_boss_wave());
+    }
+
+    #[test]
+    fn evaluate_post_wave_transitions_to_boss_intro() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 4; // past the 3 waves of mission 1
+
+        let mission = state.current_mission().unwrap();
+        let next = state.evaluate_post_wave(mission);
+        assert_eq!(next, Some(GameState::BossIntro));
+    }
+
+    #[test]
+    fn evaluate_post_wave_no_boss_completes_mission() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 4;
+        state.no_damage_taken = true;
+
+        let mission = Mission {
+            id: "test_no_boss",
+            name: "Test Mission",
+            description: "No boss mission",
+            primary_objective: "Survive",
+            bonus_objective: None,
+            boss: BossType::None,
+            enemy_waves: 3,
+            souls_to_liberate: 0,
+        };
+
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(next, Some(GameState::StageComplete));
+        assert!(state.primary_complete);
+        assert!(state.bonus_complete, "bonus_complete should be true when no damage taken");
+    }
+
+    #[test]
+    fn evaluate_post_wave_no_damage_false_sets_bonus_false() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 4;
+        state.no_damage_taken = false;
+        state.mission_souls = 0;
+
+        let mission = Mission {
+            id: "test_no_boss",
+            name: "Test Mission",
+            description: "No boss mission",
+            primary_objective: "Survive",
+            bonus_objective: None,
+            boss: BossType::None,
+            enemy_waves: 3,
+            souls_to_liberate: 10,
+        };
+
+        let next = state.evaluate_post_wave(&mission);
+        assert_eq!(next, Some(GameState::StageComplete));
+        assert!(!state.bonus_complete, "bonus_complete should be false when damage taken and souls insufficient");
+    }
+
+    #[test]
+    fn evaluate_post_wave_boss_already_spawned_returns_none() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 4;
+        state.boss_spawned = true;
+
+        let mission = state.current_mission().unwrap();
+        let next = state.evaluate_post_wave(mission);
+        assert_eq!(next, None, "should return None when boss already spawned");
+    }
+
+    #[test]
+    fn evaluate_post_wave_before_waves_returns_none() {
+        let mut state = CampaignState::default();
+        state.start_mission();
+        state.current_wave = 2; // still within enemy_waves
+
+        let mission = state.current_mission().unwrap();
+        let next = state.evaluate_post_wave(mission);
+        assert_eq!(next, None, "should return None when waves remain");
     }
 
     #[test]
