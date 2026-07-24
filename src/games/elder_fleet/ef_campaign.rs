@@ -44,12 +44,24 @@ impl ElderFleetCampaignState {
         self.boss_spawned = false;
 
         self.waves_in_mission = match mission {
-            0 => 3,
-            1 => 3,
-            2 => 4,
-            3 => 4,
+            0..=2 => 3,
+            3..=5 => 4,
             _ => 5,
         };
+    }
+
+    /// Returns the total number of missions in the campaign
+    pub fn total_missions(&self) -> u32 {
+        9
+    }
+
+    /// Returns true if the current mission is the last one in its act
+    pub fn is_act_final_mission(&self, missions: &[EFMissionInfo]) -> bool {
+        let current = self.current_mission as usize;
+        missions.get(current).is_some_and(|_m| {
+            // Last mission of act 1 (missions 0-2), act 2 (3-5), or act 3 (6-8)
+            current == 2 || current == 5 || current == 8
+        })
     }
 }
 
@@ -67,11 +79,16 @@ pub struct EFMissionInfo {
     pub boss_health: f32,
     pub boss_phases: u32,
     pub boss_type_id: u32,
+    /// Act number (1–3)
+    pub act: u32,
+    /// Optional dialogue shown on mission start
+    pub dialogue_start: Option<&'static str>,
 }
 
 /// Minmatar campaign missions (player = Minmatar, enemies = Amarr)
 pub fn minmatar_missions() -> Vec<EFMissionInfo> {
     vec![
+        // Act 1 — The Spark
         EFMissionInfo {
             name: "First Blood",
             system: "Arzad",
@@ -80,6 +97,8 @@ pub fn minmatar_missions() -> Vec<EFMissionInfo> {
             boss_health: 300.0,
             boss_phases: 2,
             boss_type_id: 597, // Punisher
+            act: 1,
+            dialogue_start: Some("The Elders have watched from the shadows for centuries. Now we strike."),
         },
         EFMissionInfo {
             name: "Slave Revolt",
@@ -89,6 +108,8 @@ pub fn minmatar_missions() -> Vec<EFMissionInfo> {
             boss_health: 400.0,
             boss_phases: 2,
             boss_type_id: 589, // Executioner
+            act: 1,
+            dialogue_start: Some("Every soul freed is a blow against the Empire."),
         },
         EFMissionInfo {
             name: "Station Assault",
@@ -98,7 +119,10 @@ pub fn minmatar_missions() -> Vec<EFMissionInfo> {
             boss_health: 600.0,
             boss_phases: 3,
             boss_type_id: 603, // Maller
+            act: 1,
+            dialogue_start: Some("Their walls cannot hold against our fury."),
         },
+        // Act 2 — The Storm
         EFMissionInfo {
             name: "Imperial Response",
             system: "Varkal",
@@ -107,15 +131,64 @@ pub fn minmatar_missions() -> Vec<EFMissionInfo> {
             boss_health: 800.0,
             boss_phases: 3,
             boss_type_id: 624, // Harbinger
+            act: 2,
+            dialogue_start: Some("The Empire reels. Press the attack."),
+        },
+        EFMissionInfo {
+            name: "Border Siege",
+            system: "Kehour",
+            description: "Siege the border fortress and break the Amarr defensive line.",
+            boss_name: "Fortress Sentinel",
+            boss_health: 950.0,
+            boss_phases: 3,
+            boss_type_id: 24690, // Harbinger (Battlecruiser variant)
+            act: 2,
+            dialogue_start: Some("Break their line and the path to the core opens."),
+        },
+        EFMissionInfo {
+            name: "Harbinger Hunt",
+            system: "Miah",
+            description: "An Abaddon-class battleship threatens the fleet. Eliminate it.",
+            boss_name: "Abaddon Warlord",
+            boss_health: 1100.0,
+            boss_phases: 4,
+            boss_type_id: 24692, // Abaddon
+            act: 2,
+            dialogue_start: Some("Their flagship must burn."),
+        },
+        // Act 3 — The Reckoning
+        EFMissionInfo {
+            name: "Deep Strike",
+            system: "Sosan",
+            description: "Penetrate Amarr core space and destroy the stargate defenses.",
+            boss_name: "Gatekeeper Lord",
+            boss_health: 1300.0,
+            boss_phases: 4,
+            boss_type_id: 2006, // Apocalypse
+            act: 3,
+            dialogue_start: Some("The heart of the Empire beats behind these gates."),
+        },
+        EFMissionInfo {
+            name: "Titan's Shadow",
+            system: "Nakis",
+            description: "An Avatar titan escort fleet blocks the approach to Amarr Prime.",
+            boss_name: "Titan Escort Commander",
+            boss_health: 1500.0,
+            boss_phases: 4,
+            boss_type_id: 11567, // Avatar
+            act: 3,
+            dialogue_start: Some("Even their god-machines will fall."),
         },
         EFMissionInfo {
             name: "Empire's End",
             system: "Amarr Prime",
             description: "Strike at the heart of the Empire. End the occupation.",
             boss_name: "Imperial Admiral",
-            boss_health: 1200.0,
-            boss_phases: 4,
+            boss_health: 1800.0,
+            boss_phases: 5,
             boss_type_id: 643, // Apocalypse
+            act: 3,
+            dialogue_start: Some("The chains break today. Fly well, pilot."),
         },
     ]
 }
@@ -123,6 +196,7 @@ pub fn minmatar_missions() -> Vec<EFMissionInfo> {
 /// Amarr campaign missions (player = Amarr, enemies = Minmatar)
 pub fn amarr_missions() -> Vec<EFMissionInfo> {
     vec![
+        // Act 1 — The Heresy
         EFMissionInfo {
             name: "Insurrection Suppression",
             system: "Arzad",
@@ -131,6 +205,8 @@ pub fn amarr_missions() -> Vec<EFMissionInfo> {
             boss_health: 300.0,
             boss_phases: 2,
             boss_type_id: 587, // Rifter
+            act: 1,
+            dialogue_start: Some("The heretics dare raise arms against the divine order. Crush them."),
         },
         EFMissionInfo {
             name: "Convoy Defense",
@@ -140,6 +216,8 @@ pub fn amarr_missions() -> Vec<EFMissionInfo> {
             boss_health: 400.0,
             boss_phases: 2,
             boss_type_id: 11371, // Wolf
+            act: 1,
+            dialogue_start: Some("The faithful depend on your protection. Do not falter."),
         },
         EFMissionInfo {
             name: "Border Reclamation",
@@ -149,7 +227,10 @@ pub fn amarr_missions() -> Vec<EFMissionInfo> {
             boss_health: 600.0,
             boss_phases: 3,
             boss_type_id: 602, // Stabber
+            act: 1,
+            dialogue_start: Some("Sacred ground has been profaned. Cleanse it with fire."),
         },
+        // Act 2 — The Crusade
         EFMissionInfo {
             name: "Heretic's Bane",
             system: "Varkal",
@@ -158,15 +239,64 @@ pub fn amarr_missions() -> Vec<EFMissionInfo> {
             boss_health: 800.0,
             boss_phases: 3,
             boss_type_id: 625, // Hurricane
+            act: 2,
+            dialogue_start: Some("Their rage is nothing before divine judgment."),
+        },
+        EFMissionInfo {
+            name: "Purification",
+            system: "Kehour",
+            description: "Purify the heretic stronghold and scatter their fleet.",
+            boss_name: "Tempest Chieftain",
+            boss_health: 950.0,
+            boss_phases: 3,
+            boss_type_id: 639, // Tempest
+            act: 2,
+            dialogue_start: Some("Burn their nests and let the light of God wash over the ashes."),
+        },
+        EFMissionInfo {
+            name: "Wolf Pack",
+            system: "Miah",
+            description: "A republic wolf pack hunts Imperial shipping. End the hunt.",
+            boss_name: "Pack Alpha",
+            boss_health: 1100.0,
+            boss_phases: 4,
+            boss_type_id: 11371, // Wolf
+            act: 2,
+            dialogue_start: Some("Beasts must be put down. Show them the Empire's teeth."),
+        },
+        // Act 3 — The Judgment
+        EFMissionInfo {
+            name: "Core Breach",
+            system: "Sosan",
+            description: "Minmatar saboteurs breach the core defenses. Hold the line.",
+            boss_name: "Saboteur King",
+            boss_health: 1300.0,
+            boss_phases: 4,
+            boss_type_id: 587, // Rifter (stealth variant placeholder)
+            act: 3,
+            dialogue_start: Some("They think they can reach the Throne Worlds. Disabuse them."),
+        },
+        EFMissionInfo {
+            name: "Republic's Last Stand",
+            system: "Nakis",
+            description: "The Republic fleet masses for a final desperate assault.",
+            boss_name: "Republic Warmaster",
+            boss_health: 1500.0,
+            boss_phases: 4,
+            boss_type_id: 625, // Hurricane
+            act: 3,
+            dialogue_start: Some("This is their last throw of the dice. End them."),
         },
         EFMissionInfo {
             name: "Purity Restored",
             system: "Minmatar Border",
             description: "Drive the heretics from imperial space. Restore divine order.",
             boss_name: "Republic Fleet Admiral",
-            boss_health: 1200.0,
-            boss_phases: 4,
+            boss_health: 1800.0,
+            boss_phases: 5,
             boss_type_id: 639, // Tempest
+            act: 3,
+            dialogue_start: Some("The heresy ends today. For God and Empire."),
         },
     ]
 }
@@ -179,6 +309,7 @@ pub fn amarr_missions() -> Vec<EFMissionInfo> {
 pub fn start_ef_mission(
     mut state: ResMut<ElderFleetCampaignState>,
     active: Res<crate::games::ActiveModule>,
+    mut dialogue_events: EventWriter<crate::systems::DialogueEvent>,
 ) {
     let mission = state.current_mission;
     state.start_mission(mission);
@@ -197,6 +328,16 @@ pub fn start_ef_mission(
             info.name,
             info.system
         );
+
+        // Send mission start dialogue if available
+        if let Some(text) = info.dialogue_start {
+            dialogue_events.send(crate::systems::DialogueEvent {
+                trigger: crate::systems::DialogueTrigger::Custom(text.to_string()),
+                custom_text: None,
+                duration: 4.0,
+                priority: 5,
+            });
+        }
     }
 }
 
@@ -562,15 +703,44 @@ pub fn check_ef_boss_defeated(
     mut state: ResMut<ElderFleetCampaignState>,
     mut next_state: ResMut<NextState<GameState>>,
     bosses: Query<Entity, With<Boss>>,
+    active: Res<crate::games::ActiveModule>,
+    mut dialogue_events: EventWriter<crate::systems::DialogueEvent>,
 ) {
     if bosses.is_empty() && state.boss_spawned {
         state.mission_complete = true;
         state.current_mission += 1;
 
-        let total_missions = 5;
+        let faction = active.player_faction.as_deref().unwrap_or("minmatar");
+        let missions = if faction == "minmatar" {
+            minmatar_missions()
+        } else {
+            amarr_missions()
+        };
+        let total_missions = missions.len() as u32;
+
         if state.current_mission >= total_missions {
             next_state.set(GameState::Victory);
         } else {
+            // Check for act transition and send dialogue
+            if let Some(info) = missions.get(state.current_mission as usize) {
+                if info.act > 1 && state.current_mission == 3 {
+                    // Transitioned from Act 1 to Act 2
+                    dialogue_events.send(crate::systems::DialogueEvent {
+                        trigger: crate::systems::DialogueTrigger::ActComplete(info.act - 1),
+                        custom_text: None,
+                        duration: 5.0,
+                        priority: 10,
+                    });
+                } else if info.act > 2 && state.current_mission == 6 {
+                    // Transitioned from Act 2 to Act 3
+                    dialogue_events.send(crate::systems::DialogueEvent {
+                        trigger: crate::systems::DialogueTrigger::ActComplete(info.act - 1),
+                        custom_text: None,
+                        duration: 5.0,
+                        priority: 10,
+                    });
+                }
+            }
             next_state.set(GameState::StageComplete);
         }
     }
@@ -608,15 +778,41 @@ mod tests {
     use super::*;
 
     #[test]
-    fn minmatar_missions_has_five_entries() {
+    fn minmatar_missions_has_nine_entries() {
         let missions = minmatar_missions();
-        assert_eq!(missions.len(), 5);
+        assert_eq!(missions.len(), 9);
     }
 
     #[test]
-    fn amarr_missions_has_five_entries() {
+    fn amarr_missions_has_nine_entries() {
         let missions = amarr_missions();
-        assert_eq!(missions.len(), 5);
+        assert_eq!(missions.len(), 9);
+    }
+
+    #[test]
+    fn campaign_state_total_missions_returns_nine() {
+        let state = ElderFleetCampaignState::default();
+        assert_eq!(state.total_missions(), 9);
+    }
+
+    #[test]
+    fn campaign_state_is_act_final_mission_detects_boundaries() {
+        let missions = minmatar_missions();
+
+        let mut state = ElderFleetCampaignState {
+            current_mission: 0,
+            ..Default::default()
+        };
+        assert!(!state.is_act_final_mission(&missions));
+
+        state.current_mission = 2;
+        assert!(state.is_act_final_mission(&missions));
+
+        state.current_mission = 5;
+        assert!(state.is_act_final_mission(&missions));
+
+        state.current_mission = 8;
+        assert!(state.is_act_final_mission(&missions));
     }
 
     #[test]
@@ -643,9 +839,18 @@ mod tests {
         assert_eq!(state.waves_in_mission, 3);
 
         state.start_mission(2);
+        assert_eq!(state.waves_in_mission, 3);
+
+        state.start_mission(3);
         assert_eq!(state.waves_in_mission, 4);
 
-        state.start_mission(4);
+        state.start_mission(5);
+        assert_eq!(state.waves_in_mission, 4);
+
+        state.start_mission(6);
+        assert_eq!(state.waves_in_mission, 5);
+
+        state.start_mission(8);
         assert_eq!(state.waves_in_mission, 5);
     }
 
