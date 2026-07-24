@@ -740,7 +740,7 @@ impl EndlessMode {
 
     /// Check if it's time for a mini-boss (every 10 waves)
     pub fn is_mini_boss_wave(&self) -> bool {
-        self.wave > 0 && self.wave.is_multiple_of(10)
+        self.wave > 0 && self.wave % 10 == 0
     }
 
     /// Get enemy count for current wave

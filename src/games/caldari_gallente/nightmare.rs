@@ -65,7 +65,7 @@ pub enum NightmareHudElement {
 /// Spawn wave announcement overlay
 fn spawn_wave_announcement(commands: &mut Commands, wave: u32) {
     // Only show announcement every 5th wave or wave 1
-    if wave != 1 && !wave.is_multiple_of(5) {
+    if wave != 1 && wave % 5 != 0 {
         return;
     }
 

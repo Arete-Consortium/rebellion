@@ -2,6 +2,7 @@
 name = "rebellion"
 version = "2.0.0"
 edition = "2021"
+rust-version = "1.82"
 authors = ["ARETE"]
 description = "Space arcade shooter suite built with Rust and Bevy"
 license = "MIT"
@@ -38,72 +39,33 @@ console_error_panic_hook = "0.1"
 web-sys = { version = "0.3", features = ["Window", "Storage", "Navigator", "Screen"] }
 getrandom = { version = "0.3", features = ["wasm_js"] }
 
-# Game Engine - Linux with x11/wayland
+# Game Engine — Desktop common features (Linux, Windows, macOS)
+[target.'cfg(any(target_os = "linux", target_os = "windows", target_os = "macos"))'.dependencies]
+bevy = { version = "0.15", default-features = false, features = [
+    "bevy_asset",
+    "bevy_audio",
+    "bevy_color",
+    "bevy_core_pipeline",
+    "bevy_gilrs",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_scene",
+    "bevy_sprite",
+    "bevy_state",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_winit",
+    "default_font",
+    "multi_threaded",
+    "png",
+    "wav",
+] }
+
+# Game Engine — Linux-specific additions
 [target.'cfg(target_os = "linux")'.dependencies]
 bevy = { version = "0.15", default-features = false, features = [
-    "bevy_asset",
-    "bevy_audio",
-    "bevy_color",
-    "bevy_core_pipeline",
-    "bevy_gilrs",
-    "bevy_gltf",
-    "bevy_render",
-    "bevy_scene",
-    "bevy_sprite",
-    "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_winit",
-    "default_font",
-    "multi_threaded",
-    "png",
-    "wav",
     "x11",
     "wayland",
-] }
-
-# Game Engine - Windows
-[target.'cfg(target_os = "windows")'.dependencies]
-bevy = { version = "0.15", default-features = false, features = [
-    "bevy_asset",
-    "bevy_audio",
-    "bevy_color",
-    "bevy_core_pipeline",
-    "bevy_gilrs",
-    "bevy_gltf",
-    "bevy_render",
-    "bevy_scene",
-    "bevy_sprite",
-    "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_winit",
-    "default_font",
-    "multi_threaded",
-    "png",
-    "wav",
-] }
-
-# Game Engine - macOS
-[target.'cfg(target_os = "macos")'.dependencies]
-bevy = { version = "0.15", default-features = false, features = [
-    "bevy_asset",
-    "bevy_audio",
-    "bevy_color",
-    "bevy_core_pipeline",
-    "bevy_gilrs",
-    "bevy_gltf",
-    "bevy_render",
-    "bevy_scene",
-    "bevy_sprite",
-    "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_winit",
-    "default_font",
-    "multi_threaded",
-    "png",
-    "wav",
 ] }
 
 # Game Engine - WASM (no multi-threading)
