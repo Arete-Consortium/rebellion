@@ -2,8 +2,8 @@
 
 **Branch**: `feat/triglavian-campaign-20260723`  
 **Date**: 2026-07-23  
-**Status**: Active — all tests passing (303 unit + 15 integration), clippy clean  
-**Last commit**: `dbda8f2` — Abyssal Depths room progression integration tests
+**Status**: Active — all tests passing (303 unit + 18 integration), clippy clean  
+**Last commit**: `dba5d8c` — Abyssal Depths bioadaptive hazard system
 
 ---
 
@@ -76,6 +76,10 @@ unplayable boss fights — no input, no damage, no visuals.
 - [x] **Integration test for BossFight state** — `tests/boss_fight_e2e.rs` added.
 - [x] **Integration test for Triglavian boss phases** — `tests/triglavian_boss_phases.rs` added.
 - [x] **Integration test for Abyssal Depths room progression** — `tests/abyssal_room_progression.rs` added.
+- [x] **Integration tests for recent objective fixes** — `tests/campaign_objectives.rs` added:
+  `player_damage_sets_no_damage_taken_false` (PlayerDamagedEvent → no_damage_taken=false),
+  `no_boss_mission_completes_without_boss` (BossType::None → StageComplete after waves),
+  `bonus_complete_when_no_damage_taken` (no-damage path + souls threshold path verified).
 
 ### P1 — Polish
 - [x] **Triglavian boss intro UI** — Boss intro screen with warning text, boss name,
