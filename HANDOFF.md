@@ -2,8 +2,8 @@
 
 **Branch**: `feat/triglavian-campaign-20260723`  
 **Date**: 2026-07-23  
-**Status**: Active — all tests passing (326 unit + 35 integration), clippy clean  
-**Last commit**: `729c7da` — KillCount, TimedSurvival, Escort objectives
+**Status**: Active — all tests passing (328 unit + 35 integration), clippy clean  
+**Last commit**: `2663c33` — Elder Fleet expanded to 9 missions across 3 acts with dialogue
 
 ---
 
@@ -164,6 +164,19 @@ unplayable boss fights — no input, no damage, no visuals.
 - [x] **Elder Fleet boss intro transition test** —
   `elder_fleet_boss_intro_transitions_to_boss_fight` verifies `BossIntro`
   → `BossFight` and `BossState::Intro` → `Battle`.
+- [x] **Elder Fleet content expansion** — Both Minmatar and Amarr campaigns
+  expanded from 5 to 9 missions across 3 acts (Act 1: The Spark/The Heresy,
+  Act 2: The Storm/The Crusade, Act 3: The Reckoning/The Judgment).
+  Progressive boss scaling: 300 HP/2 phases → 1800 HP/5 phases.
+  New missions: Border Siege, Harbinger Hunt, Deep Strike, Titan's Shadow
+  (Minmatar); Purification, Wolf Pack, Core Breach, Republic's Last Stand
+  (Amarr). `EFMissionInfo` gains `act` and `dialogue_start` fields.
+- [x] **Elder Fleet mission dialogue** — `start_ef_mission` sends
+  `DialogueEvent::Custom` with faction- and mission-specific text on each
+  mission start (e.g., "The Elders have watched from the shadows...").
+- [x] **Elder Fleet act transition dialogue** — `check_ef_boss_defeated`
+  detects act boundaries (missions 3 and 6) and sends
+  `DialogueEvent::ActComplete` with priority 10 and 5-second duration.
 
 ---
 
