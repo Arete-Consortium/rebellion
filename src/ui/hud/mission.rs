@@ -119,7 +119,23 @@ pub fn update_mission_display(
     // Update enemies killed
     for mut text in kill_query.iter_mut() {
         if campaign.in_mission {
-            **text = format!("ENEMIES DEFEATED: {}", campaign.enemies_killed);
+            if let Some(mission) = campaign.current_mission() {
+                if mission.kill_count_target > 0 {
+                    let check = if campaign.enemies_killed >= mission.kill_count_target {
+                        " \u{2713}"
+                    } else {
+                        ""
+                    };
+                    **text = format!(
+                        "KILLS: {}/{}{}",
+                        campaign.enemies_killed, mission.kill_count_target, check
+                    );
+                } else {
+                    **text = format!("ENEMIES DEFEATED: {}", campaign.enemies_killed);
+                }
+            } else {
+                **text = String::new();
+            }
         } else {
             **text = String::new();
         }

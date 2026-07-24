@@ -29,6 +29,7 @@ impl Plugin for CampaignPlugin {
             (
                 update_mission_timer,
                 check_timed_survival,
+                check_kill_count,
                 check_wave_complete,
                 spawn_next_wave,
             )
@@ -135,6 +136,31 @@ fn check_timed_survival(
         info!(
             "Timed survival complete: {:.1}s / {:.1}s",
             campaign.mission_timer, mission.timed_survival_seconds
+        );
+        next_state.set(GameState::StageComplete);
+    }
+}
+
+/// Check if kill-count objective is complete
+fn check_kill_count(
+    campaign: Res<CampaignState>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if !campaign.in_mission {
+        return;
+    }
+
+    let Some(mission) = campaign.current_mission() else {
+        return;
+    };
+
+    if mission.kill_count_target > 0
+        && campaign.enemies_killed >= mission.kill_count_target
+        && !campaign.primary_complete
+    {
+        info!(
+            "Kill count objective complete: {}/{} enemies destroyed",
+            campaign.enemies_killed, mission.kill_count_target
         );
         next_state.set(GameState::StageComplete);
     }
