@@ -2,7 +2,7 @@
 //!
 //! UI screens shown after mission completion and campaign victory.
 
-use super::campaign::CGCampaignState;
+use super::campaign::{CGCampaignState, VerticalSliceMode};
 use crate::core::{Faction, GameSession, GameState};
 use crate::systems::JoystickState;
 use bevy::prelude::*;
@@ -145,18 +145,24 @@ pub fn cg_stage_complete_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<JoystickState>,
     mut cg_campaign: ResMut<CGCampaignState>,
+    slice_mode: Res<VerticalSliceMode>,
     mut transitions: EventWriter<crate::ui::TransitionEvent>,
 ) {
     if keyboard.just_pressed(KeyCode::Space)
         || keyboard.just_pressed(KeyCode::Enter)
         || joystick.confirm()
     {
-        // Advance to next mission (returns false if campaign complete)
-        if cg_campaign.complete_mission() {
+        // Advance to next mission (returns false if campaign/slice complete)
+        if cg_campaign.complete_mission(*slice_mode) {
             // More missions available
             transitions.send(crate::ui::TransitionEvent::to(GameState::Playing));
+        } else if slice_mode.is_slice() {
+            // Vertical slice complete — show slice end screen
+            transitions.send(crate::ui::TransitionEvent::slow(
+                GameState::SliceComplete,
+            ));
         } else {
-            // Campaign complete!
+            // Full campaign complete!
             transitions.send(crate::ui::TransitionEvent::slow(GameState::Victory));
         }
     }
@@ -524,6 +530,155 @@ pub fn cg_victory_input(
 }
 
 pub fn despawn_cg_victory(mut commands: Commands, query: Query<Entity, With<CGVictoryRoot>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+// ============================================================================
+// Vertical Slice Complete Screen
+// ============================================================================
+
+/// Marker for vertical slice complete screen
+#[derive(Component)]
+pub struct CGSliceCompleteRoot;
+
+/// Spawn "Vertical Slice Complete" screen shown after Mission 3 in slice mode
+pub fn spawn_cg_slice_complete(
+    mut commands: Commands,
+    score: Res<crate::core::ScoreSystem>,
+    session: Res<GameSession>,
+    cg_campaign: Res<CGCampaignState>,
+) {
+    let faction_color = match session.player_faction {
+        Faction::Caldari => Color::srgb(0.2, 0.6, 1.0),
+        Faction::Gallente => Color::srgb(0.3, 0.9, 0.4),
+        _ => Color::WHITE,
+    };
+
+    let mission_name = cg_campaign
+        .current_mission()
+        .map(|m| m.name)
+        .unwrap_or("MISSION 3");
+
+    commands
+        .spawn((
+            CGSliceCompleteRoot,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(15.0),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.02, 0.08, 0.95)),
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("VERTICAL SLICE COMPLETE"),
+                TextFont {
+                    font_size: 48.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.3, 1.0, 0.3)),
+            ));
+
+            parent.spawn((
+                Text::new(format!("{} — Victory", mission_name)),
+                TextFont {
+                    font_size: 28.0,
+                    ..default()
+                },
+                TextColor(faction_color),
+            ));
+
+            parent.spawn(Node {
+                height: Val::Px(20.0),
+                ..default()
+            });
+
+            parent.spawn((
+                Text::new(format!("Score: {}", score.score)),
+                TextFont {
+                    font_size: 24.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+
+            parent.spawn((
+                Text::new(format!("Best Chain: {}x", score.chain)),
+                TextFont {
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+            ));
+
+            parent.spawn(Node {
+                height: Val::Px(30.0),
+                ..default()
+            });
+
+            parent.spawn((
+                Text::new("Thank you for playing the Rebellion demo."),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+            ));
+
+            parent.spawn((
+                Text::new("The full campaign is coming soon."),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+            ));
+
+            parent.spawn(Node {
+                height: Val::Px(40.0),
+                ..default()
+            });
+
+            parent.spawn((
+                Text::new("Press SPACE or ENTER for Main Menu"),
+                TextFont {
+                    font_size: 16.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.5, 0.5, 0.5)),
+            ));
+        });
+}
+
+/// Handle input on slice complete screen
+pub fn cg_slice_complete_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    joystick: Res<JoystickState>,
+    mut cg_campaign: ResMut<CGCampaignState>,
+    mut transitions: EventWriter<crate::ui::TransitionEvent>,
+) {
+    if keyboard.just_pressed(KeyCode::Space)
+        || keyboard.just_pressed(KeyCode::Enter)
+        || joystick.confirm()
+        || keyboard.just_pressed(KeyCode::Escape)
+        || joystick.back()
+    {
+        *cg_campaign = CGCampaignState::default();
+        transitions.send(crate::ui::TransitionEvent::to(GameState::MainMenu));
+    }
+}
+
+/// Despawn slice complete screen
+pub fn despawn_cg_slice_complete(
+    mut commands: Commands,
+    query: Query<Entity, With<CGSliceCompleteRoot>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }

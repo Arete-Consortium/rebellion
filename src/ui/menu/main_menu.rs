@@ -18,7 +18,7 @@ pub(crate) fn spawn_main_menu(
     save_data: Res<SaveData>,
 ) {
     selection.index = 0;
-    selection.total = 4; // PLAY, UPGRADES, OPTIONS, QUIT
+    selection.total = 4; // PLAY SLICE, UPGRADES, OPTIONS, QUIT
 
     // Get best high score across all faction pairs
     let best_score = save_data
@@ -69,7 +69,7 @@ pub(crate) fn spawn_main_menu(
             });
 
             // Menu buttons
-            spawn_menu_item(parent, "PLAY", 0);
+            spawn_menu_item(parent, "PLAY VERTICAL SLICE", 0);
             spawn_menu_item(parent, "UPGRADES", 1);
             spawn_menu_item(parent, "OPTIONS", 2);
             spawn_menu_item(parent, "QUIT", 3);
@@ -134,7 +134,7 @@ pub(crate) fn spawn_main_menu(
             ));
 
             parent.spawn((
-                Text::new("v0.5.0 - Liberation"),
+                Text::new("v2.1.0 — Vertical Slice"),
                 TextFont {
                     font_size: 12.0,
                     ..default()

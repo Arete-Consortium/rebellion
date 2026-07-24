@@ -388,8 +388,32 @@ pub enum NightmareEvent {
     SpawnBoss(NightmareBoss),
 }
 
+/// When active, limits the Caldari-Gallente campaign to the first 3 missions
+/// for vertical slice / demo purposes.
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VerticalSliceMode {
+    #[default]
+    /// Full 5-mission campaign (default)
+    FullCampaign,
+    /// Slice mode: missions 1–3 only
+    Slice,
+}
+
+impl VerticalSliceMode {
+    pub fn is_slice(&self) -> bool {
+        matches!(self, VerticalSliceMode::Slice)
+    }
+
+    pub fn max_mission_index(&self) -> usize {
+        match self {
+            VerticalSliceMode::FullCampaign => CG_MISSIONS.len() - 1,
+            VerticalSliceMode::Slice => 2, // Index 2 = Mission 3
+        }
+    }
+}
+
 /// Campaign state for Caldari/Gallente module
-#[derive(Debug, Clone, Resource, Default)]
+#[derive(Resource, Debug, Clone, Default)]
 pub struct CGCampaignState {
     pub mission_index: usize,
     pub current_wave: u32,
@@ -423,7 +447,10 @@ impl CGCampaignState {
         self.boss_defeated = false;
     }
 
-    pub fn complete_mission(&mut self) -> bool {
+    /// Complete current mission. Returns true if more missions remain.
+    /// When `slice_mode` is Slice, returns false after Mission 3 to signal
+    /// vertical slice completion.
+    pub fn complete_mission(&mut self, slice_mode: VerticalSliceMode) -> bool {
         self.in_mission = false;
 
         // Check for T3 unlock
@@ -433,11 +460,12 @@ impl CGCampaignState {
             }
         }
 
-        if self.mission_index + 1 < CG_MISSIONS.len() {
+        let max_index = slice_mode.max_mission_index();
+        if self.mission_index < max_index {
             self.mission_index += 1;
             true
         } else {
-            false // Campaign complete
+            false // Campaign (or slice) complete
         }
     }
 

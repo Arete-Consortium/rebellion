@@ -24,6 +24,7 @@ pub enum GameState {
     BossIntro,
     BossFight,
     StageComplete,
+    SliceComplete, // Vertical slice finished — shown after Mission 3 in slice mode
     GameOver,
     Victory,
     Paused,

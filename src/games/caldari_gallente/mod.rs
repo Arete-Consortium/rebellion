@@ -17,7 +17,7 @@ pub mod mode_select;
 pub mod nightmare;
 pub mod ships;
 
-pub use campaign::{CGCampaignState, ShiigeruNightmare};
+pub use campaign::{CGCampaignState, ShiigeruNightmare, VerticalSliceMode};
 pub use last_stand::LastStandState;
 pub use ships::*;
 
@@ -75,6 +75,7 @@ impl Plugin for CaldariGallentePlugin {
         app.init_resource::<ShiigeruNightmare>();
         app.init_resource::<CGCampaignState>();
         app.init_resource::<LastStandState>();
+        app.init_resource::<VerticalSliceMode>();
 
         // CG Campaign systems - run instead of main campaign when CG module is active
         // Skip when nightmare mode or Last Stand mode is active
@@ -203,6 +204,22 @@ impl Plugin for CaldariGallentePlugin {
         .add_systems(
             OnExit(GameState::Victory),
             cg_screens::despawn_cg_victory.run_if(is_caldari_gallente),
+        );
+
+        // Vertical Slice Complete screen
+        app.add_systems(
+            OnEnter(GameState::SliceComplete),
+            cg_screens::spawn_cg_slice_complete.run_if(is_caldari_gallente),
+        )
+        .add_systems(
+            Update,
+            cg_screens::cg_slice_complete_input
+                .run_if(in_state(GameState::SliceComplete))
+                .run_if(is_caldari_gallente),
+        )
+        .add_systems(
+            OnExit(GameState::SliceComplete),
+            cg_screens::despawn_cg_slice_complete.run_if(is_caldari_gallente),
         );
     }
 }
