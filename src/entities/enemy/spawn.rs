@@ -35,20 +35,20 @@ pub fn spawn_enemy(
         24690 => ("Harbinger", 400.0, 50.0, 500, ShipClass::Battlecruiser),
 
         // === CALDARI ===
-        // Frigates
-        603 => ("Merlin", 45.0, 70.0, 100, ShipClass::Frigate),
-        602 => ("Kestrel", 30.0, 100.0, 90, ShipClass::Frigate),
-        583 => ("Condor", 25.0, 130.0, 75, ShipClass::Frigate),
+        // Frigates — bumped from 25–45 to 35–55 for better TTK across all modes
+        603 => ("Merlin", 55.0, 70.0, 100, ShipClass::Frigate),
+        602 => ("Kestrel", 40.0, 100.0, 90, ShipClass::Frigate),
+        583 => ("Condor", 35.0, 130.0, 75, ShipClass::Frigate),
         // Destroyer
         16238 => ("Cormorant", 100.0, 70.0, 200, ShipClass::Destroyer),
         // Battlecruiser
         24688 => ("Drake", 450.0, 45.0, 500, ShipClass::Battlecruiser),
 
         // === GALLENTE ===
-        // Frigates
-        593 => ("Tristan", 35.0, 90.0, 100, ShipClass::Frigate),
-        594 => ("Incursus", 40.0, 85.0, 95, ShipClass::Frigate),
-        608 => ("Atron", 25.0, 130.0, 75, ShipClass::Frigate),
+        // Frigates — bumped from 25–40 to 35–50 for better TTK across all modes
+        593 => ("Tristan", 40.0, 90.0, 100, ShipClass::Frigate),
+        594 => ("Incursus", 50.0, 85.0, 95, ShipClass::Frigate),
+        608 => ("Atron", 35.0, 130.0, 75, ShipClass::Frigate),
         // Destroyer
         16242 => ("Catalyst", 90.0, 75.0, 200, ShipClass::Destroyer),
         // Battlecruiser

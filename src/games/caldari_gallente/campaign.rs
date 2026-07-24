@@ -41,10 +41,12 @@ impl CGBossType {
 
     pub fn health(&self) -> f32 {
         match self {
-            CGBossType::PatrolCommander => 400.0,
-            CGBossType::FleetCommander => 700.0,
-            CGBossType::EliteSquadron => 1000.0,
-            CGBossType::FleetAdmiral => 1500.0,
+            // Vertical-slice tuned: bosses need ~20–30 s TTK to feel like encounters,
+            // not speed bumps. Calibrated against ~80 player DPS.
+            CGBossType::PatrolCommander => 1200.0,
+            CGBossType::FleetCommander => 1800.0,
+            CGBossType::EliteSquadron => 2400.0,
+            CGBossType::FleetAdmiral => 3200.0,
         }
     }
 

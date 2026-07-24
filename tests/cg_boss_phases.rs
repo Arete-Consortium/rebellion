@@ -58,8 +58,10 @@ fn cg_boss_phase_transition() {
 
     spawn_test_player(app.world_mut(), Vec2::new(0.0, 0.0));
 
-    // Spawn boss at full health with high fire rate so it doesn't fire
-    let boss = spawn_test_cg_boss(&mut app.world_mut().commands(), 700.0, 0.0, 10.0);
+    // Spawn boss at full health with high fire rate so it doesn't fire.
+    // Use FleetCommander.max_health (1800) so phase thresholds align.
+    let max_hp = CGBossType::FleetCommander.health();
+    let boss = spawn_test_cg_boss(&mut app.world_mut().commands(), max_hp, 0.0, 10.0);
     app.update(); // flush commands
 
     // Phase 1 — full health, no transition
@@ -74,9 +76,9 @@ fn cg_boss_phase_transition() {
     {
         let mut e = app.world_mut().entity_mut(boss);
         let mut cg = e.get_mut::<CGBoss>().unwrap();
-        cg.health = 420.0;
+        cg.health = max_hp * 0.6;
         let mut stats = e.get_mut::<rebellion::entities::EnemyStats>().unwrap();
-        stats.health = 420.0;
+        stats.health = max_hp * 0.6;
     }
 
     app.world_mut()
@@ -104,9 +106,9 @@ fn cg_boss_phase_transition() {
     {
         let mut e = app.world_mut().entity_mut(boss);
         let mut cg = e.get_mut::<CGBoss>().unwrap();
-        cg.health = 210.0;
+        cg.health = max_hp * 0.3;
         let mut stats = e.get_mut::<rebellion::entities::EnemyStats>().unwrap();
-        stats.health = 210.0;
+        stats.health = max_hp * 0.3;
     }
 
     app.world_mut()
@@ -141,7 +143,7 @@ fn cg_boss_spawns_projectiles_during_boss_fight() {
     };
 
     // Spawn boss with fire_timer near fire_rate
-    let _boss = spawn_test_cg_boss(&mut app.world_mut().commands(), 700.0, 0.79, 0.8);
+    let _boss = spawn_test_cg_boss(&mut app.world_mut().commands(), CGBossType::FleetCommander.health(), 0.79, 0.8);
     app.update(); // flush commands
 
     app.world_mut()
@@ -173,7 +175,8 @@ fn cg_boss_damage_scales_with_difficulty() {
     // Insert Carebear difficulty
     app.world_mut().insert_resource(Difficulty::Carebear);
 
-    let _boss = spawn_test_cg_boss(&mut app.world_mut().commands(), 700.0, 0.79, 0.8);
+    // Spawn at full health so boss stays in phase 1 for predictable damage
+    let _boss = spawn_test_cg_boss(&mut app.world_mut().commands(), CGBossType::FleetCommander.health(), 0.79, 0.8);
     app.update(); // flush commands
 
     app.world_mut()

@@ -121,8 +121,8 @@ pub fn enemy_death_reactions(
             camera_zoom.boss_kill();
             hit_stop.trigger(0.08);
         } else {
-            screen_shake.trigger(3.0, 0.1);
-            hit_stop.trigger(0.02);
+            screen_shake.trigger(4.0, 0.12);
+            hit_stop.trigger(0.04);
         }
     }
 }

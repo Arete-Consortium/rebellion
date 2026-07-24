@@ -168,8 +168,9 @@ pub fn spawn_cg_wave(
     for i in 0..count {
         let type_id = enemy_types[fastrand::usize(..enemy_types.len())];
         let sprite = sprite_cache.get(type_id);
-        let x = (i as f32 - count as f32 / 2.0) * 80.0;
-        let y = 300.0 + 50.0 + (i as f32 * 20.0);
+
+        // Vary spawn positions by wave for visual interest and readability
+        let (x, y) = cg_spawn_position(i, count, wave);
 
         let behavior = match fastrand::u32(0..4) {
             0 => EnemyBehavior::Linear,
@@ -178,7 +179,7 @@ pub fn spawn_cg_wave(
             _ => EnemyBehavior::Weaver,
         };
 
-        spawn_enemy(
+        let entity = spawn_enemy(
             &mut commands,
             type_id,
             Vec2::new(x, y),
@@ -186,9 +187,107 @@ pub fn spawn_cg_wave(
             sprite,
             None,
         );
+
+        // Apply mission-specific scaling for vertical slice tuning
+        apply_cg_mission_scaling(&mut commands, entity, type_id, cg_campaign.mission_index);
     }
 
     cg_campaign.current_wave += 1;
+}
+
+/// Compute a varied spawn position for CG wave enemies.
+/// Wave 1: single line; Wave 2: V-formation; Wave 3+: staggered columns.
+fn cg_spawn_position(i: usize, count: usize, wave: u32) -> (f32, f32) {
+    let spread = (count as f32 * 70.0).min(500.0);
+    let base_x = -spread / 2.0;
+
+    match wave {
+        1 => {
+            // Line formation: flat across top
+            let x = base_x + (i as f32 / count.max(1) as f32) * spread;
+            let y = 320.0 + fastrand::f32() * 40.0;
+            (x, y)
+        }
+        2 => {
+            // V-formation: edges forward, center back
+            let t = i as f32 / count.max(1) as f32;
+            let x = base_x + t * spread;
+            let y_offset = (t - 0.5).abs() * 120.0;
+            let y = 300.0 + y_offset + fastrand::f32() * 20.0;
+            (x, y)
+        }
+        _ => {
+            // Staggered columns
+            let col = i % 3;
+            let row = i / 3;
+            let x = base_x + (col as f32 / 3.0) * spread + fastrand::f32() * 30.0 - 15.0;
+            let y = 280.0 + row as f32 * 50.0 + fastrand::f32() * 30.0;
+            (x, y)
+        }
+    }
+}
+
+/// Overwrite enemy stats for Caldari/Gallente mission scaling.
+/// Call immediately after spawn_enemy() in spawn_cg_wave.
+///
+/// Mission 1 (tutorial): 2x HP, 60% damage — forgiving first contact.
+/// Mission 2: 1.5x HP, 80% damage — gentle ramp.
+/// Mission 3+: baseline stats.
+fn apply_cg_mission_scaling(
+    commands: &mut Commands,
+    entity: Entity,
+    type_id: u32,
+    mission_index: usize,
+) {
+    let hp_mult = match mission_index {
+        0 => 2.0,
+        1 => 1.5,
+        _ => 1.0,
+    };
+    let dmg_mult = match mission_index {
+        0 => 0.6,
+        1 => 0.8,
+        _ => 1.0,
+    };
+
+    let (name, base_hp, speed, score) = match type_id {
+        583 => ("Condor", 25.0, 130.0, 75),
+        602 => ("Kestrel", 30.0, 100.0, 90),
+        603 => ("Merlin", 45.0, 70.0, 100),
+        593 => ("Tristan", 35.0, 90.0, 100),
+        594 => ("Incursus", 40.0, 85.0, 95),
+        608 => ("Atron", 25.0, 130.0, 75),
+        _ => return,
+    };
+
+    let scaled_hp = base_hp * hp_mult;
+    commands.entity(entity).insert(crate::entities::EnemyStats {
+        type_id,
+        name: name.to_string(),
+        health: scaled_hp,
+        max_health: scaled_hp,
+        speed,
+        score_value: score,
+        is_boss: false,
+        liberation_value: 1,
+    });
+
+    let (weapon_type, fire_rate, base_dmg, bullet_speed) = match type_id {
+        603 => (crate::core::WeaponType::Railgun, 0.6, 18.0, 350.0),
+        602 | 583 => (crate::core::WeaponType::MissileLauncher, 0.5, 20.0, 180.0),
+        593 | 594 | 608 => (crate::core::WeaponType::Drone, 1.2, 8.0, 200.0),
+        _ => return,
+    };
+
+    let scaled_dmg = base_dmg * dmg_mult;
+    commands.entity(entity).insert(crate::entities::EnemyWeapon {
+        weapon_type,
+        fire_rate,
+        damage: scaled_dmg,
+        bullet_speed,
+        cooldown: 0.5 + fastrand::f32() * 1.0,
+        pattern: crate::entities::FiringPattern::Single,
+    });
 }
 
 /// Spawn CG boss for current mission

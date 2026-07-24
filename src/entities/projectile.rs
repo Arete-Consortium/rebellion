@@ -682,37 +682,37 @@ pub fn spawn_enemy_projectile_typed(
         WeaponType::Laser => (
             DamageType::EM,
             Color::srgb(1.0, 0.2, 0.2), // Amarr red laser
-            Vec2::new(3.0, 16.0),       // Beam shape
+            Vec2::new(4.0, 22.0),       // Beam shape — thicker, longer for readability
         ),
         WeaponType::Railgun => (
             DamageType::Kinetic,
             Color::srgb(0.4, 0.8, 1.0), // Caldari cyan
-            Vec2::new(4.0, 10.0),       // Fast bolt
+            Vec2::new(5.0, 14.0),       // Fast bolt — larger so it reads at speed
         ),
         WeaponType::MissileLauncher => (
             DamageType::Explosive,
             Color::srgb(1.0, 0.5, 0.15), // Orange missile
-            Vec2::new(6.0, 8.0),         // Larger missile
+            Vec2::new(8.0, 12.0),        // Larger missile — must be seen to be dodged
         ),
         WeaponType::Drone => (
             DamageType::Thermal,
             Color::srgb(0.5, 1.0, 0.4), // Gallente green
-            Vec2::new(5.0, 5.0),        // Round drone shot
+            Vec2::new(7.0, 7.0),        // Round drone shot — bigger for visibility
         ),
         WeaponType::Autocannon | WeaponType::Artillery => (
             DamageType::Kinetic,
             Color::srgb(1.0, 0.8, 0.3), // Minmatar yellow/orange
-            Vec2::new(4.0, 8.0),        // Bullet shape
+            Vec2::new(5.0, 11.0),       // Bullet shape
         ),
         WeaponType::Disintegrator => (
             DamageType::Thermal,
             Color::srgb(0.9, 0.3, 0.0), // Triglavian orange-red beam
-            Vec2::new(3.0, 20.0),       // Long beam shape
+            Vec2::new(4.0, 26.0),       // Long beam shape
         ),
         WeaponType::Vorton => (
             DamageType::EM,
             Color::srgb(0.6, 0.7, 1.0), // EDENCOM blue-white arc
-            Vec2::new(5.0, 12.0),       // Wide arc shape
+            Vec2::new(7.0, 16.0),       // Wide arc shape
         ),
     };
 
