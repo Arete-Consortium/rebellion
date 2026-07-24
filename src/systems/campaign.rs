@@ -117,7 +117,7 @@ fn update_mission_timer(time: Res<Time>, mut campaign: ResMut<CampaignState>) {
 }
 
 /// Check if timed survival objective is complete
-fn check_timed_survival(
+pub(crate) fn check_timed_survival(
     campaign: Res<CampaignState>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
@@ -142,7 +142,7 @@ fn check_timed_survival(
 }
 
 /// Check if kill-count objective is complete
-fn check_kill_count(
+pub(crate) fn check_kill_count(
     campaign: Res<CampaignState>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
