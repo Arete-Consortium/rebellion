@@ -141,6 +141,7 @@ pub fn player_hit_reactions(
     mut dialogue_events: EventWriter<DialogueEvent>,
     mut rumble_events: EventWriter<RumbleRequest>,
     mut screen_shake: ResMut<ScreenShake>,
+    mut hit_stop: ResMut<HitStop>,
     mut last_callout: Local<f32>,
     time: Res<Time>,
 ) {
@@ -162,8 +163,9 @@ pub fn player_hit_reactions(
         // Controller rumble on hit
         rumble_events.send(RumbleRequest::player_hit());
 
-        // Screen shake on hit
+        // Screen shake + brief hit-stop on hit for impact weight
         screen_shake.small();
+        hit_stop.small();
 
         // Health callouts (with 8 second cooldown)
         if *last_callout > 8.0 {

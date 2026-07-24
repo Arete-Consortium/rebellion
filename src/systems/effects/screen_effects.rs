@@ -40,7 +40,7 @@ impl ScreenShake {
 
     /// Small shake (player hit)
     pub fn small(&mut self) {
-        self.trigger(5.0, 0.15);
+        self.trigger(4.0, 0.12);
     }
 
     /// Medium shake (enemy explosion)
