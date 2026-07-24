@@ -2,8 +2,8 @@
 
 **Branch**: `feat/triglavian-campaign-20260723`  
 **Date**: 2026-07-23  
-**Status**: Active — all tests passing (319 unit + 21 integration), clippy clean  
-**Last commit**: `dba5d8c` — Abyssal Depths bioadaptive hazard system
+**Status**: Active — all tests passing (326 unit + 35 integration), clippy clean  
+**Last commit**: `729c7da` — KillCount, TimedSurvival, Escort objectives
 
 ---
 
@@ -139,6 +139,31 @@ unplayable boss fights — no input, no damage, no visuals.
   3 integration tests: `elder_fleet_spawns_enemies_on_wave_start`,
   `elder_fleet_spawns_boss_after_waves`,
   `elder_fleet_amarr_campaign_spawns_minmatar_enemies`.
+- [x] **Escort objective system** — `Friendly` marker component + `EscortData`
+  (health, waypoints, movement, speed) in `src/entities/escort.rs`.
+  `EscortPlugin` wired into gameplay with `update_escort_movement` and
+  `despawn_escorts`. `spawn_friendly_escort` helper for campaign spawning.
+  `Mission.escort_must_survive` field; `CampaignState.escort_alive` tracked.
+  `check_escort_survival` system blocks mission completion if escort dies.
+  HUD shows "ESCORT: N%" (cyan) or "ESCORT: DESTROYED" (red).
+  Unit tests: `horizontal_path_points`, `health_fraction`, `take_damage`.
+- [x] **Kill count objective evaluation** — `evaluate_post_wave` now respects
+  `kill_count_target`: does NOT auto-complete on wave clear when kill target
+  is set; transitions only after `check_kill_count` sets `primary_complete`.
+  Unit tests: `evaluate_post_wave_kill_count_ignores_wave_clear_until_target_met`.
+- [x] **Timed survival objective evaluation** — `evaluate_post_wave` respects
+  `timed_survival_seconds`: wave clear does not auto-complete; transition
+  happens only after `check_timed_survival` sets `primary_complete`.
+  Unit tests: `evaluate_post_wave_timed_survival_ignores_wave_clear_until_timer_expires`.
+- [x] **Escort objective evaluation** — `evaluate_post_wave` blocks completion
+  when `escort_must_survive && !escort_alive`. Completes normally when escort
+  survives. Unit tests: `evaluate_post_wave_escort_death_blocks_completion`.
+- [x] **Clippy field_reassign_with_default fixes** — Fixed across `core/campaign.rs`,
+  `games/abyssal_depths/mod.rs`, `games/elder_fleet/ef_campaign.rs`,
+  `games/triglavian_invasion/campaign.rs` (5 locations total).
+- [x] **Elder Fleet boss intro transition test** —
+  `elder_fleet_boss_intro_transitions_to_boss_fight` verifies `BossIntro`
+  → `BossFight` and `BossState::Intro` → `Battle`.
 
 ---
 
