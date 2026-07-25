@@ -1,0 +1,196 @@
+//! Canonical ship hull registry.
+//!
+//! This module owns visual identity only:
+//! type ID, canonical name, faction, class, sprite path, orientation,
+//! presentation scale, and hardpoints.
+//!
+//! Combat balance remains in separate gameplay data.
+
+use bevy::prelude::*;
+use serde::Deserialize;
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(transparent)]
+pub struct ShipTypeId(pub u32);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HullFaction {
+    Minmatar,
+    Amarr,
+    Caldari,
+    Gallente,
+    Edencom,
+    Triglavian,
+    Guristas,
+    Concord,
+    Pirate,
+    Neutral,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HullClass {
+    Frigate,
+    AssaultFrigate,
+    Interceptor,
+    Destroyer,
+    TacticalDestroyer,
+    CommandDestroyer,
+    Cruiser,
+    HeavyAssaultCruiser,
+    Battlecruiser,
+    Battleship,
+    Transport,
+    Carrier,
+    Titan,
+    Drone,
+    Structure,
+    Other,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SpriteSpec {
+    pub path: String,
+    pub source: String,
+    pub format: String,
+    pub orientation: String,
+    pub rotation_correction_degrees: f32,
+    pub visual_center: [f32; 2],
+    pub alpha_required: bool,
+    pub approved_sha256: Option<String>,
+    pub approved_dhash: Option<String>,
+    pub crop_padding_percent: Option<f32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PresentationSpec {
+    pub gameplay_size: f32,
+    pub player_scale: f32,
+    pub ui_scale: f32,
+    pub boss_scale: f32,
+    pub tint_mode: String,
+    pub interpolation: String,
+    pub engine_offset: Option<[f32; 2]>,
+    pub shadow_scale: Option<f32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct HardpointSpec {
+    pub position: [f32; 2],
+    pub direction_degrees: Option<f32>,
+    pub size: Option<f32>,
+    pub tag: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct Hardpoints {
+    #[serde(default)]
+    pub engines: Vec<HardpointSpec>,
+    #[serde(default)]
+    pub weapons: Vec<HardpointSpec>,
+    #[serde(default)]
+    pub damage: Vec<HardpointSpec>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ShipHullSpec {
+    pub type_id: u32,
+    pub slug: String,
+    pub name: String,
+    pub faction: HullFaction,
+    pub class: HullClass,
+    pub sprite: SpriteSpec,
+    pub presentation: PresentationSpec,
+    #[serde(default)]
+    pub hardpoints: Hardpoints,
+    #[serde(default)]
+    pub roles: Vec<String>,
+    #[serde(default)]
+    pub campaigns: Vec<String>,
+    #[serde(default)]
+    pub aliases: Vec<String>,
+    pub status: String,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ShipManifest {
+    manifest_version: String,
+    project: String,
+    asset_root: String,
+    ships: Vec<ShipHullSpec>,
+}
+
+#[derive(Resource, Debug, Default)]
+pub struct ShipHullRegistry {
+    by_id: HashMap<ShipTypeId, ShipHullSpec>,
+}
+
+impl ShipHullRegistry {
+    pub fn get(&self, type_id: u32) -> Option<&ShipHullSpec> {
+        self.by_id.get(&ShipTypeId(type_id))
+    }
+
+    pub fn require(&self, type_id: u32) -> &ShipHullSpec {
+        self.get(type_id).unwrap_or_else(|| {
+            panic!("Hull type ID {type_id} is absent from ship_manifest.json")
+        })
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &ShipHullSpec> {
+        self.by_id.values()
+    }
+
+    fn from_embedded_manifest() -> Self {
+        // Embedding keeps native and WASM behavior identical.
+        let raw = include_str!("../../assets/ships/ship_manifest.json");
+        let manifest: ShipManifest =
+            serde_json::from_str(raw).expect("ship_manifest.json must deserialize");
+
+        assert_eq!(manifest.project, "Rebellion");
+        let mut by_id = HashMap::with_capacity(manifest.ships.len());
+
+        for hull in manifest.ships {
+            let previous = by_id.insert(ShipTypeId(hull.type_id), hull);
+            assert!(previous.is_none(), "duplicate ship type ID in manifest");
+        }
+
+        Self { by_id }
+    }
+}
+
+pub struct ShipHullRegistryPlugin;
+
+impl Plugin for ShipHullRegistryPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(ShipHullRegistry::from_embedded_manifest());
+    }
+}
+
+/// Load every declared gameplay sprite through Bevy's AssetServer.
+/// This replaces the hand-maintained SHIPS_TO_LOAD list.
+pub fn queue_ship_sprites(
+    registry: Res<ShipHullRegistry>,
+    asset_server: Res<AssetServer>,
+    mut cache: ResMut<crate::assets::ShipSpriteCache>,
+) {
+    cache.sprites.clear();
+
+    for hull in registry.iter() {
+        // AssetServer paths are relative to assets/, while the manifest uses
+        // repository-root paths for auditability.
+        let asset_path = hull
+            .sprite
+            .path
+            .strip_prefix("assets/")
+            .unwrap_or(&hull.sprite.path);
+
+        let handle: Handle<Image> = asset_server.load(asset_path.to_owned());
+        cache.sprites.insert(hull.type_id, handle);
+    }
+
+    cache.ready = true;
+}

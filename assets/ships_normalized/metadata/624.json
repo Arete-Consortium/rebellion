@@ -1,0 +1,37 @@
+{
+  "type_id": 624,
+  "class_": "cruiser",
+  "source_size": [
+    514,
+    514
+  ],
+  "output_size": 512,
+  "rotation_degrees": 89.98432173879446,
+  "visual_center": [
+    0.255,
+    -0.002
+  ],
+  "engine_hardpoints": [
+    [
+      -0.18,
+      0.35
+    ],
+    [
+      0.18,
+      0.35
+    ]
+  ],
+  "weapon_hardpoints": [
+    [
+      -0.22,
+      -0.1
+    ],
+    [
+      0.22,
+      -0.1
+    ]
+  ],
+  "collision_scale": 0.52,
+  "shadow_scale": 0.85,
+  "display_scale": 1.0
+}

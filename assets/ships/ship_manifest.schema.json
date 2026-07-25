@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arete-consortium.github.io/rebellion/schemas/ship-manifest.schema.json",
+  "title": "Rebellion Ship Hull Manifest",
+  "description": "Canonical visual identity and presentation metadata for every ship hull used by Rebellion.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version",
+    "project",
+    "asset_root",
+    "ships"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "manifest_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "project": {
+      "const": "Rebellion"
+    },
+    "asset_root": {
+      "type": "string",
+      "minLength": 1,
+      "default": "assets/ships"
+    },
+    "defaults": {
+      "$ref": "#/$defs/defaults"
+    },
+    "ships": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/ship"
+      }
+    }
+  },
+  "$defs": {
+    "vec2": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        },
+        {
+          "type": "number",
+          "minimum": -1.0,
+          "maximum": 1.0
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "pixel_size": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "integer",
+          "minimum": 1
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "orientation": {
+          "const": "nose_up"
+        },
+        "alpha_required": {
+          "type": "boolean",
+          "default": true
+        },
+        "interpolation": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "nearest"
+          ],
+          "default": "linear"
+        },
+        "tint_mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "subtle_faction",
+            "full_faction"
+          ],
+          "default": "none"
+        }
+      }
+    },
+    "sprite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "source",
+        "format",
+        "orientation",
+        "rotation_correction_degrees",
+        "visual_center",
+        "alpha_required"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^assets/ships/[0-9]+\\.png$"
+        },
+        "source_path": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "bundled",
+            "custom",
+            "generated",
+            "ccp_image_server",
+            "eve_ship_sprites"
+          ]
+        },
+        "format": {
+          "const": "png"
+        },
+        "orientation": {
+          "type": "string",
+          "enum": [
+            "nose_up",
+            "nose_down",
+            "nose_left",
+            "nose_right",
+            "unknown"
+          ]
+        },
+        "rotation_correction_degrees": {
+          "type": "number",
+          "minimum": -360.0,
+          "maximum": 360.0
+        },
+        "visual_center": {
+          "$ref": "#/$defs/vec2"
+        },
+        "expected_canvas": {
+          "$ref": "#/$defs/pixel_size"
+        },
+        "alpha_required": {
+          "type": "boolean"
+        },
+        "approved_sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "approved_dhash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{16}$"
+        },
+        "crop_padding_percent": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 45.0,
+          "default": 8.0
+        }
+      }
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gameplay_size",
+        "player_scale",
+        "ui_scale",
+        "boss_scale",
+        "tint_mode",
+        "interpolation"
+      ],
+      "properties": {
+        "gameplay_size": {
+          "type": "number",
+          "exclusiveMinimum": 0.0
+        },
+        "player_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0.0
+        },
+        "ui_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0.0
+        },
+        "boss_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0.0
+        },
+        "tint_mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "subtle_faction",
+            "full_faction"
+          ]
+        },
+        "interpolation": {
+          "type": "string",
+          "enum": [
+            "linear",
+            "nearest"
+          ]
+        },
+        "engine_offset": {
+          "$ref": "#/$defs/vec2"
+        },
+        "shadow_scale": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 3.0
+        }
+      }
+    },
+    "hardpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "position"
+      ],
+      "properties": {
+        "position": {
+          "$ref": "#/$defs/vec2"
+        },
+        "direction_degrees": {
+          "type": "number",
+          "minimum": -360.0,
+          "maximum": 360.0
+        },
+        "size": {
+          "type": "number",
+          "exclusiveMinimum": 0.0
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "hardpoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "engines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hardpoint"
+          }
+        },
+        "weapons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hardpoint"
+          }
+        },
+        "damage": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hardpoint"
+          }
+        }
+      }
+    },
+    "ship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type_id",
+        "slug",
+        "name",
+        "faction",
+        "class",
+        "sprite",
+        "presentation",
+        "roles",
+        "status"
+      ],
+      "properties": {
+        "type_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999999999
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "faction": {
+          "type": "string",
+          "enum": [
+            "minmatar",
+            "amarr",
+            "caldari",
+            "gallente",
+            "edencom",
+            "triglavian",
+            "guristas",
+            "concord",
+            "pirate",
+            "neutral",
+            "unknown"
+          ]
+        },
+        "class": {
+          "type": "string",
+          "enum": [
+            "frigate",
+            "assault_frigate",
+            "interceptor",
+            "destroyer",
+            "tactical_destroyer",
+            "command_destroyer",
+            "cruiser",
+            "heavy_assault_cruiser",
+            "battlecruiser",
+            "battleship",
+            "transport",
+            "carrier",
+            "titan",
+            "drone",
+            "structure",
+            "other"
+          ]
+        },
+        "sprite": {
+          "$ref": "#/$defs/sprite"
+        },
+        "presentation": {
+          "$ref": "#/$defs/presentation"
+        },
+        "hardpoints": {
+          "$ref": "#/$defs/hardpoints"
+        },
+        "roles": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "player",
+              "enemy",
+              "boss",
+              "carrier",
+              "wingman",
+              "menu",
+              "cinematic",
+              "background"
+            ]
+          }
+        },
+        "campaigns": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "aliases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "approved",
+            "pending_review",
+            "missing",
+            "deprecated"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

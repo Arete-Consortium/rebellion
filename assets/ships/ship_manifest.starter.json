@@ -1,0 +1,2534 @@
+{
+  "$schema": "./ship_manifest.schema.json",
+  "manifest_version": "1.0.0",
+  "project": "Rebellion",
+  "asset_root": "assets/ships",
+  "defaults": {
+    "orientation": "nose_up",
+    "alpha_required": true,
+    "interpolation": "linear",
+    "tint_mode": "none"
+  },
+  "ships": [
+    {
+      "type_id": 587,
+      "slug": "rifter",
+      "name": "Rifter",
+      "faction": "minmatar",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/587.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 585,
+      "slug": "slasher",
+      "name": "Slasher",
+      "faction": "minmatar",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/585.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 598,
+      "slug": "breacher",
+      "name": "Breacher",
+      "faction": "minmatar",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/598.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11371,
+      "slug": "wolf",
+      "name": "Wolf",
+      "faction": "minmatar",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/11371.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11400,
+      "slug": "jaguar",
+      "name": "Jaguar",
+      "faction": "minmatar",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/11400.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11993,
+      "slug": "muninn",
+      "name": "Muninn",
+      "faction": "minmatar",
+      "class": "heavy_assault_cruiser",
+      "sprite": {
+        "path": "assets/ships/11993.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 100.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 24483,
+      "slug": "nidhoggur",
+      "name": "Nidhoggur",
+      "faction": "minmatar",
+      "class": "carrier",
+      "sprite": {
+        "path": "assets/ships/24483.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 1800.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "carrier",
+        "background",
+        "cinematic"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 589,
+      "slug": "executioner",
+      "name": "Executioner",
+      "faction": "amarr",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/589.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 597,
+      "slug": "punisher",
+      "name": "Punisher",
+      "faction": "amarr",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/597.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 591,
+      "slug": "tormentor",
+      "name": "Tormentor",
+      "faction": "amarr",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/591.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11186,
+      "slug": "crusader",
+      "name": "Crusader",
+      "faction": "amarr",
+      "class": "interceptor",
+      "sprite": {
+        "path": "assets/ships/11186.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 42.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11184,
+      "slug": "malediction",
+      "name": "Malediction",
+      "faction": "amarr",
+      "class": "interceptor",
+      "sprite": {
+        "path": "assets/ships/11184.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 42.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11393,
+      "slug": "retribution",
+      "name": "Retribution",
+      "faction": "amarr",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/11393.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 16236,
+      "slug": "coercer",
+      "name": "Coercer",
+      "faction": "amarr",
+      "class": "destroyer",
+      "sprite": {
+        "path": "assets/ships/16236.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 68.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 34317,
+      "slug": "confessor",
+      "name": "Confessor",
+      "faction": "amarr",
+      "class": "tactical_destroyer",
+      "sprite": {
+        "path": "assets/ships/34317.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 62.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 624,
+      "slug": "maller",
+      "name": "Maller",
+      "faction": "amarr",
+      "class": "cruiser",
+      "sprite": {
+        "path": "assets/ships/624.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 94.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 12019,
+      "slug": "sacrilege",
+      "name": "Sacrilege",
+      "faction": "amarr",
+      "class": "heavy_assault_cruiser",
+      "sprite": {
+        "path": "assets/ships/12019.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 100.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 24690,
+      "slug": "harbinger",
+      "name": "Harbinger",
+      "faction": "amarr",
+      "class": "battlecruiser",
+      "sprite": {
+        "path": "assets/ships/24690.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 150.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 2006,
+      "slug": "apocalypse",
+      "name": "Apocalypse",
+      "faction": "amarr",
+      "class": "battleship",
+      "sprite": {
+        "path": "assets/ships/2006.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 182.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 24692,
+      "slug": "abaddon",
+      "name": "Abaddon",
+      "faction": "amarr",
+      "class": "battleship",
+      "sprite": {
+        "path": "assets/ships/24692.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 182.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 20185,
+      "slug": "bestower",
+      "name": "Bestower",
+      "faction": "amarr",
+      "class": "transport",
+      "sprite": {
+        "path": "assets/ships/20185.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 120.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 23757,
+      "slug": "archon",
+      "name": "Archon",
+      "faction": "amarr",
+      "class": "carrier",
+      "sprite": {
+        "path": "assets/ships/23757.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 1800.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "carrier",
+        "boss",
+        "background",
+        "cinematic"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 602,
+      "slug": "kestrel",
+      "name": "Kestrel",
+      "faction": "caldari",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/602.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 603,
+      "slug": "merlin",
+      "name": "Merlin",
+      "faction": "caldari",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/603.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 583,
+      "slug": "condor",
+      "name": "Condor",
+      "faction": "caldari",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/583.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11381,
+      "slug": "hawk",
+      "name": "Hawk",
+      "faction": "caldari",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/11381.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11387,
+      "slug": "harpy",
+      "name": "Harpy",
+      "faction": "caldari",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/11387.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 16238,
+      "slug": "cormorant",
+      "name": "Cormorant",
+      "faction": "caldari",
+      "class": "destroyer",
+      "sprite": {
+        "path": "assets/ships/16238.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 68.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 35683,
+      "slug": "jackdaw",
+      "name": "Jackdaw",
+      "faction": "caldari",
+      "class": "tactical_destroyer",
+      "sprite": {
+        "path": "assets/ships/35683.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 62.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 621,
+      "slug": "caracal",
+      "name": "Caracal",
+      "faction": "caldari",
+      "class": "cruiser",
+      "sprite": {
+        "path": "assets/ships/621.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 94.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 24688,
+      "slug": "drake",
+      "name": "Drake",
+      "faction": "caldari",
+      "class": "battlecruiser",
+      "sprite": {
+        "path": "assets/ships/24688.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 150.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 23915,
+      "slug": "chimera",
+      "name": "Chimera",
+      "faction": "caldari",
+      "class": "carrier",
+      "sprite": {
+        "path": "assets/ships/23915.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 1800.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "carrier",
+        "background",
+        "cinematic"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 3764,
+      "slug": "leviathan",
+      "name": "Leviathan",
+      "faction": "caldari",
+      "class": "titan",
+      "sprite": {
+        "path": "assets/ships/3764.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 2200.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "boss",
+        "cinematic",
+        "background"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 593,
+      "slug": "tristan",
+      "name": "Tristan",
+      "faction": "gallente",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/593.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 594,
+      "slug": "incursus",
+      "name": "Incursus",
+      "faction": "gallente",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/594.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 608,
+      "slug": "atron",
+      "name": "Atron",
+      "faction": "gallente",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/608.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11373,
+      "slug": "enyo",
+      "name": "Enyo",
+      "faction": "gallente",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/11373.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 11377,
+      "slug": "ishkur",
+      "name": "Ishkur",
+      "faction": "gallente",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/11377.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 16242,
+      "slug": "catalyst",
+      "name": "Catalyst",
+      "faction": "gallente",
+      "class": "destroyer",
+      "sprite": {
+        "path": "assets/ships/16242.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 68.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 35685,
+      "slug": "hecate",
+      "name": "Hecate",
+      "faction": "gallente",
+      "class": "tactical_destroyer",
+      "sprite": {
+        "path": "assets/ships/35685.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 62.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 24700,
+      "slug": "myrmidon",
+      "name": "Myrmidon",
+      "faction": "gallente",
+      "class": "battlecruiser",
+      "sprite": {
+        "path": "assets/ships/24700.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 150.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 23911,
+      "slug": "thanatos",
+      "name": "Thanatos",
+      "faction": "gallente",
+      "class": "carrier",
+      "sprite": {
+        "path": "assets/ships/23911.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 1800.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "carrier",
+        "background",
+        "cinematic"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 54731,
+      "slug": "skybreaker",
+      "name": "Skybreaker",
+      "faction": "edencom",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/54731.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 54732,
+      "slug": "stormbringer",
+      "name": "Stormbringer",
+      "faction": "edencom",
+      "class": "cruiser",
+      "sprite": {
+        "path": "assets/ships/54732.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 94.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 54733,
+      "slug": "thunderchild",
+      "name": "Thunderchild",
+      "faction": "edencom",
+      "class": "battleship",
+      "sprite": {
+        "path": "assets/ships/54733.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 182.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "boss",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 47269,
+      "slug": "damavik",
+      "name": "Damavik",
+      "faction": "triglavian",
+      "class": "frigate",
+      "sprite": {
+        "path": "assets/ships/47269.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 47.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 47270,
+      "slug": "vedmak",
+      "name": "Vedmak",
+      "faction": "triglavian",
+      "class": "cruiser",
+      "sprite": {
+        "path": "assets/ships/47270.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 94.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 47271,
+      "slug": "leshak",
+      "name": "Leshak",
+      "faction": "triglavian",
+      "class": "battleship",
+      "sprite": {
+        "path": "assets/ships/47271.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 182.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 49710,
+      "slug": "kikimora",
+      "name": "Kikimora",
+      "faction": "triglavian",
+      "class": "destroyer",
+      "sprite": {
+        "path": "assets/ships/49710.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 68.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 49711,
+      "slug": "drekavac",
+      "name": "Drekavac",
+      "faction": "triglavian",
+      "class": "battlecruiser",
+      "sprite": {
+        "path": "assets/ships/49711.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 150.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 52250,
+      "slug": "nergal",
+      "name": "Nergal",
+      "faction": "triglavian",
+      "class": "assault_frigate",
+      "sprite": {
+        "path": "assets/ships/52250.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 52.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 52252,
+      "slug": "ikitursa",
+      "name": "Ikitursa",
+      "faction": "triglavian",
+      "class": "heavy_assault_cruiser",
+      "sprite": {
+        "path": "assets/ships/52252.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 100.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 52254,
+      "slug": "draugur",
+      "name": "Draugur",
+      "faction": "triglavian",
+      "class": "command_destroyer",
+      "sprite": {
+        "path": "assets/ships/52254.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 68.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "enemy",
+        "boss"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    },
+    {
+      "type_id": 17713,
+      "slug": "gila",
+      "name": "Gila",
+      "faction": "guristas",
+      "class": "cruiser",
+      "sprite": {
+        "path": "assets/ships/17713.png",
+        "source": "bundled",
+        "format": "png",
+        "orientation": "unknown",
+        "rotation_correction_degrees": 0.0,
+        "visual_center": [
+          0.0,
+          0.0
+        ],
+        "alpha_required": true,
+        "crop_padding_percent": 8.0
+      },
+      "presentation": {
+        "gameplay_size": 94.0,
+        "player_scale": 1.15,
+        "ui_scale": 1.0,
+        "boss_scale": 1.0,
+        "tint_mode": "none",
+        "interpolation": "linear",
+        "engine_offset": [
+          0.0,
+          -0.4
+        ],
+        "shadow_scale": 0.85
+      },
+      "hardpoints": {
+        "engines": [],
+        "weapons": [],
+        "damage": []
+      },
+      "roles": [
+        "player",
+        "enemy",
+        "menu"
+      ],
+      "campaigns": [],
+      "aliases": [],
+      "status": "pending_review",
+      "notes": "Seeded from current Rebellion hull references. Visually approve the sprite, orientation, center, and hardpoints before changing status to approved."
+    }
+  ]
+}

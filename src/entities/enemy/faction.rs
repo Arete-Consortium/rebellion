@@ -17,8 +17,8 @@ pub(super) fn get_enemy_color(type_id: u32) -> Color {
         593 | 594 | 608 | 16242 | 24700 => COLOR_GALLENTE,
         // Minmatar - Rust (frigates)
         587 | 585 | 598 => COLOR_MINMATAR,
-        // Triglavian - Crimson (Damavik, Vedmak, Drekavac)
-        47269..=47273 => COLOR_TRIGLAVIAN,
+        // Triglavian - Crimson (Damavik, Vedmak, Leshak, Kikimora, Drekavac, Nergal)
+        47269 | 47270 | 47271 | 49710 | 49711 | 52250 => COLOR_TRIGLAVIAN,
         _ => Color::srgb(0.5, 0.5, 0.5),
     }
 }
@@ -27,15 +27,15 @@ pub(super) fn get_enemy_color(type_id: u32) -> Color {
 pub(super) fn get_faction_engine_trail(type_id: u32) -> EngineTrail {
     match type_id {
         // Amarr - golden engines (frigates, destroyers, battlecruisers)
-        597 | 589 | 591 | 16236 | 24690 | 624 | 2006 | 11373 | 11393 | 34317 | 12019 => {
+        597 | 589 | 591 | 16236 | 24690 | 624 | 2006 | 11393 | 34317 | 12019 => {
             EngineTrail::amarr()
         }
         // Caldari - blue engines
         603 | 602 | 583 | 16238 | 24688 | 11381 | 11387 | 35683 | 621 => EngineTrail::caldari(),
         // Gallente - green engines
-        593 | 594 | 608 | 16242 | 24700 | 11371 | 35685 => EngineTrail::gallente(),
+        593 | 594 | 608 | 16242 | 24700 | 11373 | 35685 => EngineTrail::gallente(),
         // Minmatar - rust engines
-        587 | 585 | 598 | 11400 | 11993 => EngineTrail::minmatar(),
+        587 | 585 | 598 | 11400 | 11993 | 11371 => EngineTrail::minmatar(),
         // EDENCOM — Vorton arc trails
         54731..=54733 => EngineTrail::edencom(),
         // Triglavian — entropic crimson

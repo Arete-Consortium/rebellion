@@ -1,0 +1,1243 @@
+{
+  "stats": {
+    "manifest_hulls": 74,
+    "asset_pngs": 74,
+    "source_reference_ids": 58
+  },
+  "findings": [
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Condor visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/583.png",
+      "line": null,
+      "type_id": 583
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Condor has nontransparent corner pixels.",
+      "path": "assets/ships/583.png",
+      "line": null,
+      "type_id": 583
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Tormentor visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/591.png",
+      "line": null,
+      "type_id": 591
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Tormentor has nontransparent corner pixels.",
+      "path": "assets/ships/591.png",
+      "line": null,
+      "type_id": 591
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Atron visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/608.png",
+      "line": null,
+      "type_id": 608
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Atron has nontransparent corner pixels.",
+      "path": "assets/ships/608.png",
+      "line": null,
+      "type_id": 608
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Leviathan visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/3764.png",
+      "line": null,
+      "type_id": 3764
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Cormorant visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/16238.png",
+      "line": null,
+      "type_id": 16238
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Cormorant has nontransparent corner pixels.",
+      "path": "assets/ships/16238.png",
+      "line": null,
+      "type_id": 16238
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Thanatos visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/23911.png",
+      "line": null,
+      "type_id": 23911
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Thanatos has nontransparent corner pixels.",
+      "path": "assets/ships/23911.png",
+      "line": null,
+      "type_id": 23911
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Chimera visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/23915.png",
+      "line": null,
+      "type_id": 23915
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Chimera has nontransparent corner pixels.",
+      "path": "assets/ships/23915.png",
+      "line": null,
+      "type_id": 23915
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Nidhoggur visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/24483.png",
+      "line": null,
+      "type_id": 24483
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Nidhoggur has nontransparent corner pixels.",
+      "path": "assets/ships/24483.png",
+      "line": null,
+      "type_id": 24483
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Myrmidon visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/24700.png",
+      "line": null,
+      "type_id": 24700
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Myrmidon has nontransparent corner pixels.",
+      "path": "assets/ships/24700.png",
+      "line": null,
+      "type_id": 24700
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Confessor-Alt visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/33818.png",
+      "line": null,
+      "type_id": 33818
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Nergal visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/52250.png",
+      "line": null,
+      "type_id": 52250
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Ikitursa visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/52252.png",
+      "line": null,
+      "type_id": 52252
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Ikitursa has nontransparent corner pixels.",
+      "path": "assets/ships/52252.png",
+      "line": null,
+      "type_id": 52252
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Draugur visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/52254.png",
+      "line": null,
+      "type_id": 52254
+    },
+    {
+      "severity": "warning",
+      "code": "OPAQUE_CORNERS",
+      "message": "Draugur has nontransparent corner pixels.",
+      "path": "assets/ships/52254.png",
+      "line": null,
+      "type_id": 52254
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Skybreaker visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/54731.png",
+      "line": null,
+      "type_id": 54731
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Stormbringer visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/54732.png",
+      "line": null,
+      "type_id": 54732
+    },
+    {
+      "severity": "warning",
+      "code": "CONTENT_TOUCHES_EDGE",
+      "message": "Thunderchild visible pixels touch the canvas edge; clipping is likely.",
+      "path": "assets/ships/54733.png",
+      "line": null,
+      "type_id": 54733
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Imperial Navy Slicer (592) and Exequror (641) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Incursus (594) and Enyo (11373) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Incursus (594) and Ishkur (11377) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Punisher (597) and Omen (625) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Punisher (597) and Muninn (11993) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Punisher (597) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Caracal (605) and Confessor-Alt (33818) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Caracal (605) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Omen (625) and Stabber (643) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Omen (625) and Apocalypse (2006) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Omen (625) and Megathron (11567) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Omen (625) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Omen (625) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Omen (625) and Vedmak (47270) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Stabber (643) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Scorpion (1944) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Apocalypse (2006) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Abaddon (11547) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Megathron (11567) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Tempest (11568) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Catalyst (16242) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Moa (630) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Celestis (640) and Stabber (643) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Celestis (640) and Apocalypse (2006) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Celestis (640) and Megathron (11567) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Celestis (640) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Celestis (640) and Vedmak (47270) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Scorpion (1944) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Apocalypse (2006) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Abaddon (11547) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Megathron (11567) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Catalyst (16242) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Stabber (643) and Vedmak (47270) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Scorpion (1944) and Apocalypse (2006) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Scorpion (1944) and Abaddon (11547) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Scorpion (1944) and Megathron (11567) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Scorpion (1944) and Tempest (11568) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Scorpion (1944) and Catalyst (16242) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Scorpion (1944) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Scorpion (1944) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Apocalypse (2006) and Abaddon (11547) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Apocalypse (2006) and Megathron (11567) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Apocalypse (2006) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Apocalypse (2006) and Catalyst (16242) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Apocalypse (2006) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Apocalypse (2006) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Apocalypse (2006) and Vedmak (47270) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Malediction (11184) and Crusader (11186) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Enyo (11373) and Ishkur (11377) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Retribution (11393) and Muninn (11993) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Abaddon (11547) and Megathron (11567) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Abaddon (11547) and Tempest (11568) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Abaddon (11547) and Catalyst (16242) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Abaddon (11547) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Abaddon (11547) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Megathron (11567) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Megathron (11567) and Catalyst (16242) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Megathron (11567) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Megathron (11567) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Megathron (11567) and Vedmak (47270) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Tempest (11568) and Catalyst (16242) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Tempest (11568) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Tempest (11568) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Muninn (11993) and Bestower (20185) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Coercer (16236) and Bestower (20185) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Catalyst (16242) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Catalyst (16242) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Harbinger (24690) and Ferox (24696) have near-identical perceptual hashes (distance 0). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Prophecy (24694) and Confessor (34317) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Prophecy (24694) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "warning",
+      "code": "NEAR_DUPLICATE_IMAGES",
+      "message": "Confessor (34317) and Vedmak (47270) have near-identical perceptual hashes (distance 2). Verify visually.",
+      "path": null,
+      "line": null,
+      "type_id": null
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Maller is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 586
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Imperial Navy Slicer is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 592
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Caracal is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 605
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Omen is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 625
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Arbitrator is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 626
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Vexor is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 638
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Thorax is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 639
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Celestis is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 640
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Exequror is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 641
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Rupture is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 645
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Raven is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 11566
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Tempest is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 11568
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Thrasher is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 16240
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Bestower is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 20185
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Prophecy is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 24694
+    },
+    {
+      "severity": "info",
+      "code": "MANIFEST_HULL_NOT_REFERENCED",
+      "message": "Confessor-Alt is declared but no explicit source reference was found.",
+      "path": null,
+      "line": null,
+      "type_id": 33818
+    }
+  ],
+  "locks": {
+    "583": {
+      "approved_sha256": "8da7733fe64bea8bd3b4c9f99c4a3e8b4013d0f1d0f30381dd82bea04c4ac98e",
+      "approved_dhash": "6c60f1a44f1f7fff"
+    },
+    "585": {
+      "approved_sha256": "4ade2377208be2faa026c691b9bebc7ac5c2e1a3422e4a8bea9ef0ca2a28d66a",
+      "approved_dhash": "55550f0e0c0c0c0c"
+    },
+    "586": {
+      "approved_sha256": "f306e17c40b3a8dab08a278bde1a7770478a38c0e2d7c5448d69b5702389a703",
+      "approved_dhash": "18181a1b1b181010"
+    },
+    "587": {
+      "approved_sha256": "a01d1e4d2cf5074b896b9a91b263f4fce6554430e7959537463ea4631682053a",
+      "approved_dhash": "410f1755160c0c14"
+    },
+    "589": {
+      "approved_sha256": "bece374490905915e9763a33ed010abb7e9d88f1ed13dc0138a53a8ecaa49414",
+      "approved_dhash": "1616161616161614"
+    },
+    "591": {
+      "approved_sha256": "3e3d6acea4628c79f21d3ad77ebefd62b510b3c32d1956d9d900b00a7ec572a2",
+      "approved_dhash": "e1c1d786d1e1c5c6"
+    },
+    "592": {
+      "approved_sha256": "47e5fb58424e19b44ac24562bdcddc5d9a19a28574cf90dfad1757b91a6ff237",
+      "approved_dhash": "0c0c0c0c0c0e160c"
+    },
+    "593": {
+      "approved_sha256": "aad4b04bf58fdeb729854fcf99e1ed49410b2016a7aafaf0d59c2a7498a3fb1a",
+      "approved_dhash": "1617172b0f161616"
+    },
+    "594": {
+      "approved_sha256": "86ad4975db82aa3d0140c2fba78ce63dd898ce43c9d17f98049bb306168ec08a",
+      "approved_dhash": "0c0406060e0c0c10"
+    },
+    "597": {
+      "approved_sha256": "3cc1208c69e16b8b5292ae1f7869d21e3396ede13d47c19237d8c80a01af8e67",
+      "approved_dhash": "0e0e0e0e0c0c0c0c"
+    },
+    "598": {
+      "approved_sha256": "46adf6d66bf70ef1edbd2944f95955bb84c9316e3756e1abb4c6bcbd669f2af8",
+      "approved_dhash": "080c1816060c0c08"
+    },
+    "602": {
+      "approved_sha256": "e6c619ae449be46857981c70facd18d5db4cbc47c2409d01ca334411947ba9ff",
+      "approved_dhash": "1c1e1f1c1c1f1f18"
+    },
+    "603": {
+      "approved_sha256": "55ff848ca29299eef1973ee45d3154b3094e2c4fbfa13a69be55e74b0521c219",
+      "approved_dhash": "30180c07070c1830"
+    },
+    "605": {
+      "approved_sha256": "0456ea46e2018dd31b657a550cbdde986617e1cc8df8f6a58d139570722b83d1",
+      "approved_dhash": "0c0c0f0f0c0c0c0c"
+    },
+    "608": {
+      "approved_sha256": "8481e6ab0d977aeebb9053e356140cf0c62eb8c313589e7986101ddc6d1f4826",
+      "approved_dhash": "fc7ced868783c160"
+    },
+    "621": {
+      "approved_sha256": "6da4ab13a82f059fca41ca0f046200e288d9de0347a5d8d8a4e25fed68ba5656",
+      "approved_dhash": "0c170f0c0c0c0c08"
+    },
+    "624": {
+      "approved_sha256": "99743e1f4001bf41d1f2dffa313e5d7baf30f9e36af8203d22e6b4f00e24e617",
+      "approved_dhash": "2b4dcc4d0e0e0c0c"
+    },
+    "625": {
+      "approved_sha256": "17199a2a66f6c9f5b8d78edb0de23329f446c701ed0d3f34128421e1d1febcd4",
+      "approved_dhash": "0c0e0e0c0c0c0c0c"
+    },
+    "626": {
+      "approved_sha256": "f1ae03aae26527bc5ca9a37d063141f9aaf333585c4b9eaa220c834e2a40039a",
+      "approved_dhash": "06060707060e0e3e"
+    },
+    "630": {
+      "approved_sha256": "4f6b4d55a62db40f7c31a2e15a30c0fb11de4c6b0cc32ca08cc0e423436d8433",
+      "approved_dhash": "0c0c0c0c0c0c0c04"
+    },
+    "638": {
+      "approved_sha256": "ffb902e9eced7b4d7ee31f570f6e6f78b530b558225c76530579726171711528",
+      "approved_dhash": "0e0e464f4e4e0808"
+    },
+    "639": {
+      "approved_sha256": "a524d42e332fac5e2fa60a287fa5da14477f7e704631e7a43508bc8b8ab3d5f8",
+      "approved_dhash": "040c0e0b33370404"
+    },
+    "640": {
+      "approved_sha256": "d0f03bbea3057f07b5871bf57843819d6aa306f76d386a1166adc7110fa0d663",
+      "approved_dhash": "0c0c0c0c0c0c0808"
+    },
+    "641": {
+      "approved_sha256": "fe749e8598306ad81a29a8d8ebfff92648ed5d6e478dd7c22c447077e0e7fe9e",
+      "approved_dhash": "0c0c0c0c0c16160c"
+    },
+    "643": {
+      "approved_sha256": "68fe6abc97f3ef11e6729945e32f498e0da30ef8429448759ec14daa8c58773e",
+      "approved_dhash": "0c0c0c0c0c0c0c0c"
+    },
+    "645": {
+      "approved_sha256": "1361140a6e055dca2ac8b270242d5f605581aa2413e831a0fb7a3aa0bec48342",
+      "approved_dhash": "180e060e0c0c0c08"
+    },
+    "1944": {
+      "approved_sha256": "a3d9e6e0f4b448082f269fe3bb762de732e075fd90771a73a44908b00b36ce8c",
+      "approved_dhash": "0c0c0c0c0c080c0c"
+    },
+    "2006": {
+      "approved_sha256": "f039ebe08e2070a490fa33470f86d8bb2da7f297f170c806c5feb7ad2727c8da",
+      "approved_dhash": "0c0c0c0c0c0c0c0c"
+    },
+    "3764": {
+      "approved_sha256": "d676ac35367e628d557118c2b1e08d3558468676eaaa9011feca26b512dd2a29",
+      "approved_dhash": "0c0f4d171717170f"
+    },
+    "11184": {
+      "approved_sha256": "eaf6365014c457fefa6a4cb54851c9c10f96b9663084b9e00f52b125e883dbfa",
+      "approved_dhash": "1616161617331616"
+    },
+    "11186": {
+      "approved_sha256": "997acb6017f95445bf1b1efd38a7c7a818653c17924b3d22b4c93afd6fdda93f",
+      "approved_dhash": "1616161617331616"
+    },
+    "11371": {
+      "approved_sha256": "94b2bbaa19a7034200d13eb496b842466983126af46a4bec4dfaafb4a273ea1e",
+      "approved_dhash": "33331716140c0c14"
+    },
+    "11373": {
+      "approved_sha256": "b13d35778e1b660d359a4ae283d637db28a7dd3f1a7b66f0d0ee51d2802a9cd3",
+      "approved_dhash": "0c0406060e0c0c10"
+    },
+    "11377": {
+      "approved_sha256": "0dbf8062f925933ca8c5e33a98d9e4a6e20139cc9d78166c11774cfe99730b6e",
+      "approved_dhash": "0c0406060e0c0c10"
+    },
+    "11381": {
+      "approved_sha256": "c66dd685ec574efb232e8e2f51e7268dadd0f91a26889a289006af2ebe7b3849",
+      "approved_dhash": "02060c1b1f0c0602"
+    },
+    "11387": {
+      "approved_sha256": "1c58a3743c92cb041b7eac3de1fa5cd1ffd888b5fe04c26e7b0a4dd49f570a74",
+      "approved_dhash": "02060c0f0f0c0602"
+    },
+    "11393": {
+      "approved_sha256": "8744bbfa0c821540dc03c9a96995c95654283e4fe44a3a9e22aae9f6af2dc23f",
+      "approved_dhash": "0e0e0f0e0e0e0c0c"
+    },
+    "11400": {
+      "approved_sha256": "8512a7e3c17af153195acfeb641c82428a3112b8fbdcbf177cf58a58753476e5",
+      "approved_dhash": "332b171714140e16"
+    },
+    "11547": {
+      "approved_sha256": "32ff5183346a6874abf15010f367e7aab3d2144c7bfc52412dccadc85494bdfa",
+      "approved_dhash": "080c0c0c0c0c0c0c"
+    },
+    "11566": {
+      "approved_sha256": "20dd06f4e95b71a143637299bbf9b7a05b81aea09a9f5c31625f6be1e68eb95e",
+      "approved_dhash": "0c0c0c0e0e061e1c"
+    },
+    "11567": {
+      "approved_sha256": "0b29507be521e5a9ada0bc70f34e9a3eace347bfa468e2191577f1bdd6fdaf1a",
+      "approved_dhash": "0c0c0c0c0c0c0c0c"
+    },
+    "11568": {
+      "approved_sha256": "594199897587b13c4dc18a178099f8f82137eea4e827ac4f1791ab53b490cd1d",
+      "approved_dhash": "0c0c0c0c0c0c0c08"
+    },
+    "11993": {
+      "approved_sha256": "21c7eb6b74ad001f57908e4da0ebb978c5534ae4bb054760aa40ab6c626177b2",
+      "approved_dhash": "0e0e0e0e0e0c0c0c"
+    },
+    "12019": {
+      "approved_sha256": "87a5dea18f4789f0a472020d4d45ce15b55e34f256ede8fcf6cdd69a6cc80a48",
+      "approved_dhash": "236dcd4d0c0e0c0c"
+    },
+    "16236": {
+      "approved_sha256": "9ca2e9de998e8345f484dfe905d1d527f5e41f8fba5c65ea79e4f801bedf7f69",
+      "approved_dhash": "060c1e0e0e0c0c0c"
+    },
+    "16238": {
+      "approved_sha256": "285c6e8b2b854b972bc0aa1e39ea0d0e58d6b295fb34db1c8f57b14613fc6701",
+      "approved_dhash": "e0c31163576fffff"
+    },
+    "16240": {
+      "approved_sha256": "da59d150c64f2740de7442c16a0c26c04f662741a6dc8a2ae7d9892f8fe9f451",
+      "approved_dhash": "0e0f0c0c0c0c0c0c"
+    },
+    "16242": {
+      "approved_sha256": "33a872cb1200a1abf153818f596345da9896fe5daa9e33063ada83a820300d91",
+      "approved_dhash": "080c0c0c0c0c0c0c"
+    },
+    "17713": {
+      "approved_sha256": "57639a75463d54d71d1d897699eb53794b4687d5d6621507a68d22bf82334422",
+      "approved_dhash": "080c0e0e0f4d0c08"
+    },
+    "20185": {
+      "approved_sha256": "2f5768d85f265d31149e263bf37e9e04bd7dba3c5ae9d44318abf3593713864a",
+      "approved_dhash": "060e1e0e0e0c0c0c"
+    },
+    "23757": {
+      "approved_sha256": "a4b13752ae80130b5ac68769a2f8e48cad6a3ff26f58cf3da3353b387873d7a8",
+      "approved_dhash": "0c0c0c0c0c0c060e"
+    },
+    "23911": {
+      "approved_sha256": "5c40221ea0e56e62390af09a2465ce92471766fa26a74421774f6e6d359ce488",
+      "approved_dhash": "1f0f3d6cacc480e0"
+    },
+    "23915": {
+      "approved_sha256": "e64dfdc76a059c59609a16849bdc7a539171d0542f6d9b8132bddebc1d7c88f7",
+      "approved_dhash": "c0861c3163c3c1cf"
+    },
+    "24483": {
+      "approved_sha256": "479873c9a0e14aef3f5149c4465017cf3b556c48a0b22f406f7f38c9dd6e6ecb",
+      "approved_dhash": "fcf9e3e7c998081c"
+    },
+    "24688": {
+      "approved_sha256": "5fcaa77d1c94200671e39be25f4870ff3add89b2c9d9a0a2b4c3e354e9df1118",
+      "approved_dhash": "0c0e0e0e0e0e1414"
+    },
+    "24690": {
+      "approved_sha256": "819fb7214e6342c2a66590a423ef754c4ea1e6a2af386923a4acc4159466249a",
+      "approved_dhash": "0c0c0c16160c0c0c"
+    },
+    "24694": {
+      "approved_sha256": "7bb04924c0b42739f8cf031d42b926e2d3a02bf7edc383e8d1b98138fc52edf2",
+      "approved_dhash": "0c0c0e0c0c0c0c0c"
+    },
+    "24696": {
+      "approved_sha256": "e2b9523a487a7ba6e6495e4ec7ba880ae05c9ee5aaebdf167adfcfefc12ce5b1",
+      "approved_dhash": "0c0c0c16160c0c0c"
+    },
+    "24700": {
+      "approved_sha256": "b419ba03b46cec6434f27fa011f8a30f999026ceb0592c95500c66b42aa205b0",
+      "approved_dhash": "7e3e3a3313313030"
+    },
+    "33818": {
+      "approved_sha256": "81ee10b1ef64fad1a8b620f772045107b8d77a657a690ccfc02d82ae7405579f",
+      "approved_dhash": "0e0c0f0f0c0c0c0c"
+    },
+    "34317": {
+      "approved_sha256": "25a50436a63c05ce6a4450b7dd644cf476ff1c59a7fcb97af1c0f9c6ba3b3683",
+      "approved_dhash": "0c0c0e0e0c0c0c0c"
+    },
+    "35683": {
+      "approved_sha256": "82592a3e69fefe2d393ecf3fd5f7a19168b10ea75fa19796ace247cbf4a314f3",
+      "approved_dhash": "0e0c080c0f0e0c0c"
+    },
+    "35685": {
+      "approved_sha256": "1a195916ef77297d20fb97227afdb42fccc689749cf59f858d0574ff72f44f1d",
+      "approved_dhash": "0e0e0e0e0e0e1616"
+    },
+    "47269": {
+      "approved_sha256": "bde1597f83476704c293cd42197a00381c23a10c39d06ce8e5e7aadb4359cb81",
+      "approved_dhash": "160e0e0f0f0c0c0c"
+    },
+    "47270": {
+      "approved_sha256": "3ff097374c446df7dca6a2b89ccc1d0507c21831f5e0ae85700584a440f47310",
+      "approved_dhash": "0c0c0c0c0c0c0c0c"
+    },
+    "47271": {
+      "approved_sha256": "26d16f8268343008cf9ec8cd776d15ae7ff2c2f4beaf61c8b093e1d42318ee9c",
+      "approved_dhash": "0c0c0c0e0e0e0e1e"
+    },
+    "49710": {
+      "approved_sha256": "363100609fd7ccee32f1f5f970a2c1e60cd1cc7af89c1996e29dd74d74d60245",
+      "approved_dhash": "300f1b1e1e1b0f10"
+    },
+    "49711": {
+      "approved_sha256": "0696c2462efbd03548082abe0f66f8973034b7e66adf02b6f64adf826e2b111e",
+      "approved_dhash": "0c4d0b0e0c0c0c0c"
+    },
+    "52250": {
+      "approved_sha256": "fc0f98fa1791da05301a5ec4c5e710668324ed98f2332642cd9607f0f681e28e",
+      "approved_dhash": "0e0e0e0f0f0e0e0c"
+    },
+    "52252": {
+      "approved_sha256": "fc20c5e1d8a63d3a13b25310783d9e702522218f5a4ea2a520224a4207a885ca",
+      "approved_dhash": "c38c3a64c6cc1d7f"
+    },
+    "52254": {
+      "approved_sha256": "0c49aea0e44308156c3c7e580d16a2049d8c1d7d2dc213c5028404dddd6365b5",
+      "approved_dhash": "9f9f38688e1e3f7f"
+    },
+    "54731": {
+      "approved_sha256": "297cde82b04158706bfe461e3cba2c1345d2116244b2754900da6f3530f212bd",
+      "approved_dhash": "010f0c0c0c0c0f01"
+    },
+    "54732": {
+      "approved_sha256": "d484d6e5a67c8c0be8c3cb6fa510b390317ded96c9537a3a121b683ddecb509f",
+      "approved_dhash": "08181f1f0e0c0c0c"
+    },
+    "54733": {
+      "approved_sha256": "d291e6bcf5bc6fb2fbff6dcb8134d8db5648905043c085f0bc0d796eb2ed8f94",
+      "approved_dhash": "06060e37370e0606"
+    }
+  }
+}

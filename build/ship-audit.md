@@ -1,0 +1,132 @@
+# Rebellion Ship Hull Audit
+
+- Manifest hulls: **74**
+- Numeric PNG assets: **74**
+- Source hull references: **58**
+- Errors: **0**
+- Warnings: **101**
+- Informational: **16**
+
+## Warnings
+
+- **CONTENT_TOUCHES_EDGE** [type 583]: Condor visible pixels touch the canvas edge; clipping is likely. — `assets/ships/583.png`
+- **OPAQUE_CORNERS** [type 583]: Condor has nontransparent corner pixels. — `assets/ships/583.png`
+- **CONTENT_TOUCHES_EDGE** [type 591]: Tormentor visible pixels touch the canvas edge; clipping is likely. — `assets/ships/591.png`
+- **OPAQUE_CORNERS** [type 591]: Tormentor has nontransparent corner pixels. — `assets/ships/591.png`
+- **CONTENT_TOUCHES_EDGE** [type 608]: Atron visible pixels touch the canvas edge; clipping is likely. — `assets/ships/608.png`
+- **OPAQUE_CORNERS** [type 608]: Atron has nontransparent corner pixels. — `assets/ships/608.png`
+- **CONTENT_TOUCHES_EDGE** [type 3764]: Leviathan visible pixels touch the canvas edge; clipping is likely. — `assets/ships/3764.png`
+- **CONTENT_TOUCHES_EDGE** [type 16238]: Cormorant visible pixels touch the canvas edge; clipping is likely. — `assets/ships/16238.png`
+- **OPAQUE_CORNERS** [type 16238]: Cormorant has nontransparent corner pixels. — `assets/ships/16238.png`
+- **CONTENT_TOUCHES_EDGE** [type 23911]: Thanatos visible pixels touch the canvas edge; clipping is likely. — `assets/ships/23911.png`
+- **OPAQUE_CORNERS** [type 23911]: Thanatos has nontransparent corner pixels. — `assets/ships/23911.png`
+- **CONTENT_TOUCHES_EDGE** [type 23915]: Chimera visible pixels touch the canvas edge; clipping is likely. — `assets/ships/23915.png`
+- **OPAQUE_CORNERS** [type 23915]: Chimera has nontransparent corner pixels. — `assets/ships/23915.png`
+- **CONTENT_TOUCHES_EDGE** [type 24483]: Nidhoggur visible pixels touch the canvas edge; clipping is likely. — `assets/ships/24483.png`
+- **OPAQUE_CORNERS** [type 24483]: Nidhoggur has nontransparent corner pixels. — `assets/ships/24483.png`
+- **CONTENT_TOUCHES_EDGE** [type 24700]: Myrmidon visible pixels touch the canvas edge; clipping is likely. — `assets/ships/24700.png`
+- **OPAQUE_CORNERS** [type 24700]: Myrmidon has nontransparent corner pixels. — `assets/ships/24700.png`
+- **CONTENT_TOUCHES_EDGE** [type 33818]: Confessor-Alt visible pixels touch the canvas edge; clipping is likely. — `assets/ships/33818.png`
+- **CONTENT_TOUCHES_EDGE** [type 52250]: Nergal visible pixels touch the canvas edge; clipping is likely. — `assets/ships/52250.png`
+- **CONTENT_TOUCHES_EDGE** [type 52252]: Ikitursa visible pixels touch the canvas edge; clipping is likely. — `assets/ships/52252.png`
+- **OPAQUE_CORNERS** [type 52252]: Ikitursa has nontransparent corner pixels. — `assets/ships/52252.png`
+- **CONTENT_TOUCHES_EDGE** [type 52254]: Draugur visible pixels touch the canvas edge; clipping is likely. — `assets/ships/52254.png`
+- **OPAQUE_CORNERS** [type 52254]: Draugur has nontransparent corner pixels. — `assets/ships/52254.png`
+- **CONTENT_TOUCHES_EDGE** [type 54731]: Skybreaker visible pixels touch the canvas edge; clipping is likely. — `assets/ships/54731.png`
+- **CONTENT_TOUCHES_EDGE** [type 54732]: Stormbringer visible pixels touch the canvas edge; clipping is likely. — `assets/ships/54732.png`
+- **CONTENT_TOUCHES_EDGE** [type 54733]: Thunderchild visible pixels touch the canvas edge; clipping is likely. — `assets/ships/54733.png`
+- **NEAR_DUPLICATE_IMAGES**: Imperial Navy Slicer (592) and Exequror (641) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Incursus (594) and Enyo (11373) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Incursus (594) and Ishkur (11377) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Punisher (597) and Omen (625) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Punisher (597) and Muninn (11993) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Punisher (597) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Caracal (605) and Confessor-Alt (33818) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Caracal (605) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Omen (625) and Stabber (643) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Omen (625) and Apocalypse (2006) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Omen (625) and Megathron (11567) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Omen (625) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Omen (625) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Omen (625) and Vedmak (47270) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Stabber (643) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Scorpion (1944) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Apocalypse (2006) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Abaddon (11547) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Megathron (11567) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Tempest (11568) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Catalyst (16242) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Moa (630) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Celestis (640) and Stabber (643) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Celestis (640) and Apocalypse (2006) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Celestis (640) and Megathron (11567) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Celestis (640) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Celestis (640) and Vedmak (47270) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Scorpion (1944) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Apocalypse (2006) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Abaddon (11547) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Megathron (11567) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Catalyst (16242) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Stabber (643) and Vedmak (47270) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Scorpion (1944) and Apocalypse (2006) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Scorpion (1944) and Abaddon (11547) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Scorpion (1944) and Megathron (11567) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Scorpion (1944) and Tempest (11568) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Scorpion (1944) and Catalyst (16242) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Scorpion (1944) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Scorpion (1944) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Apocalypse (2006) and Abaddon (11547) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Apocalypse (2006) and Megathron (11567) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Apocalypse (2006) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Apocalypse (2006) and Catalyst (16242) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Apocalypse (2006) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Apocalypse (2006) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Apocalypse (2006) and Vedmak (47270) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Malediction (11184) and Crusader (11186) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Enyo (11373) and Ishkur (11377) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Retribution (11393) and Muninn (11993) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Abaddon (11547) and Megathron (11567) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Abaddon (11547) and Tempest (11568) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Abaddon (11547) and Catalyst (16242) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Abaddon (11547) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Abaddon (11547) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Megathron (11567) and Tempest (11568) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Megathron (11567) and Catalyst (16242) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Megathron (11567) and Prophecy (24694) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Megathron (11567) and Confessor (34317) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Megathron (11567) and Vedmak (47270) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Tempest (11568) and Catalyst (16242) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Tempest (11568) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Tempest (11568) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Muninn (11993) and Bestower (20185) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Coercer (16236) and Bestower (20185) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Catalyst (16242) and Prophecy (24694) have near-identical perceptual hashes (distance 2). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Catalyst (16242) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Harbinger (24690) and Ferox (24696) have near-identical perceptual hashes (distance 0). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Prophecy (24694) and Confessor (34317) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Prophecy (24694) and Vedmak (47270) have near-identical perceptual hashes (distance 1). Verify visually.
+- **NEAR_DUPLICATE_IMAGES**: Confessor (34317) and Vedmak (47270) have near-identical perceptual hashes (distance 2). Verify visually.
+
+## Infos
+
+- **MANIFEST_HULL_NOT_REFERENCED** [type 586]: Maller is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 592]: Imperial Navy Slicer is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 605]: Caracal is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 625]: Omen is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 626]: Arbitrator is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 638]: Vexor is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 639]: Thorax is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 640]: Celestis is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 641]: Exequror is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 645]: Rupture is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 11566]: Raven is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 11568]: Tempest is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 16240]: Thrasher is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 20185]: Bestower is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 24694]: Prophecy is declared but no explicit source reference was found.
+- **MANIFEST_HULL_NOT_REFERENCED** [type 33818]: Confessor-Alt is declared but no explicit source reference was found.
+

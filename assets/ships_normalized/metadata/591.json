@@ -1,0 +1,37 @@
+{
+  "type_id": 591,
+  "class_": "frigate",
+  "source_size": [
+    216,
+    216
+  ],
+  "output_size": 256,
+  "rotation_degrees": 21.688836769404684,
+  "visual_center": [
+    -0.008,
+    0.006
+  ],
+  "engine_hardpoints": [
+    [
+      -0.18,
+      0.35
+    ],
+    [
+      0.18,
+      0.35
+    ]
+  ],
+  "weapon_hardpoints": [
+    [
+      -0.22,
+      -0.1
+    ],
+    [
+      0.22,
+      -0.1
+    ]
+  ],
+  "collision_scale": 0.52,
+  "shadow_scale": 0.85,
+  "display_scale": 1.0
+}

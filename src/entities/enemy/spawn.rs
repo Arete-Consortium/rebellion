@@ -127,7 +127,7 @@ pub fn spawn_enemy(
         20185 => 5, // Bestower (transport) - more slaves
         2006 => 3,  // Apocalypse - capital crew
         24690 => 2, // Harbinger/Absolution - larger crew
-        24692 => 3, // Abaddon - battleship
+        11547 => 3, // Abaddon - battleship
         _ => 1,     // Regular frigates/cruisers
     };
 

@@ -1,0 +1,37 @@
+{
+  "type_id": 17713,
+  "class_": "battleship",
+  "source_size": [
+    301,
+    401
+  ],
+  "output_size": 1024,
+  "rotation_degrees": -180.0,
+  "visual_center": [
+    -0.002,
+    -0.058
+  ],
+  "engine_hardpoints": [
+    [
+      -0.22,
+      0.38
+    ],
+    [
+      0.22,
+      0.38
+    ]
+  ],
+  "weapon_hardpoints": [
+    [
+      -0.28,
+      -0.12
+    ],
+    [
+      0.28,
+      -0.12
+    ]
+  ],
+  "collision_scale": 0.52,
+  "shadow_scale": 0.85,
+  "display_scale": 1.0
+}
