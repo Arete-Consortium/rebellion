@@ -9,8 +9,8 @@
 use bevy::prelude::*;
 
 use crate::core::{
-    CampaignState, CurrentStage, Difficulty, EndlessMode, GameProgress, GameSession, SelectedShip,
-    ShipUnlocks,
+    CampaignState, CurrentStage, Difficulty, EndlessMode, GameProgress, GameSession, ItchMode,
+    SelectedShip, ShipUnlocks,
 };
 use crate::entities::{DronePlugin, EnemyPlugin, EscortPlugin, PlayerPlugin, WingmanPlugin};
 use crate::systems::{
@@ -34,6 +34,7 @@ impl Plugin for GameplayPlugin {
             .init_resource::<CampaignState>()
             .init_resource::<GameSession>()
             .init_resource::<EndlessMode>()
+            .init_resource::<ItchMode>()
             .add_plugins((
                 PlayerPlugin,
                 EnemyPlugin,

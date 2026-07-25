@@ -32,6 +32,12 @@
             background: linear-gradient(135deg, #050508 0%, #0a0a12 100%);
             color: #aaddaa;
             z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        #loading.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         #loading .archive-header {
@@ -89,8 +95,34 @@
             100% { transform: rotate(360deg); }
         }
 
-        #loading.hidden {
+        #enter-archive {
             display: none;
+            margin-top: 2rem;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #e0e0e0;
+            background: rgba(102, 170, 102, 0.15);
+            border: 2px solid #66aa66;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #enter-archive:hover {
+            background: rgba(102, 170, 102, 0.3);
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(102, 170, 102, 0.3);
+        }
+
+        #enter-archive:active {
+            transform: scale(0.98);
+        }
+
+        #enter-archive.visible {
+            display: block;
+            animation: fadeIn 0.5s forwards;
         }
 
         #bevy-canvas {
@@ -117,15 +149,16 @@
         <div class="archive-header">CONCORD Capsuleer Combat Archive — Historical Reconstruction Program</div>
         <h1>Rebellion</h1>
         <div class="subtitle">Experience history. Learn from it. Survive it.</div>
-        <div class="terminal-line">> Neural sync: ONLINE</div>
-        <div class="terminal-line">> Fleet telemetry: STREAMING</div>
-        <div class="terminal-line">> Historical accuracy: 99.84%</div>
-        <div class="terminal-line">> Capsuleer interface: LOADING...</div>
-        <div class="spinner"></div>
+        <div class="terminal-line" data-phase="sync">> Neural sync: CONNECTING...</div>
+        <div class="terminal-line" data-phase="telemetry">> Fleet telemetry: ACQUIRING...</div>
+        <div class="terminal-line" data-phase="accuracy">> Historical accuracy: VERIFYING...</div>
+        <div class="terminal-line" data-phase="interface">> Capsuleer interface: STANDBY</div>
+        <div class="spinner" id="spinner"></div>
+        <button id="enter-archive" type="button">ENTER ARCHIVE</button>
     </div>
 
     <script type="module">
-        const canvas = document.createElement('canvas');
+        const canvas = document.getElementById('bevy-canvas');
         const gl = canvas.getContext('webgl2');
 
         if (!gl) {
@@ -141,24 +174,56 @@
 
         import init from './rebellion.js';
 
-        async function run() {
-            setTimeout(() => {
-                document.getElementById('loading').classList.add('hidden');
-            }, 2500);
+        const loading = document.getElementById('loading');
+        const spinner = document.getElementById('spinner');
+        const enterBtn = document.getElementById('enter-archive');
 
+        // Update terminal lines during load
+        const lines = loading.querySelectorAll('.terminal-line');
+        let initError = null;
+        let wasmReady = false;
+
+        async function run() {
             try {
                 await init();
+                wasmReady = true;
+
+                // Update terminal to READY state
+                lines.forEach(line => {
+                    const phase = line.dataset.phase;
+                    if (phase === 'sync') line.textContent = '> Neural sync: ONLINE';
+                    if (phase === 'telemetry') line.textContent = '> Fleet telemetry: STREAMING';
+                    if (phase === 'accuracy') line.textContent = '> Historical accuracy: 99.84%';
+                    if (phase === 'interface') line.textContent = '> Capsuleer interface: READY';
+                });
+
+                // Hide spinner, show ENTER ARCHIVE button
+                spinner.style.display = 'none';
+                enterBtn.classList.add('visible');
+
             } catch (error) {
+                initError = error;
                 const msg = String(error.message || error);
                 const isControlFlow = msg.includes('exceptions for control flow')
                     || msg.includes('don\'t mind me')
                     || msg.includes('not actually an error')
                     || msg.includes('unreachable');
+
                 if (isControlFlow) {
+                    // Rust panic-to-unwind control flow — not a real error
+                    wasmReady = true;
+                    spinner.style.display = 'none';
+                    enterBtn.classList.add('visible');
                     return;
                 }
+
                 console.error('Failed to initialize:', error);
-                document.getElementById('loading').innerHTML = `
+                spinner.style.display = 'none';
+                lines.forEach(line => {
+                    line.style.color = '#ff6666';
+                    line.style.opacity = '1';
+                });
+                loading.innerHTML += `
                     <div class="error">
                         <h2>Simulation Load Failed</h2>
                         <p>An error occurred while loading the historical reconstruction.</p>
@@ -168,6 +233,37 @@
             }
         }
 
+        // ENTER ARCHIVE click handler
+        enterBtn.addEventListener('click', () => {
+            if (!wasmReady) return;
+
+            // Hide loading overlay
+            loading.classList.add('hidden');
+
+            // Focus canvas for keyboard input
+            canvas.focus();
+
+            // Attempt to unlock audio context via user gesture
+            if (typeof AudioContext !== 'undefined') {
+                const audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+            }
+        });
+
+        // Also allow Enter/Space/Gamepad A to start
+        window.addEventListener('keydown', (e) => {
+            if (!wasmReady) return;
+            if (e.code === 'Enter' || e.code === 'Space') {
+                if (!loading.classList.contains('hidden')) {
+                    e.preventDefault();
+                    enterBtn.click();
+                }
+            }
+        });
+
+        // Start WASM initialization immediately
         run();
     </script>
 </body>

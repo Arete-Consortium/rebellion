@@ -5,6 +5,7 @@
 use super::common::*;
 use crate::core::*;
 use crate::games::ActiveModule;
+use crate::games::caldari_gallente::{CGCampaignState, VerticalSliceMode};
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
 use bevy::prelude::*;
@@ -149,7 +150,12 @@ pub(crate) fn main_menu_input(
     joystick: Res<JoystickState>,
     mut selection: ResMut<MenuSelection>,
     time: Res<Time>,
-    _active_module: ResMut<ActiveModule>,
+    mut active_module: ResMut<ActiveModule>,
+    mut game_session: ResMut<GameSession>,
+    mut difficulty: ResMut<Difficulty>,
+    mut cg_campaign: ResMut<CGCampaignState>,
+    mut slice_mode: ResMut<VerticalSliceMode>,
+    itch_mode: Res<ItchMode>,
     mut exit: EventWriter<AppExit>,
     mut transitions: EventWriter<TransitionEvent>,
 ) {
@@ -167,8 +173,29 @@ pub(crate) fn main_menu_input(
     if is_confirm(&keyboard, &joystick) {
         match selection.index {
             0 => {
-                // PLAY - go to module select
-                transitions.send(TransitionEvent::to(GameState::ModuleSelect));
+                // PLAY
+                if itch_mode.enabled && !itch_mode.completed_first_run {
+                    // ItchMode: skip all selection screens and auto-configure
+                    // Archive 01 — Caldari Prime vertical slice
+                    active_module.set_module("caldari_gallente");
+                    active_module.set_faction("caldari", "gallente");
+                    *game_session = GameSession::new(
+                        crate::core::Faction::Caldari,
+                        crate::core::Faction::Gallente,
+                    );
+                    game_session.selected_ship_index = 0; // Kestrel
+                    *difficulty = Difficulty::Newbro;
+                    cg_campaign.mission_index = 0;
+                    cg_campaign.current_wave = 1;
+                    cg_campaign.in_mission = false;
+                    cg_campaign.boss_spawned = false;
+                    cg_campaign.boss_defeated = false;
+                    cg_campaign.t3_unlocked = false;
+                    *slice_mode = VerticalSliceMode::Slice;
+                    transitions.send(TransitionEvent::to(GameState::MissionBriefing));
+                } else {
+                    transitions.send(TransitionEvent::to(GameState::ModuleSelect));
+                }
             }
             1 => {
                 // UPGRADES - go to upgrade shop

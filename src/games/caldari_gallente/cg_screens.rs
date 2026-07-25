@@ -3,7 +3,7 @@
 //! UI screens shown after mission completion and campaign victory.
 
 use super::campaign::{CGCampaignState, VerticalSliceMode};
-use crate::core::{Faction, GameSession, GameState};
+use crate::core::{Faction, GameSession, GameState, ItchMode};
 use crate::systems::JoystickState;
 use bevy::prelude::*;
 
@@ -577,7 +577,7 @@ pub fn spawn_cg_slice_complete(
         ))
         .with_children(|parent| {
             parent.spawn((
-                Text::new("VERTICAL SLICE COMPLETE"),
+                Text::new("ARCHIVE COMPLETE"),
                 TextFont {
                     font_size: 48.0,
                     ..default()
@@ -586,7 +586,7 @@ pub fn spawn_cg_slice_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("{} — Victory", mission_name)),
+                Text::new(format!("{} — Reconstructed", mission_name)),
                 TextFont {
                     font_size: 28.0,
                     ..default()
@@ -623,7 +623,7 @@ pub fn spawn_cg_slice_complete(
             });
 
             parent.spawn((
-                Text::new("Thank you for playing the Rebellion demo."),
+                Text::new("Additional historical records are under reconstruction."),
                 TextFont {
                     font_size: 18.0,
                     ..default()
@@ -632,7 +632,7 @@ pub fn spawn_cg_slice_complete(
             ));
 
             parent.spawn((
-                Text::new("The full campaign is coming soon."),
+                Text::new("Return to the archive to access the full reconstruction menu."),
                 TextFont {
                     font_size: 18.0,
                     ..default()
@@ -661,6 +661,7 @@ pub fn cg_slice_complete_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<JoystickState>,
     mut cg_campaign: ResMut<CGCampaignState>,
+    mut itch_mode: ResMut<ItchMode>,
     mut transitions: EventWriter<crate::ui::TransitionEvent>,
 ) {
     if keyboard.just_pressed(KeyCode::Space)
@@ -669,6 +670,10 @@ pub fn cg_slice_complete_input(
         || keyboard.just_pressed(KeyCode::Escape)
         || joystick.back()
     {
+        // First itch run complete — unlock full archive menu
+        if itch_mode.enabled {
+            itch_mode.completed_first_run = true;
+        }
         *cg_campaign = CGCampaignState::default();
         transitions.send(crate::ui::TransitionEvent::to(GameState::MainMenu));
     }

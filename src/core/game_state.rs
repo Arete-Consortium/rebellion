@@ -206,7 +206,7 @@ impl MinmatarShip {
     pub fn type_id(&self) -> u32 {
         match self {
             MinmatarShip::Rifter => 587,
-            MinmatarShip::Slasher => 603,
+            MinmatarShip::Slasher => 585,
             MinmatarShip::Breacher => 598,
             MinmatarShip::Probe => 586,
             MinmatarShip::Wolf => 11371,
@@ -630,6 +630,28 @@ mod tests {
 #[derive(Debug, Clone, Resource, Default)]
 pub struct SelectedShip {
     pub ship: MinmatarShip,
+}
+
+/// Itch.io vertical slice mode — bypasses menus for first-run web builds.
+#[derive(Debug, Clone, Resource)]
+pub struct ItchMode {
+    /// When true, the web build skips selection screens on first run.
+    pub enabled: bool,
+    /// Set to true after the player completes the first slice.
+    /// After this, the full archive menu becomes available.
+    pub completed_first_run: bool,
+}
+
+impl Default for ItchMode {
+    fn default() -> Self {
+        Self {
+            #[cfg(target_arch = "wasm32")]
+            enabled: true,
+            #[cfg(not(target_arch = "wasm32"))]
+            enabled: false,
+            completed_first_run: false,
+        }
+    }
 }
 
 /// Current stage/level being played
