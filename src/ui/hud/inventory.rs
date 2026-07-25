@@ -13,7 +13,14 @@ pub struct InventoryHudPanel;
 #[derive(Component)]
 pub struct InventoryHudText;
 
-pub fn spawn_inventory_hud(mut commands: Commands) {
+pub fn spawn_inventory_hud(
+    mut commands: Commands,
+    itch_mode: Res<crate::core::ItchMode>,
+) {
+    if itch_mode.enabled {
+        return;
+    }
+
     commands
         .spawn((
             InventoryHudPanel,
