@@ -329,6 +329,7 @@ pub(crate) fn pause_menu_input(
     mut slider_text_query: Query<(&SliderValueText, &mut Text)>,
     time: Res<Time>,
     mut cooldown: Local<f32>,
+    itch_mode: Res<crate::core::ItchMode>,
 ) {
     *cooldown -= time.delta_secs();
 
@@ -417,7 +418,12 @@ pub(crate) fn pause_menu_input(
                 next_state.set(GameState::Playing);
             }
             PAUSE_IDX_RESTART => {
-                transitions.send(TransitionEvent::quick(GameState::Playing));
+                if itch_mode.enabled {
+                    // Itch mode: restart via main menu to ensure clean mission reset
+                    transitions.send(TransitionEvent::to(GameState::MainMenu));
+                } else {
+                    transitions.send(TransitionEvent::quick(GameState::Playing));
+                }
             }
             PAUSE_IDX_QUIT => {
                 transitions.send(TransitionEvent::to(GameState::MainMenu));
