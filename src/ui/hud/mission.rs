@@ -3,15 +3,44 @@
 use super::common::*;
 use crate::core::*;
 use crate::entities::{EscortData, Friendly};
+use crate::games::ActiveModule;
+use crate::games::caldari_gallente::CGCampaignState;
 use crate::systems::DialogueSystem;
 use bevy::prelude::*;
 
 /// Update wave display (with stage info)
 pub fn update_wave_display(
+    active_module: Res<ActiveModule>,
     campaign: Res<CampaignState>,
+    cg_campaign: Option<Res<CGCampaignState>>,
     mut query: Query<&mut Text, With<WaveText>>,
 ) {
     for mut text in query.iter_mut() {
+        if active_module.is_caldari_gallente() {
+            if let Some(cg) = cg_campaign.as_deref() {
+                if let Some(mission) = cg.current_mission() {
+                    if cg.boss_spawned && !cg.boss_defeated {
+                        **text = format!(
+                            "WAVE {}/{} — BOSS",
+                            cg.current_wave,
+                            mission.waves + 1
+                        );
+                    } else {
+                        **text = format!(
+                            "WAVE {}/{}",
+                            cg.current_wave,
+                            mission.waves + 1
+                        );
+                    }
+                } else {
+                    **text = format!("WAVE {}", cg.current_wave);
+                }
+            } else {
+                **text = "WAVE 1".to_string();
+            }
+            continue;
+        }
+
         if let Some(mission) = campaign.current_mission() {
             if mission.timed_survival_seconds > 0.0 {
                 let remaining = (mission.timed_survival_seconds - campaign.mission_timer).max(0.0);
@@ -33,7 +62,9 @@ pub fn update_wave_display(
 
 /// Update mission info display
 pub fn update_mission_display(
+    active_module: Res<ActiveModule>,
     campaign: Res<CampaignState>,
+    cg_campaign: Option<Res<CGCampaignState>>,
     score: Res<ScoreSystem>,
     escort_query: Query<&EscortData, With<Friendly>>,
     mut mission_query: Query<
@@ -87,6 +118,19 @@ pub fn update_mission_display(
 ) {
     // Update mission name
     for mut text in mission_query.iter_mut() {
+        if active_module.is_caldari_gallente() {
+            if let Some(cg) = cg_campaign.as_deref() {
+                if let Some(mission) = cg.current_mission() {
+                    **text = format!("M{}: {}", cg.mission_number(), mission.name);
+                } else {
+                    **text = "ARCHIVE 01: CALDARI PRIME".to_string();
+                }
+            } else {
+                **text = "ARCHIVE 01: CALDARI PRIME".to_string();
+            }
+            continue;
+        }
+
         if let Some(mission) = campaign.current_mission() {
             **text = format!(
                 "M{}: {} - {}",

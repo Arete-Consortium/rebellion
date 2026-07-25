@@ -4,6 +4,8 @@
 
 use super::common::*;
 use crate::core::*;
+use crate::games::ActiveModule;
+use crate::games::caldari_gallente::CGCampaignState;
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
 use bevy::prelude::*;
@@ -59,6 +61,8 @@ pub(crate) fn spawn_death_screen(
     mut commands: Commands,
     score: Res<ScoreSystem>,
     campaign: Res<CampaignState>,
+    cg_campaign: Option<Res<CGCampaignState>>,
+    active_module: Res<ActiveModule>,
     mut endless: ResMut<crate::core::EndlessMode>,
     mut nightmare: ResMut<crate::games::caldari_gallente::ShiigeruNightmare>,
     session: Res<GameSession>,
@@ -96,11 +100,17 @@ pub(crate) fn spawn_death_screen(
         save_data.get_high_score(session.player_faction.name(), session.enemy_faction.name());
     let is_new_high = score.score > high_score && score.score > 0;
 
-    // Get mission info - different for endless/nightmare mode
+    // Get mission info - different for endless/nightmare mode / CG slice
     let mission_name = if was_nightmare {
         "SHIIGERU NIGHTMARE".to_string()
     } else if was_endless {
         format!("Endless Wave {}", endless.wave)
+    } else if active_module.is_caldari_gallente() {
+        cg_campaign
+            .as_deref()
+            .and_then(|cg| cg.current_mission())
+            .map(|m| m.name.to_string())
+            .unwrap_or_else(|| "ARCHIVE 01: CALDARI PRIME".to_string())
     } else {
         campaign.current_mission_name().to_string()
     };

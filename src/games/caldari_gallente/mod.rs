@@ -100,6 +100,14 @@ impl Plugin for CaldariGallentePlugin {
                 .run_if(not(last_stand_active)),
         )
         .add_systems(
+            Update,
+            cg_campaign::update_cg_telegraphs
+                .run_if(in_state(GameState::Playing))
+                .run_if(is_caldari_gallente)
+                .run_if(not(nightmare_active))
+                .run_if(not(last_stand_active)),
+        )
+        .add_systems(
             OnEnter(GameState::BossIntro),
             (cg_campaign::spawn_cg_boss, cg_campaign::spawn_cg_boss_intro)
                 .run_if(is_caldari_gallente),

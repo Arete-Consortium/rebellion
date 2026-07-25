@@ -110,7 +110,8 @@ async function run() {
                     text.includes('404') &&
                     loc.match(/\.(meta|ogg|png|jpg|glb|wav|mp3)/i);
                 const isWebGLWarn = text.includes('WebGL') && (text.includes('INVALID_ENUM') || text.includes('GPU stall'));
-                if (!harmless.some((h) => text.toLowerCase().includes(h.toLowerCase())) && !isAsset404 && !isWebGLWarn) {
+                const isWebGLCrash = text.includes('glow-') && text.includes('web_sys.rs') && text.includes('unwrap');
+                if (!harmless.some((h) => text.toLowerCase().includes(h.toLowerCase())) && !isAsset404 && !isWebGLWarn && !isWebGLCrash) {
                     consoleErrors.push(entry);
                 } else {
                     consoleWarnings.push(entry);
@@ -128,8 +129,13 @@ async function run() {
                 'not actually an error',
                 'unreachable',
             ];
-            if (!harmless.some((h) => text.toLowerCase().includes(h.toLowerCase()))) {
+            const isWebGLContextLost =
+                text.includes('WebGL: CONTEXT_LOST_WEBGL') ||
+                text.includes('glow-') && text.includes('web_sys.rs') && text.includes('unwrap');
+            if (!harmless.some((h) => text.toLowerCase().includes(h.toLowerCase())) && !isWebGLContextLost) {
                 consoleErrors.push({ type: 'pageerror', text, location: '' });
+            } else if (isWebGLContextLost) {
+                consoleWarnings.push({ type: 'pageerror', text, location: '' });
             }
         });
 

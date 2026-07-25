@@ -4,6 +4,8 @@
 
 use super::common::*;
 use crate::core::*;
+use crate::games::ActiveModule;
+use crate::games::caldari_gallente::CGCampaignState;
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
 use bevy::prelude::*;
@@ -58,7 +60,9 @@ pub(crate) struct PauseMenuItemText(pub(crate) usize);
 
 pub(crate) fn spawn_pause_menu(
     mut commands: Commands,
+    active_module: Res<ActiveModule>,
     campaign: Res<CampaignState>,
+    cg_campaign: Option<Res<CGCampaignState>>,
     score: Res<ScoreSystem>,
     session: Res<GameSession>,
     sound_settings: Res<crate::systems::SoundSettings>,
@@ -67,10 +71,27 @@ pub(crate) fn spawn_pause_menu(
 ) {
     commands.insert_resource(PauseSelection::default());
 
-    let mission_name = campaign
-        .current_mission()
-        .map(|m| m.name)
-        .unwrap_or("MISSION");
+    let (mission_name, stats_line) = if active_module.is_caldari_gallente() {
+        let name = cg_campaign
+            .as_deref()
+            .and_then(|cg| cg.current_mission())
+            .map(|m| m.name)
+            .unwrap_or("ARCHIVE 01: CALDARI PRIME");
+        let wave = cg_campaign
+            .as_deref()
+            .map(|cg| cg.current_wave)
+            .unwrap_or(1);
+        (name, format!("Score: {} • Wave: {}", score.score, wave))
+    } else {
+        let name = campaign
+            .current_mission()
+            .map(|m| m.name)
+            .unwrap_or("MISSION");
+        (
+            name,
+            format!("Score: {} • Souls: {}", score.score, campaign.mission_souls),
+        )
+    };
 
     let faction_color = session.player_faction.primary_color();
 
@@ -111,10 +132,7 @@ pub(crate) fn spawn_pause_menu(
 
             // Current stats
             parent.spawn((
-                Text::new(format!(
-                    "Score: {} • Souls: {}",
-                    score.score, campaign.mission_souls
-                )),
+                Text::new(stats_line),
                 TextFont {
                     font_size: 12.0,
                     ..default()

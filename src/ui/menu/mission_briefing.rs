@@ -8,6 +8,7 @@
 #![allow(dead_code)]
 
 use crate::core::*;
+use crate::games::ActiveModule;
 use crate::systems::JoystickState;
 use bevy::prelude::*;
 
@@ -16,33 +17,36 @@ pub struct MissionBriefingRoot;
 
 /// Content resolver — returns (act_line, mission_name, lore, objective, boss_line, accent)
 fn resolve_briefing(
+    active_module: &ActiveModule,
     campaign: Option<&CampaignState>,
     session: Option<&GameSession>,
 ) -> (String, String, String, String, String, Color) {
-    // Prefer CampaignState when present
-    if let Some(c) = campaign {
-        if let Some(m) = c.current_mission() {
-            let act_num = match c.act {
-                Act::Act1 => 1,
-                Act::Act2 => 2,
-                Act::Act3 => 3,
-            };
-            let act_title = match c.act {
-                Act::Act1 => "THE CALL",
-                Act::Act2 => "THE STORM",
-                Act::Act3 => "LIBERATION",
-            };
-            let accent = session
-                .map(|s| s.player_faction.primary_color())
-                .unwrap_or(Color::srgb(0.71, 0.39, 0.20));
-            return (
-                format!("ACT {} · {}", act_num, act_title),
-                m.name.to_string(),
-                m.description.to_string(),
-                m.primary_objective.to_string(),
-                format!("⚠ BOSS: {}", m.boss.name()),
-                accent,
-            );
+    // Prefer CampaignState when present (but not in Caldari/Gallente mode)
+    if !active_module.is_caldari_gallente() {
+        if let Some(c) = campaign {
+            if let Some(m) = c.current_mission() {
+                let act_num = match c.act {
+                    Act::Act1 => 1,
+                    Act::Act2 => 2,
+                    Act::Act3 => 3,
+                };
+                let act_title = match c.act {
+                    Act::Act1 => "THE CALL",
+                    Act::Act2 => "THE STORM",
+                    Act::Act3 => "LIBERATION",
+                };
+                let accent = session
+                    .map(|s| s.player_faction.primary_color())
+                    .unwrap_or(Color::srgb(0.71, 0.39, 0.20));
+                return (
+                    format!("ACT {} · {}", act_num, act_title),
+                    m.name.to_string(),
+                    m.description.to_string(),
+                    m.primary_objective.to_string(),
+                    format!("⚠ BOSS: {}", m.boss.name()),
+                    accent,
+                );
+            }
         }
     }
 
@@ -105,11 +109,12 @@ fn resolve_briefing(
 
 pub fn spawn_mission_briefing(
     mut commands: Commands,
+    active_module: Res<ActiveModule>,
     campaign: Option<Res<CampaignState>>,
     session: Option<Res<GameSession>>,
 ) {
     let (act_line, mission_name, lore, objective, boss_line, accent) =
-        resolve_briefing(campaign.as_deref(), session.as_deref());
+        resolve_briefing(&active_module, campaign.as_deref(), session.as_deref());
 
     commands
         .spawn((

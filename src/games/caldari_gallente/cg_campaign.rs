@@ -2,7 +2,7 @@
 //!
 //! Boss encounters, mission flow, and boss intro UI for the campaign.
 
-use super::campaign::{CGBossType, CGCampaignState, ShiigeruNightmare};
+use super::campaign::{CGBossType, CGCampaignState, CG_INTER_WAVE_DELAY, ShiigeruNightmare};
 use crate::core::{DamageType, Difficulty, Faction, GameSession, GameState};
 use crate::entities::enemy::EnemyBehavior;
 use crate::entities::projectile::ProjectilePhysics;
@@ -30,6 +30,12 @@ pub struct CGBossMovement {
 pub struct CGBossAttack {
     pub fire_timer: f32,
     pub fire_rate: f32,
+}
+
+/// Visual telegraph shown at spawn positions before a wave appears.
+#[derive(Component)]
+pub struct CGSpawnTelegraph {
+    pub timer: f32,
 }
 
 // ============================================================================
@@ -89,9 +95,11 @@ pub fn update_cg_mission(
     }
 }
 
-/// Check if current wave is complete in CG campaign
+/// Check if current wave is complete in CG campaign.
+/// When a wave is cleared, starts the inter-wave delay timer so the next
+/// wave doesn't spawn instantly (pacing breather for the player).
 pub fn check_cg_wave_complete(
-    cg_campaign: Res<CGCampaignState>,
+    mut cg_campaign: ResMut<CGCampaignState>,
     enemy_query: Query<Entity, With<crate::entities::Enemy>>,
     boss_query: Query<Entity, With<CGBoss>>,
 ) {
@@ -111,28 +119,57 @@ pub fn check_cg_wave_complete(
         if let Some(mission) = cg_campaign.current_mission() {
             if cg_campaign.current_wave <= mission.waves {
                 info!("CG Wave {} complete!", cg_campaign.current_wave);
+                // Start inter-wave delay if not already counting
+                if cg_campaign.wave_delay_timer <= 0.0 {
+                    cg_campaign.wave_delay_timer = CG_INTER_WAVE_DELAY;
+                }
             }
         }
     }
 }
 
-/// Spawn next wave of enemies for CG campaign
+/// Spawn next wave of enemies for CG campaign.
+/// Respects `wave_delay_timer` for pacing between waves.
 pub fn spawn_cg_wave(
     mut commands: Commands,
+    time: Res<Time>,
     mut cg_campaign: ResMut<CGCampaignState>,
     session: Res<GameSession>,
     difficulty: Res<crate::core::Difficulty>,
     sprite_cache: Res<crate::assets::ShipSpriteCache>,
     enemy_query: Query<Entity, With<crate::entities::Enemy>>,
     boss_query: Query<Entity, With<CGBoss>>,
+    telegraph_query: Query<Entity, With<CGSpawnTelegraph>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     use crate::entities::enemy::spawn_enemy;
+
+    // Tick inter-wave delay
+    if cg_campaign.wave_delay_timer > 0.0 {
+        // On first frame of delay, spawn telegraphs at the upcoming wave positions
+        if cg_campaign.wave_delay_timer >= CG_INTER_WAVE_DELAY - 0.05 {
+            let wave = cg_campaign.current_wave;
+            let base_count = 3 + wave as usize;
+            let spawn_mult = difficulty.spawn_rate_mult();
+            let count = (base_count as f32 * spawn_mult) as usize;
+            spawn_cg_telegraphs(
+                &mut commands,
+                count,
+                wave,
+                session.enemy_faction,
+            );
+        }
+        cg_campaign.wave_delay_timer -= time.delta_secs();
+        return;
+    }
 
     // Only spawn if no enemies remain
     if enemy_query.iter().count() > 0 || boss_query.iter().count() > 0 {
         return;
     }
+
+    // Despawn any lingering telegraphs before spawning the actual wave
+    despawn_cg_telegraphs(&mut commands, &telegraph_query);
 
     let Some(mission) = cg_campaign.current_mission() else {
         return;
@@ -220,6 +257,57 @@ fn cg_spawn_position(i: usize, count: usize, wave: u32) -> (f32, f32) {
             let y = 280.0 + row as f32 * 50.0 + fastrand::f32() * 30.0;
             (x, y)
         }
+    }
+}
+
+/// Spawn visual telegraphs (warning indicators) at the positions where the
+/// next wave will appear. Gives the player ~2.5 s to read the pattern and
+/// reposition before enemies actually spawn.
+fn spawn_cg_telegraphs(
+    commands: &mut Commands,
+    count: usize,
+    wave: u32,
+    enemy_faction: Faction,
+) {
+    let color = match enemy_faction {
+        Faction::Caldari => Color::srgba(0.4, 0.6, 0.9, 0.35),   // Caldari blue
+        Faction::Gallente => Color::srgba(0.4, 0.9, 0.5, 0.35), // Gallente green
+        Faction::Amarr => Color::srgba(0.9, 0.6, 0.2, 0.35),    // Amarr gold
+        Faction::Minmatar => Color::srgba(0.9, 0.3, 0.2, 0.35),  // Minmatar red
+    };
+
+    for i in 0..count {
+        let (x, y) = cg_spawn_position(i, count, wave);
+        commands.spawn((
+            CGSpawnTelegraph { timer: 0.0 },
+            Sprite {
+                color,
+                custom_size: Some(Vec2::splat(24.0)),
+                ..default()
+            },
+            Transform::from_xyz(x, y, 5.0),
+        ));
+    }
+}
+
+fn despawn_cg_telegraphs(commands: &mut Commands, query: &Query<Entity, With<CGSpawnTelegraph>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+}
+
+/// Animate telegraphs: fast pulse in opacity so the player notices them.
+pub fn update_cg_telegraphs(
+    time: Res<Time>,
+    mut query: Query<(&mut Sprite,
+        &mut CGSpawnTelegraph,
+    )>,
+) {
+    let dt = time.delta_secs();
+    for (mut sprite, mut telegraph) in query.iter_mut() {
+        telegraph.timer += dt * 8.0; // fast pulse
+        let pulse = (telegraph.timer.sin() * 0.5 + 0.5).clamp(0.2, 1.0);
+        sprite.color.set_alpha(pulse * 0.5);
     }
 }
 

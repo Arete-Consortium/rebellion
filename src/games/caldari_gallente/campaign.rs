@@ -414,6 +414,9 @@ impl VerticalSliceMode {
     }
 }
 
+/// Seconds to wait between waves for pacing (set to 0.0 for instant back-to-back).
+pub const CG_INTER_WAVE_DELAY: f32 = 2.5;
+
 /// Campaign state for Caldari/Gallente module
 #[derive(Resource, Debug, Clone, Default)]
 pub struct CGCampaignState {
@@ -423,6 +426,8 @@ pub struct CGCampaignState {
     pub boss_spawned: bool,
     pub boss_defeated: bool,
     pub t3_unlocked: bool,
+    /// Counts down after a wave is cleared; next wave spawns at 0.
+    pub wave_delay_timer: f32,
 }
 
 impl CGCampaignState {
@@ -447,6 +452,7 @@ impl CGCampaignState {
         self.current_wave = 1;
         self.boss_spawned = false;
         self.boss_defeated = false;
+        self.wave_delay_timer = 0.0;
     }
 
     /// Complete current mission. Returns true if more missions remain.
