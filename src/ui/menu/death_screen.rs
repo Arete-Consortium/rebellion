@@ -515,6 +515,8 @@ pub(crate) fn death_screen_input(
     mut selection: ResMut<DeathSelection>,
     mut score: ResMut<ScoreSystem>,
     mut campaign: ResMut<CampaignState>,
+    mut cg_campaign: ResMut<crate::games::caldari_gallente::CGCampaignState>,
+    itch_mode: Res<crate::core::ItchMode>,
     mut transitions: EventWriter<TransitionEvent>,
 ) {
     // Navigation
@@ -540,7 +542,13 @@ pub(crate) fn death_screen_input(
             DeathAction::Retry => {
                 score.reset_game();
                 *campaign = CampaignState::default();
-                transitions.send(TransitionEvent::to(GameState::ShipSelect));
+                if itch_mode.enabled {
+                    // Itch mode: bypass ship select and briefing, restart slice immediately
+                    *cg_campaign = crate::games::caldari_gallente::CGCampaignState::default();
+                    transitions.send(TransitionEvent::to(GameState::Playing));
+                } else {
+                    transitions.send(TransitionEvent::to(GameState::ShipSelect));
+                }
             }
             DeathAction::Exit => {
                 transitions.send(TransitionEvent::to(GameState::MainMenu));

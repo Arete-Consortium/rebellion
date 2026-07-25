@@ -253,6 +253,7 @@ pub fn spawn_mission_briefing(
 pub fn mission_briefing_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<JoystickState>,
+    itch_mode: Res<crate::core::ItchMode>,
     mut next: ResMut<NextState<GameState>>,
 ) {
     if joystick.confirm()
@@ -261,6 +262,10 @@ pub fn mission_briefing_input(
     {
         next.set(GameState::Playing);
     } else if joystick.back() || keyboard.just_pressed(KeyCode::Escape) {
-        next.set(GameState::ShipSelect);
+        if itch_mode.enabled {
+            next.set(GameState::MainMenu);
+        } else {
+            next.set(GameState::ShipSelect);
+        }
     }
 }
