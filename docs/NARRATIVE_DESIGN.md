@@ -1,4 +1,4 @@
-# EVE Rebellion: Narrative Design Document
+# Rebellion: Narrative Design Document
 
 ## The Elder Fleet Liberation Campaign
 

@@ -119,5 +119,5 @@ See `config/module.json` for the complete module manifest including:
 
 ## Credits
 
-Part of EVE Rebellion by the EVE Rebellion Team.
+Part of Rebellion.
 Inspired by the Battle of Caldari Prime (YC115) from EVE Online lore.

@@ -132,7 +132,7 @@ jobs:
             | Linux x64 | `${{ github.event.repository.name }}-linux-x64.tar.gz` |
             | Windows x64 | `${{ github.event.repository.name }}-windows-x64.zip` |
             | macOS x64 | `${{ github.event.repository.name }}-macos-x64.tar.gz` |
-            | Web (itch.io) | [Play in browser](https://aretedriver.itch.io/eve-rebellion) |
+            | Web (itch.io) | [Play in browser](https://aretedriver.itch.io/rebellion) |
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         env:
@@ -216,14 +216,14 @@ jobs:
       - name: Push to itch.io (Linux)
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: butler push linux-extracted aretedriver/eve-rebellion:linux --userversion ${{ github.ref_name }}
+        run: butler push linux-extracted aretedriver/rebellion:linux --userversion ${{ github.ref_name }}
 
       - name: Push to itch.io (Windows)
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: butler push windows-extracted aretedriver/eve-rebellion:windows --userversion ${{ github.ref_name }}
+        run: butler push windows-extracted aretedriver/rebellion:windows --userversion ${{ github.ref_name }}
 
       - name: Push to itch.io (Web)
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-        run: butler push web aretedriver/eve-rebellion:html5 --userversion ${{ github.ref_name }}
+        run: butler push web aretedriver/rebellion:html5 --userversion ${{ github.ref_name }}
