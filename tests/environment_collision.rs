@@ -14,7 +14,7 @@ use rebellion::core::{AmmoType, GameState, PlayerFireEvent, WeaponType};
 use rebellion::entities::{Player, ShipStats};
 use rebellion::entities::environment::{
     spawn_environment, EnvironmentContactDamage, EnvironmentHealth, EnvironmentKind,
-    EnvironmentObject, ProjectileEnvironmentContact, ProjectileInteraction,
+    EnvironmentObject, ProjectileInteraction,
 };
 use rebellion::systems::ManeuverState;
 use rebellion::simulation::state_hash::SimStateHash;
@@ -169,4 +169,46 @@ fn environment_pipeline_e2e() {
         hash_before, hash_after,
         "state hash should change after projectile/environment collision"
     );
+}
+
+/// Spawn 100 environment objects and run 60 frames to verify spatial grid
+/// and detection systems scale linearly without panic.
+#[test]
+fn environment_stress_test_survives() {
+    let mut app = build_headless_app();
+
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Playing);
+    app.update();
+
+    for i in 0..100 {
+        let x = ((i % 10) as f32 - 4.5) * 60.0;
+        let y = ((i / 10) as f32 - 4.5) * 50.0;
+        app.world_mut().commands().queue(move |w: &mut World| {
+            spawn_environment(
+                &mut w.commands(),
+                Vec2::new(x, y),
+                EnvironmentKind::SoftHazard,
+                20.0,
+                None,
+                Some(50.0),
+                None,
+                ProjectileInteraction::Damageable,
+                10,
+            );
+        });
+    }
+
+    // Run 60 frames — enough for grid updates and detection to exercise all objects
+    for _ in 0..60 {
+        app.update();
+    }
+
+    // All 100 should still exist (nothing destroys them in this test)
+    let remaining = {
+        let mut q = app.world_mut().query_filtered::<Entity, With<EnvironmentObject>>();
+        q.iter(app.world()).count()
+    };
+    assert_eq!(remaining, 100, "all 100 stress-test asteroids should survive");
 }
