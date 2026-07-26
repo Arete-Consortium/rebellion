@@ -20,8 +20,10 @@ use combat_reactions::{
     environment_hit_reactions, player_death_reactions, player_hit_reactions, spawn_chain_bolts,
     tick_chain_bolts,
 };
+use debug_overlay::{draw_environment_colliders, DevConfig};
 
 pub mod combat_reactions;
+pub mod debug_overlay;
 pub mod rng;
 
 pub use rng::PresentationRng;
@@ -33,6 +35,7 @@ impl Plugin for PresentationPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AudioSettings>()
             .init_resource::<PresentationRng>()
+            .init_resource::<DevConfig>()
             .add_plugins((
                 EffectsPlugin,
                 AudioPlugin,
@@ -58,6 +61,11 @@ impl Plugin for PresentationPlugin {
                     spawn_chain_bolts,
                     tick_chain_bolts,
                 )
+                    .run_if(in_state(crate::core::GameState::Playing)),
+            )
+            .add_systems(
+                Update,
+                draw_environment_colliders
                     .run_if(in_state(crate::core::GameState::Playing)),
             );
     }
