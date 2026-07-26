@@ -15,7 +15,7 @@ use crate::entities::{
 };
 use crate::entities::environment::{
     ContactCooldown, EnvironmentCollider, EnvironmentContactDamage,
-    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent, EnvironmentHealth, EnvironmentKind,
+    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent, EnvironmentHealth,
     EnvironmentObject, EnvironmentScoreValue, PlayerEnvironmentContact, ProjectileEnvironmentContact,
     ProjectileInteraction, resolve_boundary_pin,
 };
@@ -323,14 +323,9 @@ pub fn resolve_player_environment_contacts(
         &EnvironmentCollider,
         Option<&EnvironmentContactDamage>,
         Option<&mut ContactCooldown>,
-        Option<&mut EnvironmentHealth>,
-        Option<&EnvironmentScoreValue>,
-        Option<&EnvironmentKind>,
     ), (With<EnvironmentObject>, Without<Player>)>,
     mut damage_events: EventWriter<PlayerDamagedEvent>,
     mut damage_layer_events: EventWriter<DamageLayerEvent>,
-    _env_damage_events: EventWriter<EnvironmentDamageAppliedEvent>,
-    _env_destroyed_events: EventWriter<EnvironmentDestroyedEvent>,
 ) {
     let Ok((mut player_transform, mut movement, mut player_stats, maneuver, hitbox)) =
         player_query.get_single_mut()
@@ -339,18 +334,19 @@ pub fn resolve_player_environment_contacts(
     };
 
     for contact in contact_events.read() {
-        let Ok((env_transform, env_collider, contact_damage, mut cooldown, _health, _score_val, _kind)) =
+        let Ok((env_transform, env_collider, contact_damage, mut cooldown)) =
             env_query.get_mut(contact.environment)
         else {
             continue;
         };
 
         let env_pos = env_transform.translation.truncate();
+        let player_pos = player_transform.translation.truncate();
 
         // ── Separation ──
         let slop = 2.0; // small buffer to prevent jitter
         let corrected = resolve_boundary_pin(
-            contact.player_position,
+            player_pos,
             hitbox.radius,
             env_pos,
             env_collider.radius,
@@ -367,7 +363,7 @@ pub fn resolve_player_environment_contacts(
 
         // ── Deflection ──
         // Nudge velocity along contact normal to prevent sliding into the object again
-        let deflection = contact.normal * contact.penetration * 60.0; // scale by fixed timestep frequency
+        let deflection = contact.normal * contact.penetration * ((1.0 / crate::simulation::FIXED_TIMESTEP_SECS) as f32);
         movement.velocity += deflection;
 
         // ── Contact Damage ──
@@ -428,12 +424,6 @@ pub fn resolve_player_environment_contacts(
                 });
             }
         }
-
-        // ── Destructible health (projectile damage handled elsewhere) ──
-        // If the environment has health and was somehow destroyed externally,
-        // emit events.  This block is a no-op here; projectile resolution will
-        // drive health changes.
-        let _ = (_health, _score_val, _kind);
     }
 }
 
@@ -473,7 +463,7 @@ pub fn resolve_projectile_environment_contacts(
                 commands.entity(contact.projectile).despawn_recursive();
             }
             ProjectileInteraction::Damageable => {
-                // Soft hazard / asteroid — apply damage and destroy projectile
+                // Soft hazard / asteroid — apply damage; respect pierce
                 health.current -= contact.damage;
                 let destroyed = health.current <= 0.0;
 
@@ -495,7 +485,15 @@ pub fn resolve_projectile_environment_contacts(
                     commands.entity(contact.environment).despawn_recursive();
                 }
 
-                commands.entity(contact.projectile).despawn_recursive();
+                // Pierce: decrement and keep projectile alive; else despawn
+                match contact.pierce_remaining {
+                    Some(n) if n > 0 => {
+                        commands.entity(contact.projectile).insert(crate::entities::Pierce(n - 1));
+                    }
+                    _ => {
+                        commands.entity(contact.projectile).despawn_recursive();
+                    }
+                }
             }
         }
     }

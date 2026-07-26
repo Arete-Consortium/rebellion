@@ -10,19 +10,10 @@ use crate::entities::Hitbox;
 use crate::entities::Player;
 
 /// Dev/debug toggle resource.
-#[derive(Resource, Debug, Clone, Copy)]
+#[derive(Resource, Debug, Clone, Copy, Default)]
 pub struct DevConfig {
     pub show_environment_colliders: bool,
     pub show_player_hitbox: bool,
-}
-
-impl Default for DevConfig {
-    fn default() -> Self {
-        Self {
-            show_environment_colliders: false,
-            show_player_hitbox: false,
-        }
-    }
 }
 
 /// Draw wireframe circles for environment colliders and player hitbox.

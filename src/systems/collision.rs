@@ -86,25 +86,33 @@ impl SpatialGrid {
         }
     }
 
-    /// Get environment objects in the same cell and adjacent cells
-    pub fn get_nearby_environments(&self, pos: Vec2) -> impl Iterator<Item = &(Entity, Vec2, f32)> {
+    /// Get environment objects in the same cell and adjacent cells.
+    /// Deduplicates entities that span multiple grid cells.
+    pub fn get_nearby_environments(&self, pos: Vec2) -> Vec<(Entity, Vec2, f32)> {
         let gx = ((pos.x + crate::core::SCREEN_WIDTH / 2.0) / CELL_SIZE) as i32;
         let gy = ((pos.y + crate::core::SCREEN_HEIGHT / 2.0) / CELL_SIZE) as i32;
 
-        let mut indices = Vec::with_capacity(9);
+        let mut results = Vec::with_capacity(16);
+        let mut seen = Vec::with_capacity(16);
+
         for dy in -1..=1 {
             for dx in -1..=1 {
                 let nx = gx + dx;
                 let ny = gy + dy;
                 if nx >= 0 && nx < GRID_WIDTH as i32 && ny >= 0 && ny < GRID_HEIGHT as i32 {
-                    indices.push((ny * GRID_WIDTH as i32 + nx) as usize);
+                    let idx = (ny * GRID_WIDTH as i32 + nx) as usize;
+                    for &entry in &self.environment_cells[idx] {
+                        let entity = entry.0;
+                        if !seen.contains(&entity) {
+                            seen.push(entity);
+                            results.push(entry);
+                        }
+                    }
                 }
             }
         }
 
-        indices
-            .into_iter()
-            .flat_map(move |idx| self.environment_cells[idx].iter())
+        results
     }
 
     /// Get enemies in the same cell and adjacent cells (for border cases)

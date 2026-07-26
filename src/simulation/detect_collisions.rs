@@ -39,7 +39,7 @@ pub fn detect_player_environment_contacts(
     };
     let player_pos = player_transform.translation.truncate();
 
-    for &(env_entity, env_pos, env_radius) in grid.get_nearby_environments(player_pos) {
+    for (env_entity, env_pos, env_radius) in grid.get_nearby_environments(player_pos) {
         if let Some(contact) = circle_contact(player_pos, hitbox.radius, env_pos, env_radius) {
             contact_events.send(PlayerEnvironmentContact {
                 player: player_entity,
@@ -119,14 +119,13 @@ pub fn detect_player_projectile_environment_hits(
     projectile_query: Query<(Entity, &Transform, &ProjectileDamage, Option<&Pierce>), With<PlayerProjectile>>,
     mut contact_events: EventWriter<ProjectileEnvironmentContact>,
 ) {
-    const COLLISION_RADIUS_SQ: f32 = 25.0 * 25.0;
-
     for (proj_entity, proj_transform, proj_damage, pierce) in projectile_query.iter() {
         let proj_pos = proj_transform.translation.truncate();
 
-        for &(env_entity, env_pos, _env_radius) in grid.get_nearby_environments(proj_pos) {
+        for (env_entity, env_pos, env_radius) in grid.get_nearby_environments(proj_pos) {
+            let hit_radius = env_radius + 4.0;
             let dist_sq = (proj_pos - env_pos).length_squared();
-            if dist_sq < COLLISION_RADIUS_SQ {
+            if dist_sq < hit_radius * hit_radius {
                 contact_events.send(ProjectileEnvironmentContact {
                     projectile: proj_entity,
                     environment: env_entity,
@@ -150,14 +149,13 @@ pub fn detect_enemy_projectile_environment_hits(
     projectile_query: Query<(Entity, &Transform, &ProjectileDamage), With<EnemyProjectile>>,
     mut contact_events: EventWriter<ProjectileEnvironmentContact>,
 ) {
-    const COLLISION_RADIUS_SQ: f32 = 25.0 * 25.0;
-
     for (proj_entity, proj_transform, proj_damage) in projectile_query.iter() {
         let proj_pos = proj_transform.translation.truncate();
 
-        for &(env_entity, env_pos, _env_radius) in grid.get_nearby_environments(proj_pos) {
+        for (env_entity, env_pos, env_radius) in grid.get_nearby_environments(proj_pos) {
+            let hit_radius = env_radius + 4.0;
             let dist_sq = (proj_pos - env_pos).length_squared();
-            if dist_sq < COLLISION_RADIUS_SQ {
+            if dist_sq < hit_radius * hit_radius {
                 contact_events.send(ProjectileEnvironmentContact {
                     projectile: proj_entity,
                     environment: env_entity,

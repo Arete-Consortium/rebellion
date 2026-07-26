@@ -11,8 +11,8 @@ use bevy::prelude::*;
 use crate::core::GameState;
 use crate::entities::{CollectiblePlugin, ProjectilePlugin};
 use crate::entities::environment::{
-    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent, PlayerEnvironmentContact,
-    ProjectileEnvironmentContact,
+    tick_contact_cooldowns, EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent,
+    PlayerEnvironmentContact, ProjectileEnvironmentContact,
 };
 use crate::systems::collision::SpatialGrid;
 use crate::systems::CollisionPlugin;
@@ -109,6 +109,12 @@ impl Plugin for SimulationPlugin {
                 FixedUpdate,
                 compute_state_hash_system
                     .after(assign_sim_ids)
+                    .run_if(simulation_active),
+            )
+            .add_systems(
+                FixedUpdate,
+                tick_contact_cooldowns
+                    .after(compute_state_hash_system)
                     .run_if(simulation_active),
             )
             .add_plugins((CollisionPlugin, ProjectilePlugin, CollectiblePlugin));

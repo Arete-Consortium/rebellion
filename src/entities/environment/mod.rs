@@ -337,6 +337,18 @@ pub fn spawn_environment(
 }
 
 // =============================================================================
+// Cooldown Ticking
+// =============================================================================
+
+/// Decrement `ContactCooldown` on every fixed tick.
+/// Saturates at zero so underflow is impossible.
+pub fn tick_contact_cooldowns(mut query: Query<&mut ContactCooldown>) {
+    for mut cd in query.iter_mut() {
+        cd.remaining_ticks = cd.remaining_ticks.saturating_sub(1);
+    }
+}
+
+// =============================================================================
 // Unit Tests
 // =============================================================================
 
