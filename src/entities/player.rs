@@ -339,13 +339,14 @@ fn not_last_stand(last_stand: Option<Res<crate::games::caldari_gallente::LastSta
     }
 }
 
-/// Spawn player at start of gameplay
+/// Spawn player at start of gameplay. Idempotent: despawn existing player first.
 fn spawn_player(
     mut commands: Commands,
     session: Res<GameSession>,
     sprite_cache: Res<crate::assets::ShipSpriteCache>,
     save_data: Res<crate::core::SaveData>,
     last_stand: Option<Res<crate::games::caldari_gallente::LastStandState>>,
+    existing_player: Query<Entity, With<Player>>,
 ) {
     // Skip player spawn in Last Stand mode (titan is spawned instead)
     match &last_stand {
@@ -359,6 +360,11 @@ fn spawn_player(
         None => {
             info!("spawn_player: LastStandState resource not found");
         }
+    }
+
+    // Remove any stale player entity from a previous run before spawning fresh
+    for entity in existing_player.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 
     let ship_def = session.selected_ship();

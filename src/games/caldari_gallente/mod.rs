@@ -81,7 +81,11 @@ impl Plugin for CaldariGallentePlugin {
         // Skip when nightmare mode or Last Stand mode is active
         app.add_systems(
             OnEnter(GameState::Playing),
-            cg_campaign::start_cg_mission
+            (
+                cg_campaign::cleanup_cg_entities,
+                cg_campaign::start_cg_mission,
+            )
+                .chain()
                 .run_if(is_caldari_gallente)
                 .run_if(not(nightmare_active))
                 .run_if(not(last_stand_active)),

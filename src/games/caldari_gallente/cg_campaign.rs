@@ -800,3 +800,32 @@ pub fn check_cg_boss_defeated(
         }
     }
 }
+
+/// Despawn all gameplay entities before starting a new CG mission or retry.
+/// Prevents stale enemies, bosses, projectiles, and telegraphs from leaking
+/// across runs when the death-screen retry path skips the main menu.
+/// Player entities are handled idempotently by `spawn_player`.
+pub fn cleanup_cg_entities(
+    mut commands: Commands,
+    enemy_query: Query<Entity, With<crate::entities::Enemy>>,
+    boss_query: Query<Entity, With<CGBoss>>,
+    projectile_query: Query<Entity, With<crate::entities::EnemyProjectile>>,
+    telegraph_query: Query<Entity, With<CGSpawnTelegraph>>,
+    collectible_query: Query<Entity, With<crate::entities::collectible::Collectible>>,
+) {
+    for e in enemy_query.iter() {
+        commands.entity(e).despawn_recursive();
+    }
+    for e in boss_query.iter() {
+        commands.entity(e).despawn_recursive();
+    }
+    for e in projectile_query.iter() {
+        commands.entity(e).despawn_recursive();
+    }
+    for e in telegraph_query.iter() {
+        commands.entity(e).despawn_recursive();
+    }
+    for e in collectible_query.iter() {
+        commands.entity(e).despawn_recursive();
+    }
+}
