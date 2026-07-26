@@ -113,9 +113,14 @@ pub fn check_cg_wave_complete(
         return;
     }
 
-    // Wave complete when no enemies remain
+    // Wave complete when no enemies remain.
+    // Only start the inter-wave delay for waves > 1 so wave 1 spawns immediately
+    // (preserves the "10-second to action" feel).
     let enemy_count = enemy_query.iter().count();
-    if enemy_count == 0 && cg_campaign.current_wave > 0 && cg_campaign.in_mission {
+    if enemy_count == 0
+        && cg_campaign.current_wave > 1
+        && cg_campaign.in_mission
+    {
         if let Some(mission) = cg_campaign.current_mission() {
             if cg_campaign.current_wave <= mission.waves {
                 info!("CG Wave {} complete!", cg_campaign.current_wave);
