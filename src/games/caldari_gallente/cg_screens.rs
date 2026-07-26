@@ -2,7 +2,7 @@
 //!
 //! UI screens shown after mission completion and campaign victory.
 
-use super::campaign::{CGCampaignState, VerticalSliceMode};
+use super::campaign::{CGCampaignState, CGSessionTimer, VerticalSliceMode};
 use crate::core::{Faction, GameSession, GameState, ItchMode};
 use crate::systems::JoystickState;
 use bevy::prelude::*;
@@ -146,6 +146,8 @@ pub fn cg_stage_complete_input(
     joystick: Res<JoystickState>,
     mut cg_campaign: ResMut<CGCampaignState>,
     slice_mode: Res<VerticalSliceMode>,
+    mut session_timer: ResMut<CGSessionTimer>,
+    time: Res<Time>,
     mut transitions: EventWriter<crate::ui::TransitionEvent>,
 ) {
     if keyboard.just_pressed(KeyCode::Space)
@@ -157,12 +159,14 @@ pub fn cg_stage_complete_input(
             // More missions available
             transitions.send(crate::ui::TransitionEvent::to(GameState::Playing));
         } else if slice_mode.is_slice() {
-            // Vertical slice complete — show slice end screen
+            // Vertical slice complete — stop timer and show end screen
+            session_timer.stop_and_log(time.elapsed_secs_f64());
             transitions.send(crate::ui::TransitionEvent::slow(
                 GameState::SliceComplete,
             ));
         } else {
             // Full campaign complete!
+            session_timer.stop_and_log(time.elapsed_secs_f64());
             transitions.send(crate::ui::TransitionEvent::slow(GameState::Victory));
         }
     }
@@ -662,6 +666,8 @@ pub fn cg_slice_complete_input(
     joystick: Res<JoystickState>,
     mut cg_campaign: ResMut<CGCampaignState>,
     mut itch_mode: ResMut<ItchMode>,
+    mut session_timer: ResMut<CGSessionTimer>,
+    time: Res<Time>,
     mut transitions: EventWriter<crate::ui::TransitionEvent>,
 ) {
     if keyboard.just_pressed(KeyCode::Space)
@@ -674,6 +680,7 @@ pub fn cg_slice_complete_input(
         if itch_mode.enabled {
             itch_mode.completed_first_run = true;
         }
+        session_timer.stop_and_log(time.elapsed_secs_f64());
         *cg_campaign = CGCampaignState::default();
         transitions.send(crate::ui::TransitionEvent::to(GameState::MainMenu));
     }

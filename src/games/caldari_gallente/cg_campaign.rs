@@ -65,8 +65,14 @@ pub struct CGBossIntroDialogue {
     timer: f32,
 }
 
-/// Start a CG mission when entering Playing state
-pub fn start_cg_mission(mut cg_campaign: ResMut<CGCampaignState>) {
+/// Start a CG mission when entering Playing state.
+/// Also starts the session timer on wave 1 of mission 1 so we can log total
+/// slice duration for empirical timing validation.
+pub fn start_cg_mission(
+    mut cg_campaign: ResMut<CGCampaignState>,
+    mut session_timer: ResMut<crate::games::caldari_gallente::CGSessionTimer>,
+    time: Res<Time>,
+) {
     cg_campaign.start_mission();
 
     if let Some(mission) = cg_campaign.current_mission() {
@@ -76,6 +82,12 @@ pub fn start_cg_mission(mut cg_campaign: ResMut<CGCampaignState>) {
             mission.name,
             mission.description
         );
+    }
+
+    // Start the empirical timer on the very first wave of the slice
+    if cg_campaign.mission_index == 0 && cg_campaign.current_wave == 1 {
+        let now = time.elapsed_secs_f64();
+        session_timer.start(now);
     }
 }
 

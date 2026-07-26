@@ -83,20 +83,23 @@ impl CGBossType {
         }
     }
 
-    /// Get the ship type_id for this boss based on enemy faction
+    /// Get the ship type_id for this boss based on enemy faction.
+    ///
+    /// Hull progression: cruiser → battlecruiser → heavy battlecruiser → battleship/carrier.
+    /// Every ID is verified against ship_manifest.json.
     pub fn type_id(&self, enemy_faction: crate::core::Faction) -> u32 {
         use crate::core::Faction;
         match (self, enemy_faction) {
             // Caldari bosses (player is Gallente, fighting Caldari)
-            (CGBossType::PatrolCommander, Faction::Caldari) => 624, // Moa
-            (CGBossType::FleetCommander, Faction::Caldari) => 24696, // Drake
-            (CGBossType::EliteSquadron, Faction::Caldari) => 24688, // Ferox
-            (CGBossType::FleetAdmiral, Faction::Caldari) => 638,    // Raven
+            (CGBossType::PatrolCommander, Faction::Caldari) => 630,   // Moa (cruiser)
+            (CGBossType::FleetCommander, Faction::Caldari) => 24696,  // Ferox (battlecruiser)
+            (CGBossType::EliteSquadron, Faction::Caldari) => 24688,   // Drake (battlecruiser)
+            (CGBossType::FleetAdmiral, Faction::Caldari) => 11566,     // Raven (battleship)
             // Gallente bosses (player is Caldari, fighting Gallente)
-            (CGBossType::PatrolCommander, Faction::Gallente) => 626, // Vexor
-            (CGBossType::FleetCommander, Faction::Gallente) => 24690, // Myrmidon
-            (CGBossType::EliteSquadron, Faction::Gallente) => 24694, // Brutix
-            (CGBossType::FleetAdmiral, Faction::Gallente) => 641,    // Megathron
+            (CGBossType::PatrolCommander, Faction::Gallente) => 638,  // Vexor (cruiser)
+            (CGBossType::FleetCommander, Faction::Gallente) => 24700, // Myrmidon (battlecruiser)
+            (CGBossType::EliteSquadron, Faction::Gallente) => 11567,  // Megathron (battleship)
+            (CGBossType::FleetAdmiral, Faction::Gallente) => 23911,   // Thanatos (carrier)
             // Fallback
             _ => 0,
         }
@@ -416,6 +419,35 @@ impl VerticalSliceMode {
 
 /// Seconds to wait between waves for pacing (set to 0.0 for instant back-to-back).
 pub const CG_INTER_WAVE_DELAY: f32 = 2.5;
+
+/// Timer that tracks how long a full slice run takes, from first wave to slice complete.
+/// Logs to the browser console so we can validate the 8–12 minute target empirically.
+#[derive(Resource, Debug, Clone, Default)]
+pub struct CGSessionTimer {
+    pub start_time: Option<f64>,
+    pub elapsed_secs: f64,
+}
+
+impl CGSessionTimer {
+    pub fn start(&mut self, now: f64) {
+        self.start_time = Some(now);
+        self.elapsed_secs = 0.0;
+        info!("[SESSION TIMER] Started");
+    }
+
+    pub fn stop_and_log(&mut self, now: f64) {
+        if let Some(start) = self.start_time {
+            self.elapsed_secs = now - start;
+            let mins = (self.elapsed_secs / 60.0) as u32;
+            let secs = (self.elapsed_secs % 60.0) as u32;
+            info!(
+                "[SESSION TIMER] Slice complete — total duration: {}m {:02}s",
+                mins, secs
+            );
+        }
+        self.start_time = None;
+    }
+}
 
 /// Campaign state for Caldari/Gallente module
 #[derive(Resource, Debug, Clone, Default)]

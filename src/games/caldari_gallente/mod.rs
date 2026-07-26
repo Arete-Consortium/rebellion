@@ -17,7 +17,7 @@ pub mod mode_select;
 pub mod nightmare;
 pub mod ships;
 
-pub use campaign::{CGCampaignState, ShiigeruNightmare, VerticalSliceMode};
+pub use campaign::{CGCampaignState, CGSessionTimer, ShiigeruNightmare, VerticalSliceMode};
 pub use last_stand::LastStandState;
 pub use ships::*;
 
@@ -74,6 +74,7 @@ impl Plugin for CaldariGallentePlugin {
         app.init_resource::<CaldariGallenteShips>();
         app.init_resource::<ShiigeruNightmare>();
         app.init_resource::<CGCampaignState>();
+        app.init_resource::<CGSessionTimer>();
         app.init_resource::<LastStandState>();
         app.init_resource::<VerticalSliceMode>();
 

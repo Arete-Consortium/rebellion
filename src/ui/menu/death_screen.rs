@@ -5,7 +5,7 @@
 use super::common::*;
 use crate::core::*;
 use crate::games::ActiveModule;
-use crate::games::caldari_gallente::CGCampaignState;
+use crate::games::caldari_gallente::{CGCampaignState, CGSessionTimer};
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
 use bevy::prelude::*;
@@ -526,6 +526,8 @@ pub(crate) fn death_screen_input(
     mut score: ResMut<ScoreSystem>,
     mut campaign: ResMut<CampaignState>,
     mut cg_campaign: ResMut<crate::games::caldari_gallente::CGCampaignState>,
+    mut session_timer: ResMut<CGSessionTimer>,
+    time: Res<Time>,
     itch_mode: Res<crate::core::ItchMode>,
     mut transitions: EventWriter<TransitionEvent>,
 ) {
@@ -554,6 +556,7 @@ pub(crate) fn death_screen_input(
                 *campaign = CampaignState::default();
                 if itch_mode.enabled {
                     // Itch mode: bypass ship select and briefing, restart slice immediately
+                    session_timer.stop_and_log(time.elapsed_secs_f64());
                     *cg_campaign = crate::games::caldari_gallente::CGCampaignState::default();
                     transitions.send(TransitionEvent::to(GameState::Playing));
                 } else {
@@ -561,6 +564,7 @@ pub(crate) fn death_screen_input(
                 }
             }
             DeathAction::Exit => {
+                session_timer.stop_and_log(time.elapsed_secs_f64());
                 transitions.send(TransitionEvent::to(GameState::MainMenu));
             }
         }
@@ -568,6 +572,7 @@ pub(crate) fn death_screen_input(
 
     // Quick exit
     if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+        session_timer.stop_and_log(time.elapsed_secs_f64());
         transitions.send(TransitionEvent::to(GameState::MainMenu));
     }
 }
