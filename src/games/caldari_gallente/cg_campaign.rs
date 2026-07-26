@@ -166,7 +166,7 @@ pub fn spawn_cg_wave(
         // On first frame of delay, spawn telegraphs at the upcoming wave positions
         if cg_campaign.wave_delay_timer >= CG_INTER_WAVE_DELAY - 0.05 {
             let wave = cg_campaign.current_wave;
-            let base_count = 3 + wave as usize;
+            let base_count = 4 + wave as usize;
             let spawn_mult = difficulty.spawn_rate_mult();
             let count = (base_count as f32 * spawn_mult) as usize;
             spawn_cg_telegraphs(
@@ -365,9 +365,10 @@ fn cg_behavior_for_mission(mission_index: usize) -> EnemyBehavior {
 /// Overwrite enemy stats for Caldari/Gallente mission scaling.
 /// Call immediately after spawn_enemy() in spawn_cg_wave.
 ///
-/// Mission 1 (tutorial): 2x HP, 60% damage — forgiving first contact.
-/// Mission 2: 1.5x HP, 80% damage — gentle ramp.
-/// Mission 3+: baseline stats.
+/// Tuned for the 8–12 min vertical-slice target:
+///   M1 (tutorial): 3× HP, 50% damage — very forgiving, lets player learn.
+///   M2: 2× HP, 70% damage — proper fight, gentle ramp.
+///   M3+: 1.5× HP, 90% damage — climax intensity, still survivable.
 fn apply_cg_mission_scaling(
     commands: &mut Commands,
     entity: Entity,
@@ -375,14 +376,14 @@ fn apply_cg_mission_scaling(
     mission_index: usize,
 ) {
     let hp_mult = match mission_index {
-        0 => 2.0,
-        1 => 1.5,
-        _ => 1.0,
+        0 => 3.0,
+        1 => 2.0,
+        _ => 1.5,
     };
     let dmg_mult = match mission_index {
-        0 => 0.6,
-        1 => 0.8,
-        _ => 1.0,
+        0 => 0.5,
+        1 => 0.7,
+        _ => 0.9,
     };
 
     let (name, base_hp, speed, score) = match type_id {

@@ -41,12 +41,13 @@ impl CGBossType {
 
     pub fn health(&self) -> f32 {
         match self {
-            // Vertical-slice tuned: bosses need ~20–35 s TTK to feel like encounters,
-            // not speed bumps. Calibrated against ~100 player DPS (Kestrel missiles).
-            CGBossType::PatrolCommander => 2000.0,
-            CGBossType::FleetCommander => 2800.0,
-            CGBossType::EliteSquadron => 3200.0,
-            CGBossType::FleetAdmiral => 3500.0,
+            // Tuned for 8–12 min slice run target.
+            // Kestrel DPS ≈ 64; these HP values give 55–110 s TTK per boss,
+            // which feels like a real encounter without becoming a slog.
+            CGBossType::PatrolCommander => 3500.0,
+            CGBossType::FleetCommander => 5000.0,
+            CGBossType::EliteSquadron => 5500.0,
+            CGBossType::FleetAdmiral => 7000.0,
         }
     }
 
@@ -114,7 +115,7 @@ pub const CG_MISSIONS: [CGMission; 5] = [
         description: "Federation forces probe Caldari orbital defenses. First contact.",
         primary_objective: "Destroy enemy patrol ships",
         bonus_objective: Some("No damage taken"),
-        waves: 3,
+        waves: 5,
         boss: None,
         is_tutorial: true,
         unlocks_t3: false,
@@ -125,7 +126,7 @@ pub const CG_MISSIONS: [CGMission; 5] = [
         description: "Combat above Caldari Prime's cities. The skyline burns.",
         primary_objective: "Clear the airspace",
         bonus_objective: Some("Protect civilian transports"),
-        waves: 4,
+        waves: 6,
         boss: Some(CGBossType::PatrolCommander),
         is_tutorial: false,
         unlocks_t3: false,
@@ -136,7 +137,7 @@ pub const CG_MISSIONS: [CGMission; 5] = [
         description: "Enemy reinforcements inbound. Intercept before they reach the front.",
         primary_objective: "Destroy the convoy",
         bonus_objective: Some("Destroy all escorts first"),
-        waves: 5,
+        waves: 7,
         boss: Some(CGBossType::FleetCommander),
         is_tutorial: false,
         unlocks_t3: false,
@@ -418,7 +419,9 @@ impl VerticalSliceMode {
 }
 
 /// Seconds to wait between waves for pacing (set to 0.0 for instant back-to-back).
-pub const CG_INTER_WAVE_DELAY: f32 = 2.5;
+/// Tuned to ~3.5 s to give the player a breather and stretch total slice
+/// duration toward the 8–12 minute target.
+pub const CG_INTER_WAVE_DELAY: f32 = 3.5;
 
 /// Timer that tracks how long a full slice run takes, from first wave to slice complete.
 /// Logs to the browser console so we can validate the 8–12 minute target empirically.
