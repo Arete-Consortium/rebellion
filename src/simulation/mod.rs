@@ -10,14 +10,21 @@ use bevy::prelude::*;
 
 use crate::core::GameState;
 use crate::entities::{CollectiblePlugin, ProjectilePlugin};
+use crate::entities::environment::{
+    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent, PlayerEnvironmentContact,
+    ProjectileEnvironmentContact,
+};
 use crate::systems::collision::SpatialGrid;
 use crate::systems::CollisionPlugin;
 
 use detect_collisions::{
-    detect_enemy_projectile_hits, detect_player_projectile_hits, update_spatial_grid,
+    detect_enemy_projectile_environment_hits, detect_enemy_projectile_hits,
+    detect_player_environment_contacts, detect_player_projectile_environment_hits,
+    detect_player_projectile_hits, update_spatial_grid,
 };
 use resolve_damage::{
-    enrich_contacts, resolve_enemy_projectile_damage, resolve_player_projectile_damage,
+    enrich_contacts, resolve_enemy_projectile_damage, resolve_player_environment_contacts,
+    resolve_player_projectile_damage, resolve_projectile_environment_contacts,
 };
 use resolve_deaths::resolve_enemy_deaths;
 use sim_id::assign_sim_ids;
@@ -56,6 +63,10 @@ impl Plugin for SimulationPlugin {
             .insert_resource(SimulationRng::from_seed(DEFAULT_MISSION_SEED))
             .init_resource::<SimIdGenerator>()
             .init_resource::<SimStateHash>()
+            .add_event::<PlayerEnvironmentContact>()
+            .add_event::<ProjectileEnvironmentContact>()
+            .add_event::<EnvironmentDamageAppliedEvent>()
+            .add_event::<EnvironmentDestroyedEvent>()
             .configure_sets(
                 FixedUpdate,
                 (CollisionPhase::Detection, CollisionPhase::Resolution).chain(),
@@ -66,6 +77,9 @@ impl Plugin for SimulationPlugin {
                     update_spatial_grid,
                     detect_player_projectile_hits,
                     detect_enemy_projectile_hits,
+                    detect_player_environment_contacts,
+                    detect_player_projectile_environment_hits,
+                    detect_enemy_projectile_environment_hits,
                 )
                     .chain()
                     .in_set(CollisionPhase::Detection)
@@ -77,6 +91,8 @@ impl Plugin for SimulationPlugin {
                     enrich_contacts,
                     resolve_player_projectile_damage,
                     resolve_enemy_projectile_damage,
+                    resolve_player_environment_contacts,
+                    resolve_projectile_environment_contacts,
                     resolve_enemy_deaths,
                 )
                     .chain()

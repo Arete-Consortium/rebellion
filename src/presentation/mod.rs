@@ -16,8 +16,9 @@ use crate::systems::{
 use crate::ui::UiPlugin;
 
 use combat_reactions::{
-    boss_health_callouts, enemy_death_reactions, enemy_hit_reactions, player_death_reactions,
-    player_hit_reactions, spawn_chain_bolts, tick_chain_bolts,
+    boss_health_callouts, enemy_death_reactions, enemy_hit_reactions, environment_destroyed_reactions,
+    environment_hit_reactions, player_death_reactions, player_hit_reactions, spawn_chain_bolts,
+    tick_chain_bolts,
 };
 
 pub mod combat_reactions;
@@ -52,6 +53,8 @@ impl Plugin for PresentationPlugin {
                     boss_health_callouts,
                     enemy_death_reactions,
                     player_death_reactions,
+                    environment_hit_reactions,
+                    environment_destroyed_reactions,
                     spawn_chain_bolts,
                     tick_chain_bolts,
                 )

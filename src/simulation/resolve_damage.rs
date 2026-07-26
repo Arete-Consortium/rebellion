@@ -8,9 +8,16 @@ use crate::core::{
     ContactDetected, ContactRaw, ContactType, DamageLayer, DamageLayerEvent,
     EnemyDamageAppliedEvent, PlayerDamagedEvent, RawContactType,
 };
+use crate::core::constants::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::entities::{
-    BurnOnHit, BurnStatus, ChainOnHit, Enemy, EnemyProjectile, EnemyStats, Pierce, Player,
-    PlayerProjectile, PowerupEffects, ProjectileDamage, ShipStats,
+    BurnOnHit, BurnStatus, ChainOnHit, Enemy, EnemyProjectile, EnemyStats, Hitbox, Movement,
+    Pierce, Player, PlayerProjectile, PowerupEffects, ProjectileDamage, ShipStats,
+};
+use crate::entities::environment::{
+    ContactCooldown, EnvironmentCollider, EnvironmentContactDamage,
+    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent, EnvironmentHealth, EnvironmentKind,
+    EnvironmentObject, EnvironmentScoreValue, PlayerEnvironmentContact, ProjectileEnvironmentContact,
+    ProjectileInteraction, resolve_boundary_pin,
 };
 use crate::systems::collision::SpatialGrid;
 use crate::systems::ManeuverState;
@@ -295,5 +302,201 @@ pub fn resolve_enemy_projectile_damage(
             hull_damage: damage_result.hull_damage,
             destroyed: damage_result.destroyed,
         });
+    }
+}
+
+// =============================================================================
+// Stage 3: Resolve player / environment contacts
+// =============================================================================
+
+/// Resolve player overlapping with environment objects.
+/// Applies boundary-pin separation, deflects velocity along normal, and
+/// applies contact damage with cooldown.
+pub fn resolve_player_environment_contacts(
+    mut commands: Commands,
+    mut contact_events: EventReader<PlayerEnvironmentContact>,
+    mut player_query: Query<(
+        &mut Transform, &mut Movement, &mut ShipStats, &ManeuverState, &Hitbox
+    ), (With<Player>, Without<EnvironmentObject>)>,
+    mut env_query: Query<(
+        &Transform,
+        &EnvironmentCollider,
+        Option<&EnvironmentContactDamage>,
+        Option<&mut ContactCooldown>,
+        Option<&mut EnvironmentHealth>,
+        Option<&EnvironmentScoreValue>,
+        Option<&EnvironmentKind>,
+    ), (With<EnvironmentObject>, Without<Player>)>,
+    mut damage_events: EventWriter<PlayerDamagedEvent>,
+    mut damage_layer_events: EventWriter<DamageLayerEvent>,
+    _env_damage_events: EventWriter<EnvironmentDamageAppliedEvent>,
+    _env_destroyed_events: EventWriter<EnvironmentDestroyedEvent>,
+) {
+    let Ok((mut player_transform, mut movement, mut player_stats, maneuver, hitbox)) =
+        player_query.get_single_mut()
+    else {
+        return;
+    };
+
+    for contact in contact_events.read() {
+        let Ok((env_transform, env_collider, contact_damage, mut cooldown, _health, _score_val, _kind)) =
+            env_query.get_mut(contact.environment)
+        else {
+            continue;
+        };
+
+        let env_pos = env_transform.translation.truncate();
+
+        // ── Separation ──
+        let slop = 2.0; // small buffer to prevent jitter
+        let corrected = resolve_boundary_pin(
+            contact.player_position,
+            hitbox.radius,
+            env_pos,
+            env_collider.radius,
+            &crate::entities::environment::CircleContact {
+                normal: contact.normal,
+                penetration: contact.penetration,
+            },
+            slop,
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+        );
+        player_transform.translation.x = corrected.x;
+        player_transform.translation.y = corrected.y;
+
+        // ── Deflection ──
+        // Nudge velocity along contact normal to prevent sliding into the object again
+        let deflection = contact.normal * contact.penetration * 60.0; // scale by fixed timestep frequency
+        movement.velocity += deflection;
+
+        // ── Contact Damage ──
+        if let Some(dmg) = contact_damage {
+            // Check cooldown
+            let can_damage = if let Some(ref mut cd) = cooldown {
+                if cd.remaining_ticks == 0 {
+                    cd.remaining_ticks = dmg.cooldown_ticks;
+                    true
+                } else {
+                    false
+                }
+            } else {
+                // No cooldown component yet — insert one and apply damage this tick
+                commands.entity(contact.environment).insert(ContactCooldown {
+                    remaining_ticks: dmg.cooldown_ticks,
+                });
+                true
+            };
+
+            if can_damage && !maneuver.invincible {
+                let damage_result = player_stats.take_damage_detailed(dmg.amount, dmg.damage_type);
+                let direction = contact.normal;
+
+                if damage_result.shield_damage > 0.0 {
+                    damage_layer_events.send(DamageLayerEvent {
+                        position: corrected,
+                        layer: DamageLayer::Shield,
+                        damage: damage_result.shield_damage,
+                        direction,
+                    });
+                }
+                if damage_result.armor_damage > 0.0 {
+                    damage_layer_events.send(DamageLayerEvent {
+                        position: corrected,
+                        layer: DamageLayer::Armor,
+                        damage: damage_result.armor_damage,
+                        direction,
+                    });
+                }
+                if damage_result.hull_damage > 0.0 {
+                    damage_layer_events.send(DamageLayerEvent {
+                        position: corrected,
+                        layer: DamageLayer::Hull,
+                        damage: damage_result.hull_damage,
+                        direction,
+                    });
+                }
+
+                damage_events.send(PlayerDamagedEvent {
+                    damage: dmg.amount,
+                    damage_type: dmg.damage_type,
+                    source_position: env_pos,
+                    shield_damage: damage_result.shield_damage,
+                    armor_damage: damage_result.armor_damage,
+                    hull_damage: damage_result.hull_damage,
+                    destroyed: damage_result.destroyed,
+                });
+            }
+        }
+
+        // ── Destructible health (projectile damage handled elsewhere) ──
+        // If the environment has health and was somehow destroyed externally,
+        // emit events.  This block is a no-op here; projectile resolution will
+        // drive health changes.
+        let _ = (_health, _score_val, _kind);
+    }
+}
+
+// =============================================================================
+// Stage 4: Resolve projectile / environment contacts
+// =============================================================================
+
+/// Resolve projectiles hitting environment objects.
+/// Applies damage to destructible objects, despawns projectiles on absorb,
+/// and ignores decorative objects.
+pub fn resolve_projectile_environment_contacts(
+    mut commands: Commands,
+    mut contact_events: EventReader<ProjectileEnvironmentContact>,
+    mut env_query: Query<(
+        &mut EnvironmentHealth,
+        &EnvironmentScoreValue,
+        &ProjectileInteraction,
+        &Transform,
+    ), With<EnvironmentObject>>,
+    mut damage_applied_events: EventWriter<EnvironmentDamageAppliedEvent>,
+    mut destroyed_events: EventWriter<EnvironmentDestroyedEvent>,
+) {
+    for contact in contact_events.read() {
+        let Ok((mut health, score_value, interaction, env_transform)) =
+            env_query.get_mut(contact.environment)
+        else {
+            continue;
+        };
+
+        match *interaction {
+            ProjectileInteraction::Ignore => {
+                // Decorative — nothing happens
+                continue;
+            }
+            ProjectileInteraction::Absorb => {
+                // Hard terrain — projectile is destroyed, no damage
+                commands.entity(contact.projectile).despawn_recursive();
+            }
+            ProjectileInteraction::Damageable => {
+                // Soft hazard / asteroid — apply damage and destroy projectile
+                health.current -= contact.damage;
+                let destroyed = health.current <= 0.0;
+
+                damage_applied_events.send(EnvironmentDamageAppliedEvent {
+                    environment: contact.environment,
+                    position: env_transform.translation.truncate(),
+                    damage: contact.damage,
+                    damage_type: contact.damage_type,
+                    destroyed,
+                });
+
+                if destroyed {
+                    destroyed_events.send(EnvironmentDestroyedEvent {
+                        environment: contact.environment,
+                        definition_id: String::new(), // populated by spawner if needed
+                        position: env_transform.translation.truncate(),
+                        score_value: score_value.0,
+                    });
+                    commands.entity(contact.environment).despawn_recursive();
+                }
+
+                commands.entity(contact.projectile).despawn_recursive();
+            }
+        }
     }
 }

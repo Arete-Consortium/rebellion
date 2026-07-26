@@ -6,6 +6,7 @@ pub mod boss;
 pub mod collectible;
 pub mod drone;
 pub mod enemy;
+pub mod environment;
 pub mod escort;
 pub mod items;
 pub mod player;

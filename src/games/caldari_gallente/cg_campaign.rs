@@ -242,6 +242,27 @@ pub fn spawn_cg_wave(
         apply_cg_mission_scaling(&mut commands, entity, type_id, cg_campaign.mission_index);
     }
 
+    // Spawn a single destructible asteroid for waves 2+ to add tactical cover
+    if wave >= 2 {
+        let env_positions = [
+            Vec2::new(150.0, 0.0),
+            Vec2::new(-150.0, 0.0),
+            Vec2::new(0.0, 100.0),
+        ];
+        let pos = env_positions[wave as usize % env_positions.len()];
+        crate::entities::environment::spawn_environment(
+            &mut commands,
+            pos,
+            crate::entities::environment::EnvironmentKind::SoftHazard,
+            30.0,
+            None,
+            Some(80.0),
+            None,
+            crate::entities::environment::ProjectileInteraction::Damageable,
+            50,
+        );
+    }
+
     cg_campaign.current_wave += 1;
 }
 
@@ -825,6 +846,7 @@ pub fn cleanup_cg_entities(
     projectile_query: Query<Entity, With<crate::entities::EnemyProjectile>>,
     telegraph_query: Query<Entity, With<CGSpawnTelegraph>>,
     collectible_query: Query<Entity, With<crate::entities::collectible::Collectible>>,
+    env_query: Query<Entity, With<crate::entities::environment::EnvironmentObject>>,
 ) {
     for e in enemy_query.iter() {
         commands.entity(e).despawn_recursive();
@@ -839,6 +861,9 @@ pub fn cleanup_cg_entities(
         commands.entity(e).despawn_recursive();
     }
     for e in collectible_query.iter() {
+        commands.entity(e).despawn_recursive();
+    }
+    for e in env_query.iter() {
         commands.entity(e).despawn_recursive();
     }
 }

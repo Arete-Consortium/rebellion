@@ -15,19 +15,28 @@ const GRID_HEIGHT: usize = 16; // 700 / 50 + padding
 pub struct SpatialGrid {
     /// Grid cells containing enemy entity indices
     enemy_cells: Vec<Vec<(Entity, Vec2)>>,
+    /// Grid cells containing environmental object entity indices
+    environment_cells: Vec<Vec<(Entity, Vec2, f32)>>,
 }
 
 impl SpatialGrid {
     pub fn new() -> Self {
+        let cell_count = GRID_WIDTH * GRID_HEIGHT;
         Self {
-            enemy_cells: (0..GRID_WIDTH * GRID_HEIGHT)
+            enemy_cells: (0..cell_count)
                 .map(|_| Vec::with_capacity(8))
+                .collect(),
+            environment_cells: (0..cell_count)
+                .map(|_| Vec::with_capacity(4))
                 .collect(),
         }
     }
 
     pub fn clear(&mut self) {
         for cell in &mut self.enemy_cells {
+            cell.clear();
+        }
+        for cell in &mut self.environment_cells {
             cell.clear();
         }
     }
@@ -49,6 +58,53 @@ impl SpatialGrid {
         if let Some(idx) = Self::pos_to_cell(pos) {
             self.enemy_cells[idx].push((entity, pos));
         }
+    }
+
+    pub fn insert_environment(&mut self, entity: Entity, pos: Vec2, radius: f32) {
+        // Insert into every cell intersecting the object's bounding box
+        // so large objects are found from any overlapping query cell.
+        let min_x = pos.x - radius;
+        let min_y = pos.y - radius;
+        let max_x = pos.x + radius;
+        let max_y = pos.y + radius;
+
+        let gx_min = ((min_x + crate::core::SCREEN_WIDTH / 2.0) / CELL_SIZE) as i32;
+        let gy_min = ((min_y + crate::core::SCREEN_HEIGHT / 2.0) / CELL_SIZE) as i32;
+        let gx_max = ((max_x + crate::core::SCREEN_WIDTH / 2.0) / CELL_SIZE) as i32;
+        let gy_max = ((max_y + crate::core::SCREEN_HEIGHT / 2.0) / CELL_SIZE) as i32;
+
+        let gx_min = gx_min.max(0) as usize;
+        let gy_min = gy_min.max(0) as usize;
+        let gx_max = (gx_max as usize).min(GRID_WIDTH - 1);
+        let gy_max = (gy_max as usize).min(GRID_HEIGHT - 1);
+
+        for gy in gy_min..=gy_max {
+            for gx in gx_min..=gx_max {
+                let idx = gy * GRID_WIDTH + gx;
+                self.environment_cells[idx].push((entity, pos, radius));
+            }
+        }
+    }
+
+    /// Get environment objects in the same cell and adjacent cells
+    pub fn get_nearby_environments(&self, pos: Vec2) -> impl Iterator<Item = &(Entity, Vec2, f32)> {
+        let gx = ((pos.x + crate::core::SCREEN_WIDTH / 2.0) / CELL_SIZE) as i32;
+        let gy = ((pos.y + crate::core::SCREEN_HEIGHT / 2.0) / CELL_SIZE) as i32;
+
+        let mut indices = Vec::with_capacity(9);
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                let nx = gx + dx;
+                let ny = gy + dy;
+                if nx >= 0 && nx < GRID_WIDTH as i32 && ny >= 0 && ny < GRID_HEIGHT as i32 {
+                    indices.push((ny * GRID_WIDTH as i32 + nx) as usize);
+                }
+            }
+        }
+
+        indices
+            .into_iter()
+            .flat_map(move |idx| self.environment_cells[idx].iter())
     }
 
     /// Get enemies in the same cell and adjacent cells (for border cases)

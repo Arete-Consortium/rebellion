@@ -8,6 +8,9 @@ use crate::core::{
     ExplosionEvent, ExplosionSize, PlayerDamagedEvent,
 };
 use crate::entities::{Enemy, EnemyStats, Player, ShipStats};
+use crate::entities::environment::{
+    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent,
+};
 use crate::systems::effects::{
     spawn_damage_number, spawn_impact_sparks, CameraZoom, HitFlash, HitStop, ScreenFlash,
     ScreenShake,
@@ -218,6 +221,51 @@ pub fn player_death_reactions(
                 color: Color::srgb(1.0, 0.4, 0.2),
             });
         }
+    }
+}
+
+// =============================================================================
+// Environment Hit Reactions
+// =============================================================================
+
+/// Spawn impact sparks and brief screen shake when an environment object is
+/// damaged by a projectile.
+pub fn environment_hit_reactions(
+    mut commands: Commands,
+    mut damage_events: EventReader<EnvironmentDamageAppliedEvent>,
+    mut screen_shake: ResMut<ScreenShake>,
+) {
+    for event in damage_events.read() {
+        spawn_impact_sparks(&mut commands, event.position, event.damage_type);
+        // Tiny shake on environment hit for tactile feedback
+        screen_shake.trigger(2.0, 0.06);
+    }
+}
+
+// =============================================================================
+// Environment Destruction Reactions
+// =============================================================================
+
+/// Spawn explosions, screen shake, and score popups when an environment
+/// object is destroyed.
+pub fn environment_destroyed_reactions(
+    mut commands: Commands,
+    mut destroyed_events: EventReader<EnvironmentDestroyedEvent>,
+    mut screen_shake: ResMut<ScreenShake>,
+    mut explosion_events: EventWriter<ExplosionEvent>,
+) {
+    for event in destroyed_events.read() {
+        explosion_events.send(ExplosionEvent {
+            position: event.position,
+            size: ExplosionSize::Small,
+            color: Color::srgb(0.7, 0.5, 0.3), // rock/asteroid brown-orange
+        });
+
+        screen_shake.trigger(3.0, 0.10);
+
+        // Floating score number
+        spawn_damage_number(&mut commands, event.position, event.score_value as f32, false,
+        );
     }
 }
 
