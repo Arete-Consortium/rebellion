@@ -19,6 +19,7 @@ mod spawn;
 use bevy::prelude::*;
 
 use crate::core::GameState;
+use crate::games::not_in_triglavian_invasion;
 
 use achievements::update_achievement_popup;
 use boss::update_boss_health_bar;
@@ -41,7 +42,9 @@ impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(GameState::Playing),
-            (spawn_hud, spawn_inventory_hud).run_if(not_last_stand),
+            (spawn_hud, spawn_inventory_hud)
+                .run_if(not_last_stand)
+                .run_if(not_in_triglavian_invasion),
         )
         .add_systems(
             Update,
@@ -66,11 +69,14 @@ impl Plugin for HudPlugin {
                 update_inventory_hud,
             )
                 .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
-                .run_if(not_last_stand),
+                .run_if(not_last_stand)
+                .run_if(not_in_triglavian_invasion),
         )
         .add_systems(
             OnExit(GameState::Playing),
-            despawn_hud.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+            despawn_hud
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
+                .run_if(not_in_triglavian_invasion),
         );
     }
 }

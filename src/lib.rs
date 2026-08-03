@@ -16,4 +16,4 @@ pub(crate) mod presentation;
 pub mod replay;
 pub mod simulation;
 pub mod systems;
-pub(crate) mod ui;
+pub mod ui;

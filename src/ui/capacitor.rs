@@ -6,6 +6,9 @@
 //! - Speed display at bottom center
 //! - Percentage readouts on left
 //! - Heat status indicators
+//!
+//! Replaced by the Combat Wheel HUD during the Triglavian Invasion campaign
+//! (see `crate::games::triglavian_invasion`).
 
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
@@ -13,6 +16,7 @@ use std::f32::consts::PI;
 
 use crate::core::*;
 use crate::entities::{Movement, Player, ShipStats};
+use crate::games::not_in_triglavian_invasion;
 use crate::systems::ComboHeatSystem;
 
 /// Capacitor wheel plugin
@@ -25,6 +29,7 @@ impl Plugin for CapacitorWheelPlugin {
             (update_capacitor_animation, draw_capacitor_wheel)
                 .chain()
                 .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
+                .run_if(not_in_triglavian_invasion)
                 .after(bevy_egui::EguiSet::ProcessInput),
         );
     }

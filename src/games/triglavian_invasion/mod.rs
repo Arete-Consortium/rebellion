@@ -3,14 +3,21 @@
 //! EDENCOM vs Triglavian Collective - defend New Eden or embrace Pochven.
 //! Set during the Triglavian invasion of YC122.
 
-use super::{ActiveModule, FactionInfo, GameModuleInfo, ModuleRegistry};
+use super::{in_triglavian_invasion, ActiveModule, FactionInfo, GameModuleInfo, ModuleRegistry};
 use crate::core::GameState;
+use crate::ui::combat_wheel::{
+    despawn_combat_wheel, spawn_capacitor_core, spawn_combat_wheel, spawn_heat_arc,
+    spawn_integrity_ring, spawn_module_slots, spawn_module_text, spawn_percentage_labels,
+    spawn_shield_ring,
+};
 use bevy::prelude::*;
 
 pub mod campaign;
+pub mod combat_wheel_bind;
 pub mod ships;
 
 pub use campaign::*;
+pub use combat_wheel_bind::*;
 pub use ships::*;
 
 /// Triglavian Invasion module plugin
@@ -25,28 +32,54 @@ impl Plugin for TriglavianInvasionPlugin {
         app.init_resource::<TriglavianShips>();
         app.init_resource::<TriglavianCampaignState>();
 
+        // Combat Wheel HUD adapter — projects real-game ShipStats /
+        // ComboHeatSystem / PlayerDamagedEvent into the HUD's
+        // CombatWheelAdapter resource. Only meaningful during this campaign.
+        app.add_plugins(CombatWheelBindPlugin);
+
+        // Phase 2: spawn the Combat Wheel HUD when entering Playing during
+        // the Triglavian Invasion campaign, and despawn on exit. The
+        // existing HudPlugin/CapacitorWheelPlugin systems are gated with
+        // `not_in_triglavian_invasion` so the wheel replaces them.
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            (
+                spawn_combat_wheel,
+                spawn_shield_ring,
+                spawn_integrity_ring,
+                spawn_capacitor_core,
+                spawn_heat_arc,
+                spawn_module_slots,
+                spawn_module_text,
+                spawn_percentage_labels,
+                start_trig_mission,
+            )
+                .chain()
+                .run_if(in_triglavian_invasion),
+        )
+        .add_systems(
+            OnExit(GameState::Playing),
+            despawn_combat_wheel.run_if(in_triglavian_invasion),
+        );
+
         // Faction select screen
         app.add_systems(
             OnEnter(GameState::FactionSelect),
-            spawn_faction_select.run_if(is_triglavian_invasion),
+            spawn_faction_select.run_if(in_triglavian_invasion),
         )
         .add_systems(
             Update,
             faction_select_input
                 .run_if(in_state(GameState::FactionSelect))
-                .run_if(is_triglavian_invasion),
+                .run_if(in_triglavian_invasion),
         )
         .add_systems(
             OnExit(GameState::FactionSelect),
-            despawn_faction_select.run_if(is_triglavian_invasion),
+            despawn_faction_select.run_if(in_triglavian_invasion),
         );
 
         // Campaign systems
         app.add_systems(
-            OnEnter(GameState::Playing),
-            start_trig_mission.run_if(is_triglavian_invasion),
-        )
-        .add_systems(
             Update,
             (
                 update_trig_mission,
@@ -55,62 +88,46 @@ impl Plugin for TriglavianInvasionPlugin {
             )
                 .chain()
                 .run_if(in_state(GameState::Playing))
-                .run_if(is_triglavian_invasion),
+                .run_if(in_triglavian_invasion),
         );
 
         // Boss systems
         app.add_systems(
             OnEnter(GameState::BossIntro),
-            (
-                spawn_trig_boss,
-                spawn_trig_boss_intro_ui,
-            )
-                .run_if(is_triglavian_invasion),
+            (spawn_trig_boss, spawn_trig_boss_intro_ui).run_if(in_triglavian_invasion),
         )
         .add_systems(
             Update,
-            (
-                trig_boss_intro,
-                update_trig_boss_intro_ui,
-            )
+            (trig_boss_intro, update_trig_boss_intro_ui)
                 .run_if(in_state(GameState::BossIntro))
-                .run_if(is_triglavian_invasion),
+                .run_if(in_triglavian_invasion),
         )
         .add_systems(
             OnExit(GameState::BossIntro),
-            (
-                despawn_trig_boss_intro,
-                despawn_trig_boss_intro_ui,
-            )
-                .run_if(is_triglavian_invasion),
+            (despawn_trig_boss_intro, despawn_trig_boss_intro_ui).run_if(in_triglavian_invasion),
         )
         .add_systems(
             Update,
             (update_trig_boss, check_trig_boss_defeated)
                 .run_if(in_state(GameState::BossFight))
-                .run_if(is_triglavian_invasion),
+                .run_if(in_triglavian_invasion),
         )
         // Victory screen
         .add_systems(
             OnEnter(GameState::Victory),
-            spawn_trig_victory_screen.run_if(is_triglavian_invasion),
+            spawn_trig_victory_screen.run_if(in_triglavian_invasion),
         )
         .add_systems(
             Update,
             trig_victory_input
                 .run_if(in_state(GameState::Victory))
-                .run_if(is_triglavian_invasion),
+                .run_if(in_triglavian_invasion),
         )
         .add_systems(
             OnExit(GameState::Victory),
-            despawn_trig_victory.run_if(is_triglavian_invasion),
+            despawn_trig_victory.run_if(in_triglavian_invasion),
         );
     }
-}
-
-/// Check if Triglavian Invasion module is active
-fn is_triglavian_invasion(active: Res<ActiveModule>) -> bool {
-    active.module_id.as_deref() == Some("triglavian_invasion")
 }
 
 /// Register the Triglavian Invasion module
@@ -468,7 +485,10 @@ fn update_trig_boss_intro_ui(
     }
 }
 
-fn despawn_trig_boss_intro_ui(mut commands: Commands, query: Query<Entity, With<TrigBossIntroRoot>>) {
+fn despawn_trig_boss_intro_ui(
+    mut commands: Commands,
+    query: Query<Entity, With<TrigBossIntroRoot>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }

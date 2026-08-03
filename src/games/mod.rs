@@ -101,6 +101,18 @@ impl ActiveModule {
     }
 }
 
+/// Run condition: true when the Triglavian Invasion module is active.
+pub fn in_triglavian_invasion(active: Res<ActiveModule>) -> bool {
+    active.is_triglavian_invasion()
+}
+
+/// Run condition: true when the active module is NOT Triglavian Invasion.
+/// Use this to gate UI systems that should be replaced by the Combat Wheel
+/// HUD during that campaign.
+pub fn not_in_triglavian_invasion(active: Res<ActiveModule>) -> bool {
+    !active.is_triglavian_invasion()
+}
+
 /// Ship definition for a module
 #[derive(Clone, Debug)]
 pub struct ModuleShip {
