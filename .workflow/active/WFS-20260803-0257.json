@@ -27,8 +27,8 @@
     },
     {
       "task": "HIGH quinn-proto Dependabot alert (#16)",
-      "reason": "Cannot be fixed from this project — quinn-proto is not in our transitive dep tree. Requires upstream bevy/reqwest bump past 0.11.15",
-      "unblock": "Either merge bevy/reqwest PRs that bump quinn-proto, or accept the alert as out-of-scope"
+      "reason": "RESOLVED. Cargo.lock contained quinn-proto 0.11.14 via Reqwest's optional HTTP/3 dependency. The dependency was not active in the current build (no `http3` feature enabled), but the lockfile entry was still present in the dependency graph. Bumped to patched 0.11.15 via `cargo update -p quinn-proto --precise 0.11.15` — two-line Cargo.lock diff, no downstream changes. Alert should close after this reaches main and GitHub refreshes the dependency graph.",
+      "unblock": "Cargo.lock updated on feat branch. Need to merge to main (or apply on main) so GitHub re-evaluates the dependency graph."
     },
     {
       "task": "Independent review via /close-session",
@@ -74,13 +74,15 @@
     "40 unrelated files reformatted by cargo fmt (committed separately as a0b7c2d)"
   ],
   "git_ref_start": "129c477",
-  "git_ref_latest": "0f8ed58",
-  "git_ref_unpushed": "0f8ed58",
+  "git_ref_latest": "a85ea23",
+  "git_ref_unpushed": "a85ea23",
   "unpushed_commits": [
     "f80100e feat(hud): port Combat Wheel HUD prototype to Triglavian Invasion",
     "a0b7c2d style: rustfmt across repository",
     "dbcfa03 chore(session): add WFS-20260803-0257 handoff and state JSON",
-    "0f8ed58 fix(deps): bump rand 0.8.5 -> 0.8.6 (patched LOW GHSA-cq8v-f236-94qc)"
+    "0f8ed58 fix(deps): bump rand 0.8.5 -> 0.8.6 (patched LOW GHSA-cq8v-f236-94qc)",
+    "a85ea23 chore(session): update handoff with push + Dependabot status",
+    "fix(deps): update quinn-proto to patched 0.11.15 (pending)"
   ],
   "prior_session": null,
   "adl_entries": [
