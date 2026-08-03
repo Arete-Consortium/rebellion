@@ -6,8 +6,8 @@
 //! Per ERROR_AND_DIAGNOSTICS.md, this plugin is a pure reader — it must not
 //! mutate gameplay or simulation state, even for debug convenience.
 
-use bevy::prelude::*;
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use bevy::prelude::*;
 
 use crate::core::GameState;
 use crate::systems::perf_profile::PerfProfilePlugin;

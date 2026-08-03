@@ -4,12 +4,14 @@
 
 pub mod backgrounds;
 pub mod capacitor;
+pub mod combat_wheel;
 pub mod hud;
 pub mod menu;
 pub mod transitions;
 
 pub use backgrounds::*;
 pub use capacitor::*;
+pub use combat_wheel::*;
 pub use hud::*;
 pub use menu::*;
 pub use transitions::*;
@@ -27,6 +29,7 @@ impl Plugin for UiPlugin {
             CapacitorWheelPlugin,
             BackgroundPlugin,
             TransitionPlugin,
+            CombatWheelPlugin,
         ));
     }
 }

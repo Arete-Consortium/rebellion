@@ -8,7 +8,9 @@ use bevy::prelude::*;
 
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::GameState;
-use rebellion::entities::boss::{Boss, BossAttack, BossData, BossMovement, BossState, MovementPattern};
+use rebellion::entities::boss::{
+    Boss, BossAttack, BossData, BossMovement, BossState, MovementPattern,
+};
 use rebellion::entities::EnemyProjectile;
 use rebellion::games::ActiveModule;
 
@@ -21,43 +23,50 @@ fn spawn_test_player(world: &mut World) {
 }
 
 /// Helper to build a Leshak boss entity with configurable health.
-fn spawn_test_boss(commands: &mut Commands, health: f32, fire_timer: f32, fire_rate: f32) -> Entity {
-    commands.spawn((
-        Boss,
-        BossData {
-            id: 1,
-            stage: 1,
-            name: "Test Leshak".to_string(),
-            title: "Test Mission".to_string(),
-            ship_class: "Battleship".to_string(),
-            type_id: rebellion::games::triglavian_invasion::ships::triglavian::LESHAK,
-            max_health: 1000.0,
-            health,
-            current_phase: 1,
-            total_phases: 3,
-            score_value: 2000,
-            liberation_value: 10,
-            stationary: false,
-            dialogue_intro: "Test intro".to_string(),
-            dialogue_defeat: "Test defeat".to_string(),
-            is_enraged: false,
-            enrage_threshold: 0.2,
-        },
-        BossState::Battle,
-        BossMovement {
-            pattern: MovementPattern::Sweep,
-            timer: 0.0,
-            speed: 100.0,
-        },
-        BossAttack {
-            pattern: "steady_beam".to_string(),
-            fire_timer,
-            fire_rate,
-            burst_count: 3,
-            burst_remaining: 0,
-        },
-        Transform::from_xyz(0.0, 200.0, 0.0),
-    )).id()
+fn spawn_test_boss(
+    commands: &mut Commands,
+    health: f32,
+    fire_timer: f32,
+    fire_rate: f32,
+) -> Entity {
+    commands
+        .spawn((
+            Boss,
+            BossData {
+                id: 1,
+                stage: 1,
+                name: "Test Leshak".to_string(),
+                title: "Test Mission".to_string(),
+                ship_class: "Battleship".to_string(),
+                type_id: rebellion::games::triglavian_invasion::ships::triglavian::LESHAK,
+                max_health: 1000.0,
+                health,
+                current_phase: 1,
+                total_phases: 3,
+                score_value: 2000,
+                liberation_value: 10,
+                stationary: false,
+                dialogue_intro: "Test intro".to_string(),
+                dialogue_defeat: "Test defeat".to_string(),
+                is_enraged: false,
+                enrage_threshold: 0.2,
+            },
+            BossState::Battle,
+            BossMovement {
+                pattern: MovementPattern::Sweep,
+                timer: 0.0,
+                speed: 100.0,
+            },
+            BossAttack {
+                pattern: "steady_beam".to_string(),
+                fire_timer,
+                fire_rate,
+                burst_count: 3,
+                burst_remaining: 0,
+            },
+            Transform::from_xyz(0.0, 200.0, 0.0),
+        ))
+        .id()
 }
 
 #[test]
@@ -105,7 +114,10 @@ fn trig_boss_phase_transition_and_enrage() {
         .expect("update_trig_boss should run");
 
     let data = app.world().get::<BossData>(boss).unwrap();
-    assert_eq!(data.current_phase, 2, "should transition to phase 2 at 60% health");
+    assert_eq!(
+        data.current_phase, 2,
+        "should transition to phase 2 at 60% health"
+    );
 
     let movement = app.world().get::<BossMovement>(boss).unwrap();
     assert!(
@@ -128,7 +140,10 @@ fn trig_boss_phase_transition_and_enrage() {
         .expect("update_trig_boss should run");
 
     let data = app.world().get::<BossData>(boss).unwrap();
-    assert_eq!(data.current_phase, 3, "should transition to phase 3 at 30% health");
+    assert_eq!(
+        data.current_phase, 3,
+        "should transition to phase 3 at 30% health"
+    );
 
     let movement = app.world().get::<BossMovement>(boss).unwrap();
     assert!(
@@ -226,9 +241,7 @@ fn trig_boss_does_not_fire_when_not_in_battle_state() {
     let boss = spawn_test_boss(&mut app.world_mut().commands(), 1000.0, 0.79, 0.8);
     app.update(); // flush commands so entity exists
 
-    app.world_mut()
-        .entity_mut(boss)
-        .insert(BossState::Intro);
+    app.world_mut().entity_mut(boss).insert(BossState::Intro);
     app.update(); // flush the insert
 
     app.world_mut()

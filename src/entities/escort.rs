@@ -4,8 +4,8 @@
 //! and must survive for mission completion.
 
 use crate::core::{DamageType, GameState, LAYER_PLAYER};
-use crate::entities::Hitbox;
 use crate::entities::player::DamageResult;
+use crate::entities::Hitbox;
 use bevy::prelude::*;
 
 /// Marker component for friendly entities the player must protect
@@ -110,11 +110,7 @@ pub fn spawn_friendly_escort(
 /// Update escort movement along its waypoint path
 pub fn update_escort_movement(
     time: Res<Time>,
-    mut escort_query: Query<(&mut Transform,
-        &mut EscortData),
-    (
-        With<Friendly>,
-    )>,
+    mut escort_query: Query<(&mut Transform, &mut EscortData), (With<Friendly>,)>,
 ) {
     let dt = time.delta_secs();
     for (mut transform, mut data) in escort_query.iter_mut() {
@@ -144,10 +140,7 @@ pub fn update_escort_movement(
 }
 
 /// Despawn escort entities when leaving gameplay states
-pub fn despawn_escorts(
-    mut commands: Commands,
-    escort_query: Query<Entity, With<Friendly>>,
-) {
+pub fn despawn_escorts(mut commands: Commands, escort_query: Query<Entity, With<Friendly>>) {
     for entity in escort_query.iter() {
         commands.entity(entity).despawn();
     }
@@ -158,15 +151,12 @@ pub struct EscortPlugin;
 
 impl Plugin for EscortPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_escort_movement.run_if(in_state(GameState::Playing)))
-            .add_systems(
-                OnExit(GameState::Playing),
-                despawn_escorts,
-            )
-            .add_systems(
-                OnExit(GameState::BossFight),
-                despawn_escorts,
-            );
+        app.add_systems(
+            Update,
+            update_escort_movement.run_if(in_state(GameState::Playing)),
+        )
+        .add_systems(OnExit(GameState::Playing), despawn_escorts)
+        .add_systems(OnExit(GameState::BossFight), despawn_escorts);
     }
 }
 

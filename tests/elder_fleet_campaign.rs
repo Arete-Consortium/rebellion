@@ -161,9 +161,7 @@ fn elder_fleet_boss_intro_transitions_to_boss_fight() {
 
     // Verify boss spawned in Intro state
     {
-        let mut q = app.world_mut().query::<(&BossData,
-            &BossState,
-        )>();
+        let mut q = app.world_mut().query::<(&BossData, &BossState)>();
         let (data, state) = q.get_single(app.world()).expect("boss should spawn");
         assert_eq!(*state, BossState::Intro, "Boss should start in Intro state");
         assert!(

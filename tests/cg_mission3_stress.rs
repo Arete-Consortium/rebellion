@@ -66,11 +66,7 @@ fn mission3_all_waves_spawn_bounded_enemies() {
             .expect("spawn_cg_wave should run");
         app.update(); // flush spawn commands
 
-        let enemy_count = app
-            .world_mut()
-            .query::<&Enemy>()
-            .iter(app.world())
-            .count();
+        let enemy_count = app.world_mut().query::<&Enemy>().iter(app.world()).count();
 
         assert!(
             enemy_count > 0,

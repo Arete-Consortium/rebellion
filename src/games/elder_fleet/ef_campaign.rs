@@ -8,7 +8,9 @@ use crate::assets::ShipSpriteCache;
 use crate::core::{DamageType, Difficulty, GameState, LAYER_ENEMIES};
 use crate::entities::boss::{Boss, BossAttack, BossData, BossMovement, BossState, MovementPattern};
 use crate::entities::projectile::ProjectilePhysics;
-use crate::entities::{spawn_enemy, spawn_variant, EnemyBehavior, EnemyStats, EnemyVariant, Hitbox};
+use crate::entities::{
+    spawn_enemy, spawn_variant, EnemyBehavior, EnemyStats, EnemyVariant, Hitbox,
+};
 use bevy::prelude::*;
 
 // =============================================================================
@@ -98,7 +100,9 @@ pub fn minmatar_missions() -> Vec<EFMissionInfo> {
             boss_phases: 2,
             boss_type_id: 597, // Punisher
             act: 1,
-            dialogue_start: Some("The Elders have watched from the shadows for centuries. Now we strike."),
+            dialogue_start: Some(
+                "The Elders have watched from the shadows for centuries. Now we strike.",
+            ),
         },
         EFMissionInfo {
             name: "Slave Revolt",
@@ -206,7 +210,9 @@ pub fn amarr_missions() -> Vec<EFMissionInfo> {
             boss_phases: 2,
             boss_type_id: 587, // Rifter
             act: 1,
-            dialogue_start: Some("The heretics dare raise arms against the divine order. Crush them."),
+            dialogue_start: Some(
+                "The heretics dare raise arms against the divine order. Crush them.",
+            ),
         },
         EFMissionInfo {
             name: "Convoy Defense",
@@ -388,10 +394,7 @@ pub fn spawn_ef_wave(
         // Player Minmatar → enemies Amarr
         (
             vec![597, 589, 591, 603], // Punisher, Executioner, Tormentor, Maller
-            vec![
-                EnemyVariant::PunisherTank,
-                EnemyVariant::ExecutionerElite,
-            ],
+            vec![EnemyVariant::PunisherTank, EnemyVariant::ExecutionerElite],
         )
     } else {
         // Player Amarr → enemies Minmatar
@@ -530,7 +533,11 @@ pub fn spawn_ef_boss(
             liberation_value: 10,
         },
         Sprite {
-            color: if sprite.is_none() { boss_color } else { Color::WHITE },
+            color: if sprite.is_none() {
+                boss_color
+            } else {
+                Color::WHITE
+            },
             custom_size: Some(Vec2::splat(size)),
             ..default()
         },
@@ -540,10 +547,7 @@ pub fn spawn_ef_boss(
 /// Boss intro sequence — descend boss into position then start fight
 pub fn ef_boss_intro(
     time: Res<Time>,
-    mut boss_query: Query<(&mut Transform,
-        &mut BossState,
-        &BossData,
-    ), With<Boss>>,
+    mut boss_query: Query<(&mut Transform, &mut BossState, &BossData), With<Boss>>,
     mut next_state: ResMut<NextState<GameState>>,
     mut timer: Local<f32>,
 ) {

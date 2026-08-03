@@ -40,7 +40,8 @@ impl Plugin for BackgroundPlugin {
             )
             .add_systems(
                 OnExit(GameState::Playing),
-                despawn_starfield.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+                despawn_starfield
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
 }

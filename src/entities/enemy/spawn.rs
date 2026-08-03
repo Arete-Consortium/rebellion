@@ -748,7 +748,10 @@ mod tests {
     fn executioner_elite_is_fast_with_laser() {
         let config = EnemyVariant::ExecutionerElite.config();
         assert!(config.speed > 100.0, "Elite Executioner should be fast");
-        assert!(config.health > 25.0, "Elite Executioner should be tougher than base");
+        assert!(
+            config.health > 25.0,
+            "Elite Executioner should be tougher than base"
+        );
         let weapon = config.weapon_override.expect("should have weapon override");
         assert_eq!(weapon.weapon_type, WeaponType::Laser);
         assert!(weapon.damage > 10.0, "laser should be strong");
@@ -757,7 +760,10 @@ mod tests {
     #[test]
     fn punisher_tank_is_slow_and_tanky() {
         let config = EnemyVariant::PunisherTank.config();
-        assert!(config.health >= 200.0, "Heavy Punisher should be very tanky");
+        assert!(
+            config.health >= 200.0,
+            "Heavy Punisher should be very tanky"
+        );
         assert!(config.speed <= 35.0, "Heavy Punisher should be slow");
         let weapon = config.weapon_override.expect("should have weapon override");
         assert_eq!(weapon.weapon_type, WeaponType::Laser);
@@ -767,7 +773,10 @@ mod tests {
     fn rifter_berserker_is_fast_with_autocannon() {
         let config = EnemyVariant::RifterBerserker.config();
         assert!(config.speed > 100.0, "Berserker Rifter should be fast");
-        assert!(config.health > 35.0, "Berserker should be tougher than base Rifter");
+        assert!(
+            config.health > 35.0,
+            "Berserker should be tougher than base Rifter"
+        );
         let weapon = config.weapon_override.expect("should have weapon override");
         assert_eq!(weapon.weapon_type, WeaponType::Autocannon);
         assert!(weapon.fire_rate > 1.0, "autocannon should fire fast");

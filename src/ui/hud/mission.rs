@@ -3,8 +3,8 @@
 use super::common::*;
 use crate::core::*;
 use crate::entities::{EscortData, Friendly};
-use crate::games::ActiveModule;
 use crate::games::caldari_gallente::CGCampaignState;
+use crate::games::ActiveModule;
 use crate::systems::DialogueSystem;
 use bevy::prelude::*;
 
@@ -20,17 +20,9 @@ pub fn update_wave_display(
             if let Some(cg) = cg_campaign.as_deref() {
                 if let Some(mission) = cg.current_mission() {
                     if cg.boss_spawned && !cg.boss_defeated {
-                        **text = format!(
-                            "WAVE {}/{} — BOSS",
-                            cg.current_wave,
-                            mission.waves + 1
-                        );
+                        **text = format!("WAVE {}/{} — BOSS", cg.current_wave, mission.waves + 1);
                     } else {
-                        **text = format!(
-                            "WAVE {}/{}",
-                            cg.current_wave,
-                            mission.waves + 1
-                        );
+                        **text = format!("WAVE {}/{}", cg.current_wave, mission.waves + 1);
                     }
                 } else {
                     **text = format!("WAVE {}", cg.current_wave);
