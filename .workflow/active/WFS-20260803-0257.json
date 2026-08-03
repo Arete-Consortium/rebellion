@@ -1,0 +1,80 @@
+{
+  "session_id": "WFS-20260803-0257",
+  "project": "rebellion",
+  "worktree": "/home/arete/projects/rebellion-hud-integration",
+  "branch": "feat/combat-wheel-hud-integration",
+  "started_at": "2026-08-02T00:00:00Z",
+  "ended_at": "2026-08-03T02:57:00Z",
+  "status": "completed",
+  "focus": "Combat Wheel HUD integration into Triglavian Invasion campaign (Bevy 0.14 -> 0.15 port)",
+  "completed": [
+    "Phase 1: Bevy 0.14 -> 0.15 API migration (ColorMesh2dBundle -> MaterialMesh2dBundle, time API, Color channels, AudioBundle, Text2d)",
+    "Phase 1.5: First integration tests (5 tests, ship_stats/heat/damage_event/active_module/headless app)",
+    "Phase 2: Campaign gating via in_triglavian_invasion / not_in_triglavian_invasion run conditions; HudPlugin and CapacitorWheelPlugin gated; spawn/despawn wired on OnEnter/OnExit(GameState::Playing)",
+    "Phase 3: Faction skin sync via sync_faction_skin_from_active_module; per-faction material tints; FactionSkin::from_player_faction mapper; 4 unit + 4 integration tests",
+    "Phase 4: rustfmt of touched files; module.json description updated; test mirror includes spawn_module_text; ADL entry ADL-20260802-001 logged",
+    "Split commits: f80100e (Combat Wheel feature) + a0b7c2d (rustfmt cleanup), no push performed"
+  ],
+  "in_progress": [],
+  "blocked": [
+    {
+      "task": "Push to origin",
+      "reason": "Awaiting user approval per session-end rule (no push without explicit consent)",
+      "unblock": "User runs `git push origin feat/combat-wheel-hud-integration` or approves push"
+    },
+    {
+      "task": "Independent review via /close-session",
+      "reason": "Awaiting user decision",
+      "unblock": "User invokes /close-session for adversarial verification"
+    },
+    {
+      "task": "Shader visual sophistication (electric arcs, fracture textures, glow falloff)",
+      "reason": "Deferred — minimal v1 shaders ship; visual polish is explicit TODO in shader files",
+      "unblock": "Future session picks up shader work"
+    },
+    {
+      "task": "Audio assets for shield surge / heat warning / integrity crit",
+      "reason": "Deferred — audio.rs ships as console-printing stub",
+      "unblock": "Asset creation + AudioSource loading in combat_wheel/audio.rs"
+    },
+    {
+      "task": "Dialogue + act-boundary auto skin swap",
+      "reason": "Mission.act: Act already exists on src/core/campaign.rs::Mission (lines 374, 591); MissionInfo at src/games/triglavian_invasion/campaign.rs:57 lacks the field",
+      "unblock": "Either thread act through MissionInfo, or read from TriglavianCampaignState directly; then extend sync_faction_skin_from_active_module to swap skin when current act changes"
+    }
+  ],
+  "decisions": [
+    {"decision": "Adapter resource pattern over query rewrite", "rationale": "Prototype uses 4 Resources (ShieldState/IntegrityState/CapacitorState/HeatState); real game has ShipStats Component + ComboHeatSystem Resource. Adapter is one trivial file vs rewriting every bind_*_to_wheel system", "reversible": "yes"},
+    {"decision": "in_triglavian_invasion / not_in_triglavian_invasion run conditions over feature flags", "rationale": "Mirrors existing not_last_stand pattern at src/ui/hud/mod.rs:85; evaluates ActiveModule.module_id every frame; no JSON parsing or compile-time branching", "reversible": "yes"},
+    {"decision": "FactionSkin as single Resource with is_changed() listener", "rationale": "update_faction_materials listens on is_changed() and re-tints every material asset in one pass; sync_faction_skin_from_active_module writes only when target differs from current", "reversible": "yes"},
+    {"decision": "Drop Deployable slot for Triglavian (5 slots, not 6)", "rationale": "TriglavianShips have no deployable capability; keeping the slot would require a no-op stub. Also fixes the prototype's compact-mode stacking bug (Ability/Deployable shared coords) by construction", "reversible": "no — slot count is layout.rs contract"},
+    {"decision": "Test mirror over full plugin import", "rationale": "TriglavianInvasionPlugin::spawn_trig_wave requires a Window entity the headless app doesn't provide. Mirroring production wiring in build_triglavian_campaign_app decouples HUD tests from campaign simulation", "reversible": "yes"},
+    {"decision": "Split into two commits (feature + rustfmt)", "rationale": "cargo fmt produced 40+ file diffs across unrelated modules. Mixing with Combat Wheel feature would obscure both in git log and risk bisect breaks", "reversible": "yes — could be squashed before merge"},
+    {"decision": "Locked pattern: campaign-gated HUD replacement", "rationale": "Documented in ADL-20260802-001 as the canonical mechanism for future campaign-specific HUD work", "reversible": "yes"}
+  ],
+  "files_modified": [
+    "src/games/mod.rs (added in_triglavian_invasion + not_in_triglavian_invasion run conditions)",
+    "src/games/triglavian_invasion/mod.rs (added CombatWheelBindPlugin wiring + spawn chain)",
+    "src/lib.rs (pub(crate) mod ui -> pub mod ui)",
+    "src/ui/capacitor.rs (added not_in_triglavian_invasion gate)",
+    "src/ui/hud/mod.rs (added not_in_triglavian_invasion gate)",
+    "games/triglavian_invasion/config/module.json (description updated)",
+    "src/games/triglavian_invasion/combat_wheel_bind.rs (NEW, 143 LOC)",
+    "src/ui/combat_wheel/{mod,components,events,layout,materials,mesh_gen,resources,spawn,systems,text,audio}.rs (NEW, 2158 LOC total)",
+    "tests/combat_wheel_integration.rs (NEW, 502 LOC, 12 tests)",
+    "assets/shaders/{shield_ring,integrity_ring,capacitor_core,heat_arc}.wgsl (NEW, minimal v1 shaders)",
+    "40 unrelated files reformatted by cargo fmt (committed separately as a0b7c2d)"
+  ],
+  "git_ref_start": "129c477",
+  "git_ref_latest": "aff3c39",
+  "git_ref_unpushed": "aff3c39",
+  "unpushed_commits": [
+    "f80100e feat(hud): port Combat Wheel HUD prototype to Triglavian Invasion",
+    "a0b7c2d style: rustfmt across repository",
+    "aff3c39 chore(session): add WFS-20260803-0257 handoff and state JSON"
+  ],
+  "prior_session": null,
+  "adl_entries": [
+    "ADL-20260802-001 in /home/arete/projects/notes/decisions/2026-08.md"
+  ]
+}
