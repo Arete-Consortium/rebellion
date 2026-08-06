@@ -583,8 +583,17 @@ pub fn spawn_boss(
 }
 
 /// Get phase health threshold
+///
+/// The defensive ordering below matters: the `(1, 0) => 0.0` arm
+/// comes **before** `(1, _) => 1.0` so that a `total_phases` of
+/// zero (which the live code never produces — `BossData::total_phases`
+/// is always 3, 4, or 5 — but a defensive caller might) returns
+/// 0 instead of 1.0. Without the explicit ordering, the
+/// `(1, _)` arm would swallow `(1, 0)` and the bar would draw
+/// at full HP for an undefined phase count.
 pub fn get_phase_threshold(phase: u32, total_phases: u32) -> f32 {
     match (phase, total_phases) {
+        (1, 0) | (_, 0) => 0.0,
         (1, _) => 1.0,
         (2, 2) => 0.4,
         (2, 3) => 0.6,

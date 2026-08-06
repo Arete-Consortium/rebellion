@@ -894,3 +894,71 @@ deterministically regardless of what's on disk.
 A cleaner long-term fix would be to add a `REBELLION_HOME`
 env-var override to `save_path()` (deferred — this is test-only
 docs, not a new feature).
+
+## Phase 12 — Tighten Defensive Arms (save isolation + boss phase guard)
+
+Closes two items the Phase 11 ledger called out as deferred:
+
+1. **Test isolation from the user's real save file** — the
+   overwrite-after-flush pattern in
+   `integration_save_progress.rs` was a workaround. The real fix
+   is an env-var override that any test (or developer) can use.
+2. **`get_phase_threshold(1, 0) == 0.0`** — the defensive case
+   that was unreachable in production but would misreport to a
+   future caller if `total_phases` ever hit zero.
+
+### Fixes shipped
+
+| # | Item | File:line | Fix |
+|---|---|---|---|
+| 1 | `REBELLION_HOME` env var redirects `save_path()` | `src/core/save.rs:158-175` | `save_path()` checks `std::env::var("REBELLION_HOME")` first; if set, the save file is `<root>/save.json` instead of the platform data dir. Read on every call (no caching) so tests can mutate it mid-process. |
+| 2 | `get_phase_threshold(1, 0)` returns 0, not 1.0 | `src/entities/boss.rs:585-608` | Reordered match: added `(1, 0) \| (_, 0) => 0.0` arm **before** `(1, _) => 1.0` so a `total_phases == 0` defensive case gets 0, not the misleading 1.0. |
+
+### New test file: `tests/integration_save_disk.rs` (+4 tests)
+
+| Test | What it pins |
+|---|---|
+| `save_then_load_round_trips_through_disk` | The full disk cycle (the path `SavePlugin::auto_save` + `SaveData::load` actually take on every session boundary). |
+| `auto_save_writes_file_visible_to_load` | Two-stage save → load → mutate → save → load. Catches the case where the second write silently fails or reads stale. |
+| `load_returns_default_when_save_file_missing` | `load()` against an empty dir returns `SaveData::default()` (not a panic, not stale data). Also asserts `load()` does **not** write a file. |
+| `rebellion_home_override_routes_to_tempdir` | After `REBELLION_HOME` is set, `save()` writes to the tempdir's `save.json` (not the platform data dir). |
+
+The disk-cycle tests use a `SaveHomeGuard` RAII helper that:
+1. Acquires a process-wide `ENV_LOCK` mutex for the guard's lifetime
+   (so parallel `cargo test` runs don't race on the global env var).
+2. Sets `REBELLION_HOME` to a unique tempdir per test (PID + atomic
+   counter + test name).
+3. On drop, restores the prior `REBELLION_HOME` value and deletes
+   the tempdir.
+
+### Test that triggered Phase 12
+
+The Phase 11 ledger flagged that `integration_save_progress.rs`
+worked around on-disk save pollution by overwriting the resource
+**after** the disk load. That's a test-only workaround; the real
+fix is the env-var override that any test (or local developer who
+wants to keep their save file out of harm's way) can use.
+
+The first run of `integration_save_disk.rs` failed with `left: 0,
+right: 7` because two parallel tests were stepping on each other's
+`REBELLION_HOME` value — `std::env::set_var` is process-global.
+Fixed with the `ENV_LOCK: Mutex<()>` that serializes all tests in
+the file.
+
+### Verification
+
+- Full test suite: **475 tests pass** (was 471; +4 disk cycle tests).
+  - `cargo test --test integration_save_disk` — 4 tests.
+  - `cargo test --test integration_boss_phases` — 8 tests, includes
+    the new `phase_greater_than_total_returns_zero` assertions for
+    `total_phases == 0`.
+  - `cargo test --lib boss` — 39 tests, including the in-file
+    `phase_thresholds_decrease` / `phase_1_always_100_percent` /
+    `phase_thresholds_positive`, all still green after the match
+    reorder.
+- `cargo build` clean.
+- `cargo clippy --all-targets` — only pre-existing warning at
+  `src/core/game_state.rs:646` for `ItchMode::default`. Unrelated.
+- No new Cargo deps.
+- Production code touched: `src/core/save.rs` (env-var override),
+  `src/entities/boss.rs` (match reorder).

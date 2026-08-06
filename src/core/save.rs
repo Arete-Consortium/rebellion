@@ -156,9 +156,20 @@ impl Default for GameSettings {
 }
 
 impl SaveData {
-    /// Get save file path (native only)
+    /// Get save file path (native only).
+    ///
+    /// Honors the `REBELLION_HOME` env var for test isolation —
+    /// set it to a temp dir before calling `load()` or `save()`
+    /// to keep your real save file untouched. Defaults to the
+    /// platform `data_dir()/rebellion/save.json`. The env var is
+    /// cheap to read (no allocation on the hot path), so we check
+    /// it every call rather than caching at startup — caching
+    /// would break tests that mutate it mid-process.
     #[cfg(not(target_arch = "wasm32"))]
     fn save_path() -> PathBuf {
+        if let Ok(root) = std::env::var("REBELLION_HOME") {
+            return PathBuf::from(root).join("save.json");
+        }
         dirs::data_dir()
             .unwrap_or_else(|| PathBuf::from("."))
             .join("rebellion")

@@ -56,11 +56,12 @@ fn phase_1_is_full_for_all_totals() {
 /// with `next_phase <= total_phases` so this defensive behavior
 /// is reachable only via user/script paths.
 ///
-/// Note: `(phase, total) = (1, 0)` returns 1.0 (the `(1, _) => 1.0`
-/// arm catches it before total_phases is examined). The function
-/// is not designed for `total_phases == 0` — `BossData::total_phases`
-/// is always 3, 4, or 5 in production. Tests below only exercise
-/// reachable inputs.
+/// Additionally: `total_phases == 0` returns 0 for **any** phase
+/// (including phase 1). The function is not designed for
+/// `total_phases == 0` — `BossData::total_phases` is always 3, 4,
+/// or 5 in production — but a defensive caller must get 0, not
+/// the misleading 1.0 that `(1, _)` would return if the match
+/// weren't reordered. Pinned in `entities/boss.rs:585-608`.
 #[test]
 fn phase_greater_than_total_returns_zero() {
     // total=3, phase=4 → out of range → 0
@@ -69,6 +70,11 @@ fn phase_greater_than_total_returns_zero() {
     assert_eq!(get_phase_threshold(3, 2), 0.0);
     // total=5, phase=6 → way out of range → 0
     assert_eq!(get_phase_threshold(6, 5), 0.0);
+    // Defensive arm: total_phases == 0 returns 0 for any phase,
+    // including phase 1 (the (1, _) arm would otherwise catch it).
+    assert_eq!(get_phase_threshold(1, 0), 0.0);
+    assert_eq!(get_phase_threshold(2, 0), 0.0);
+    assert_eq!(get_phase_threshold(3, 0), 0.0);
 }
 
 // ============================================================================
