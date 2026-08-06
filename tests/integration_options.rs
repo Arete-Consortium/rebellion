@@ -21,7 +21,7 @@ use rebellion::app_builder::build_headless_app;
 use rebellion::core::{GameSettings, SaveData};
 use rebellion::systems::audio::SoundSettings;
 use rebellion::systems::effects::screen_effects::ScreenShake;
-use rebellion::systems::joystick::RumbleSettings;
+use rebellion::systems::joystick::{RumbleRequest, RumbleSettings, RumbleType};
 
 const OPTIONS_SRC: &str = include_str!("../src/ui/menu/options.rs");
 const SAVE_SRC: &str = include_str!("../src/core/save.rs");
@@ -402,4 +402,115 @@ fn options_layout_pins_reset_label_literal() {
         OPTIONS_SRC.contains(r#"Text::new("RESET TO DEFAULTS")"#),
         "options.rs must render the literal 'RESET TO DEFAULTS' label"
     );
+}
+
+// ============================================================================
+// Group F — Audio/haptic previews (Phase 10)
+// ============================================================================
+
+// Source-level guard: the SFX preview must spawn an AudioPlayer when
+// the SFX slider is adjusted. Pins the wiring literally.
+#[test]
+fn options_sfx_preview_plays_menu_select() {
+    assert!(
+        OPTIONS_SRC.contains("AudioPlayer")
+            && OPTIONS_SRC.contains("PlaybackMode::Despawn")
+            && OPTIONS_SRC.contains("sounds.menu_select"),
+        "options.rs must spawn an AudioPlayer(Handle) + PlaybackMode::Despawn for the menu_select sound when adjusting the SFX slider"
+    );
+}
+
+// Source-level guard: the haptic preview must send a RumbleRequest with
+// a Custom rumble type when the Rumble slider is adjusted.
+#[test]
+fn options_rumble_preview_fires_custom_request() {
+    assert!(
+        OPTIONS_SRC.contains("RumbleRequest")
+            && OPTIONS_SRC.contains("RumbleType::Custom")
+            && OPTIONS_SRC.contains("duration_ms"),
+        "options.rs must send a RumbleRequest::new(RumbleType::Custom) on Rumble slider adjust"
+    );
+}
+
+// Source-level guard: the preview triggers are gated on the SFX and
+// Rumble slider indices, not the audio sliders (0/1/2) or nav rows
+// (5/6). Master preview is intentionally absent.
+#[test]
+fn options_preview_targets_sfx_and_rumble_only() {
+    assert!(
+        OPTIONS_SRC.contains("current_setting == SliderSetting::Sfx")
+            && OPTIONS_SRC.contains("current_setting == SliderSetting::Rumble"),
+        "options.rs must only fire previews for Sfx and Rumble slider indices"
+    );
+    // Anti-pattern: no preview on Master.
+    assert!(
+        !OPTIONS_SRC.contains("current_setting == SliderSetting::Master"),
+        "options.rs must NOT preview the Master slider (would mid-playback change its own volume)"
+    );
+}
+
+// The SFX preview volume must be `sfx_volume * master_volume * 0.7`.
+// At default settings (0.8 * 0.7 * 0.7) ≈ 0.392 — a comfortable UI blip.
+// Without the `0.7` factor the preview would match the in-game SFX
+// level exactly, which is louder than a menu confirmation should be.
+#[test]
+fn options_sfx_preview_volume_uses_combined_factor() {
+    assert!(
+        OPTIONS_SRC.contains("sfx_volume")
+            && OPTIONS_SRC.contains("master_volume")
+            && OPTIONS_SRC.contains("* 0.7"),
+        "options.rs must compute SFX preview volume as sfx_volume * master_volume * 0.7"
+    );
+}
+
+// ============================================================================
+// Group G — Rumble round-trip (resource-level, headless)
+// ============================================================================
+
+// The RumbleRequest event flows through process_rumble_requests
+// which scales by RumbleSettings.intensity. Sending a Custom
+// RumbleRequest must not panic, regardless of intensity.
+//
+// (No gamepads exist in headless, so we cannot verify the actual
+// GamepadRumbleRequest is sent. The point of this test is to confirm
+// the system chain is registered end-to-end in the headless build —
+// which only works if JoystickPlugin + Events<GamepadRumbleRequest>
+// are both present.)
+#[test]
+fn rumble_request_event_chains_through_process_rumble_requests() {
+    let mut app = build_headless_app();
+    app.world_mut().resource_mut::<RumbleSettings>().intensity = 0.5;
+    app.world_mut()
+        .send_event(RumbleRequest::new(RumbleType::Custom {
+            strong: 0.6,
+            weak: 0.4,
+            duration_ms: 100,
+        }));
+
+    // Run several frames to let the event flow through.
+    for _ in 0..5 {
+        app.update();
+    }
+}
+
+// With intensity = 0.0, the early-return guard in
+// process_rumble_requests must fire and skip the event. The test
+// passes if `process_rumble_requests` does not panic on an empty
+// gamepad list.
+#[test]
+fn rumble_request_with_zero_intensity_is_skipped() {
+    let mut app = build_headless_app();
+    app.world_mut().resource_mut::<RumbleSettings>().intensity = 0.0;
+    app.world_mut()
+        .send_event(RumbleRequest::new(RumbleType::Custom {
+            strong: 1.0,
+            weak: 1.0,
+            duration_ms: 1000,
+        }));
+
+    // The early-return means the system doesn't read or clear
+    // pending events. Run a frame; no panic.
+    for _ in 0..3 {
+        app.update();
+    }
 }

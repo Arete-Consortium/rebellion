@@ -164,8 +164,20 @@ impl RebellionAppConfig {
 
     fn configure_headless_plugins(&self, app: &mut App) {
         use crate::replay::ReplayPlugin;
+        use crate::systems::joystick::JoystickPlugin;
 
-        app.add_plugins((GameplayPlugin, SavePlugin, GameEventsPlugin, ReplayPlugin));
+        app.add_plugins((
+            GameplayPlugin,
+            SavePlugin,
+            GameEventsPlugin,
+            ReplayPlugin,
+            // Register JoystickPlugin so process_rumble_requests runs
+            // in headless tests. The plugin is a no-op without gamepads
+            // (poll_gamepad produces no events, process_rumble_requests
+            // iterates zero gamepads) but provides the system surface
+            // the rumble round-trip tests need.
+            JoystickPlugin,
+        ));
 
         // Events added by gameplay sub-plugins (not covered by GameEventsPlugin)
         app.add_event::<crate::systems::ability::AbilityActivatedEvent>()
@@ -176,6 +188,7 @@ impl RebellionAppConfig {
             .add_event::<crate::systems::dialogue::DialogueEvent>()
             .add_event::<crate::systems::joystick::RumbleRequest>()
             .add_event::<crate::systems::joystick::BackButtonEvent>()
+            .add_event::<bevy::input::gamepad::GamepadRumbleRequest>()
             .add_event::<crate::core::EnemyDestroyedEvent>();
 
         // Stub resources normally provided by presentation / platform plugins

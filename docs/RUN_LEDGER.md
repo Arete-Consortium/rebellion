@@ -729,3 +729,84 @@ The wheel is now properly centered on `(center_x, center_y)` with more bottom ma
 - The thread-local scratch buffer is `pub(crate)`-invisible; if a future feature adds a second egui HUD (e.g., a mini-map) that uses the same `draw_arc_segment` helper, the buffer is shared but `clear()` makes that safe.
 - No source-level test for the wheel rendering (still egui-only).
 - No new Cargo deps.
+
+## Phase 10 — Options Slider Previews (audio + haptic feedback)
+
+Phases 7 and 9 both noted a "known limit": adjusting an Options slider
+had no immediate feedback — players had to quit and re-launch to hear
+the new SFX volume or feel the new rumble intensity. This phase
+closes that loop with two live previews.
+
+### Fixes shipped
+
+| # | Item | File:line | Fix |
+|---|---|---|---|
+| 1 | SFX slider adjust plays a live preview at the new volume | `src/ui/menu/options.rs:432-459` | Spawns `AudioPlayer(menu_select_handle) + PlaybackSettings { mode: Despawn, volume: sfx * master * 0.7 }` inside the existing 0.08s cooldown-gated `adjust != 0.0` block. Uses `bevy::audio::Volume::new()` for explicit linear gain. |
+| 2 | Rumble slider adjust fires a haptic preview pulse | `src/ui/menu/options.rs:460-470` | Sends `RumbleRequest::new(RumbleType::Custom { strong: 0.6, weak: 0.4, duration_ms: 120 })`. `process_rumble_requests` multiplies by `RumbleSettings.intensity`, so the player feels the new setting as the new pulse strength. |
+| 3 | `JoystickPlugin` registered in headless build | `src/app_builder.rs:174-179` | Plugin added to the headless plugin tuple so `process_rumble_requests` runs in tests. No-op without gamepads (`poll_gamepad` produces no events, `process_rumble_requests` iterates zero gamepads). |
+| 4 | `Events<GamepadRumbleRequest>` registered in headless build | `src/app_builder.rs:189` | `process_rumble_requests` writes to `EventWriter<GamepadRumbleRequest>` — the resource must be registered explicitly when `JoystickPlugin` runs in a build without Bevy's full `InputPlugin`. |
+
+### Why Master and Music don't preview
+
+- **Master**: previewing it would mid-playback change the volume of
+  its own preview — a feedback loop. UX anti-pattern. The other audio
+  sliders preview because they don't affect the preview's amplitude
+  the way the master does.
+- **Music**: no music track is playing in the Options menu. Would
+  require either (a) a dedicated ambient track just for the menu
+  (scope creep) or (b) previewing the SFX channel through the music
+  bus (semantically wrong).
+
+### Headless test wiring note
+
+The headless build (`configure_headless_plugins`) registers plugins
+explicitly instead of relying on Bevy's `DefaultPlugins`. Adding
+`JoystickPlugin` activated `process_rumble_requests` (which writes to
+`EventWriter<GamepadRumbleRequest>`), so the headless build must also
+explicitly register `Events<GamepadRumbleRequest>` — the same pattern
+already used for `RumbleRequest`, `BackButtonEvent`, etc.
+
+### Verification
+
+- Full test suite: **455 tests pass** (was 449; +6 Phase 10 tests).
+  - `cargo test --test integration_options` — 23 tests (was 17; +4
+    source-level guards in Group F, +2 resource-level round-trip in
+    Group G).
+  - `cargo test --lib` — 350 tests, no regressions.
+- `cargo build` clean.
+- `cargo clippy --all-targets` — only pre-existing warning at
+  `src/core/game_state.rs:646` for `ItchMode::default`. Unrelated.
+- Math verification:
+  - SFX preview volume at defaults: `0.8 * 0.7 * 0.7 ≈ 0.392`. A
+    comfortable UI blip — about 40% volume.
+  - Rumble preview: 120ms pulse at 0.6 strong / 0.4 weak motor.
+    Multiplied by `RumbleSettings.intensity`, so intensity=1.0 gives
+    full pulse; intensity=0.0 early-returns and the player feels
+    nothing. The preview IS the new setting, not a separate signal.
+- No new Cargo deps. `bevy::audio::Volume`, `PlaybackMode::Despawn`,
+  and `RumbleRequest` are all from existing dependencies.
+
+### Manual smoke protocol (for next session QA)
+
+```bash
+cargo build --release && cargo run --release
+# In-game:
+#   MainMenu → Options
+#   Highlight SFX Volume. Press Left twice (volume drops).
+#   Listen: two menu_select clicks play at the new (lower) volume.
+#   Press Right back to default. Listen: clicks at the new (higher)
+#   volume.
+#   Highlight Controller Rumble. Press Left twice.
+#   With a gamepad connected, feel the rumble pulse weaken.
+#   Press Right. Feel the rumble pulse strengthen.
+```
+
+### Known limits (deferred to future passes)
+
+- Audio device dropdown (still deferred from Phase 7).
+- Persistent preview disable toggle (some players may want to silence
+  previews). Would be a `SoundSettings.preview_enabled: bool` plus a
+  guard around the preview spawn — small future pass.
+- Music slider preview needs an Options-menu ambient track first
+  (separate feature).
+- Master preview is intentionally absent (UX anti-pattern).

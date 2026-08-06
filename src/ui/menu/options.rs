@@ -5,6 +5,7 @@
 use super::common::*;
 use crate::core::*;
 use crate::systems::JoystickState;
+use bevy::audio::PlaybackMode;
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -335,6 +336,7 @@ fn spawn_volume_row(
 }
 
 pub(crate) fn options_menu_input(
+    mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<JoystickState>,
     time: Res<Time>,
@@ -342,6 +344,8 @@ pub(crate) fn options_menu_input(
     mut sound_settings: ResMut<crate::systems::audio::SoundSettings>,
     mut screen_shake: ResMut<crate::systems::effects::screen_effects::ScreenShake>,
     mut rumble: ResMut<crate::systems::joystick::RumbleSettings>,
+    sounds: Res<crate::systems::audio::SoundAssets>,
+    mut rumble_writer: EventWriter<crate::systems::joystick::RumbleRequest>,
     mut next_state: ResMut<NextState<GameState>>,
     mut sliders: Query<(&VolumeSlider, &mut BorderColor), Without<VolumeLabel>>,
     mut bars: Query<(&VolumeSlider, &mut Node), (Without<VolumeLabel>, Without<BorderColor>)>,
@@ -424,6 +428,46 @@ pub(crate) fn options_menu_input(
                     if label.setting == current_setting {
                         **text = format!("{}%", (new_value * 100.0) as i32);
                     }
+                }
+
+                // Live previews so the player hears/feels the new
+                // setting without quitting. Both gated by the 0.08s
+                // cooldown so playback never piles up.
+                //
+                // - SFX: spawn a one-shot menu_select at the new
+                //   sfx_volume * master_volume. Master slider
+                //   intentionally skipped — previewing the master
+                //   would mid-playback alter its own volume (a
+                //   feedback loop). Music has no playing track in
+                //   the Options menu so no preview.
+                // - Rumble: send a Custom RumbleRequest so the
+                //   gamepad pulses at the new intensity.
+                if current_setting == SliderSetting::Sfx {
+                    if let Some(source) = sounds.menu_select.clone() {
+                        commands.spawn((
+                            AudioPlayer(source),
+                            PlaybackSettings {
+                                mode: PlaybackMode::Despawn,
+                                volume: bevy::audio::Volume::new(
+                                    sound_settings.sfx_volume
+                                        * sound_settings.master_volume
+                                        * 0.7,
+                                ),
+                                ..default()
+                            },
+                        ));
+                    }
+                }
+                if current_setting == SliderSetting::Rumble {
+                    rumble_writer.send(
+                        crate::systems::joystick::RumbleRequest::new(
+                            crate::systems::joystick::RumbleType::Custom {
+                                strong: 0.6,
+                                weak: 0.4,
+                                duration_ms: 120,
+                            },
+                        ),
+                    );
                 }
 
                 state.cooldown = 0.08;
