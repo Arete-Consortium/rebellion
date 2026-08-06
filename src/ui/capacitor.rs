@@ -9,10 +9,22 @@
 
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
+use std::cell::RefCell;
 use std::f32::consts::PI;
 
 use crate::core::*;
 use crate::entities::{Player, ShipStats};
+
+// Thread-local scratch buffer reused by every `draw_arc_segment` and
+// `draw_cap_cell` call. The wheel draws 24+20+16=60 arc segments and
+// 18 capacitor cells per frame (78 small Vec allocations at 60fps =
+// ~4.7k allocs/sec on a fresh Vec). Reusing one Vec per thread cuts
+// that to zero steady-state allocations. Each call `clear()`s the
+// buffer, pushes points into it, and `mem::take`s it into the
+// `egui::Shape`, leaving the empty Vec in place for the next call.
+thread_local! {
+    static POINT_BUF: RefCell<Vec<egui::Pos2>> = const { RefCell::new(Vec::new()) };
+}
 
 /// Capacitor wheel plugin
 pub struct CapacitorWheelPlugin;
@@ -49,7 +61,10 @@ impl Default for CapacitorAnimation {
 
 /// Update capacitor animation
 fn update_capacitor_animation(time: Res<Time>, mut anim: ResMut<CapacitorAnimation>) {
-    let dt = time.delta_secs();
+    // Clamp dt to 100ms so a long pause (alt-tab, breakpoint, scene
+    // transition) can't desync the pulse phase by jumping straight
+    // to its clamp bound. Six frames at 60fps is the natural worst case.
+    let dt = time.delta_secs().clamp(0.0, 0.1);
 
     // Very slow rotation for capacitor glow effect
     anim.rotation += dt * 0.15;
@@ -99,9 +114,11 @@ fn draw_capacitor_wheel(
         // so there's ~200-280px of clear horizontal space in the middle.
         (window.width() * 0.5, window.height() - 96.0)
     } else {
-        // center_y = height - 80 keeps the outer sensor ring's bottom
-        // edge at height - 19 (19px breathing room after the area
-        // padding, see fixed_pos / response.rect.center math).
+        // center_y = height - 80 leaves 34px of breathing room from
+        // the outer sensor ring's bottom edge (radius 46) to the
+        // window bottom. The new Area::anchor + default_size layout
+        // centers the rect exactly on (center_x, center_y) — no more
+        // manual fixed_pos / response.rect.center math.
         (window.width() - 70.0, window.height() - 80.0)
     };
 
@@ -111,15 +128,21 @@ fn draw_capacitor_wheel(
     let hull_pct = (stats.hull / stats.max_hull).clamp(0.0, 1.0);
     let cap_pct = (stats.capacitor / stats.max_capacitor).clamp(0.0, 1.0);
 
-    // Draw using egui Area
+    // Draw using egui Area. Anchoring at CENTER_CENTER with an explicit
+    // default_size puts the rect's center exactly at (center_x, center_y)
+    // — no manual fixed_pos math, no response.rect.center drift.
     egui::Area::new(egui::Id::new("capacitor_wheel"))
-        .fixed_pos(egui::pos2(
-            center_x - wheel_radius - 45.0,
-            center_y - wheel_radius - 25.0,
+        .anchor(
+            egui::Align2::CENTER_CENTER,
+            [center_x, center_y],
+        )
+        .default_size(egui::vec2(
+            (wheel_radius + 50.0) * 2.0,
+            (wheel_radius + 40.0) * 2.0,
         ))
         .show(ctx, |ui| {
-            let size = egui::vec2((wheel_radius + 50.0) * 2.0, (wheel_radius + 40.0) * 2.0);
-            let (response, painter) = ui.allocate_painter(size, egui::Sense::hover());
+            let (response, painter) =
+                ui.allocate_painter(ui.available_size(), egui::Sense::hover());
             let center = response.rect.center();
 
             // === OUTER SENSOR OVERLAY RING ===
@@ -274,14 +297,23 @@ fn draw_health_arc(
     let total_arc = arc_end - arc_start;
     let segment_arc = (total_arc / num_segments as f32) - segment_gap;
 
-    // Fills segments from edges toward center
-    let filled_segments = (fill_pct * num_segments as f32).ceil() as u32;
+    // Round to the nearest half-segment so common fill levels (25%,
+    // 50%, 75%, 100%) produce symmetric edge-anchored fills (left
+    // count == right count). Without this, every odd `filled_segments`
+    // — including those produced by `fill_pct` slightly off a quarter
+    // mark — gives one side an extra cell, which reads as a visible
+    // visual lean.
+    let quant = (num_segments as f32) * 2.0;
+    let symmetric_pct = (fill_pct * quant).round() / quant;
+    let filled_segments = (symmetric_pct * num_segments as f32).ceil() as u32;
+
+    // An odd `filled_segments` is unavoidable between quarter marks
+    // (e.g. 13/24 ≈ 54%). Convention: right side gets the extra.
+    let half = num_segments / 2;
 
     for i in 0..num_segments {
         let angle_start = arc_start + (i as f32) * (total_arc / num_segments as f32);
 
-        // Fill from both edges toward middle
-        let half = num_segments / 2;
         let is_filled = if i < half {
             i < filled_segments / 2
         } else {
@@ -320,35 +352,42 @@ fn draw_arc_segment(
     let inner_r = radius - width / 2.0;
     let outer_r = radius + width / 2.0;
 
-    let mut points = Vec::with_capacity((steps + 1) * 2);
+    // Reuse the thread-local scratch buffer. `clear()` keeps the
+    // Vec's capacity; `mem::take` hands ownership to the Shape and
+    // leaves an empty Vec in place.
+    POINT_BUF.with(|buf| {
+        let mut points = buf.borrow_mut();
+        points.clear();
 
-    // Outer arc
-    for i in 0..=steps {
-        let t = i as f32 / steps as f32;
-        let angle = start_angle + arc_span * t;
-        points.push(egui::pos2(
-            center.x + outer_r * angle.cos(),
-            center.y + outer_r * angle.sin(),
-        ));
-    }
+        // Outer arc
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let angle = start_angle + arc_span * t;
+            points.push(egui::pos2(
+                center.x + outer_r * angle.cos(),
+                center.y + outer_r * angle.sin(),
+            ));
+        }
 
-    // Inner arc (reversed)
-    for i in (0..=steps).rev() {
-        let t = i as f32 / steps as f32;
-        let angle = start_angle + arc_span * t;
-        points.push(egui::pos2(
-            center.x + inner_r * angle.cos(),
-            center.y + inner_r * angle.sin(),
-        ));
-    }
+        // Inner arc (reversed)
+        for i in (0..=steps).rev() {
+            let t = i as f32 / steps as f32;
+            let angle = start_angle + arc_span * t;
+            points.push(egui::pos2(
+                center.x + inner_r * angle.cos(),
+                center.y + inner_r * angle.sin(),
+            ));
+        }
 
-    if points.len() >= 3 {
-        painter.add(egui::Shape::convex_polygon(
-            points,
-            color,
-            egui::Stroke::NONE,
-        ));
-    }
+        if points.len() >= 3 {
+            let owned = std::mem::take(&mut *points);
+            painter.add(egui::Shape::convex_polygon(
+                owned,
+                color,
+                egui::Stroke::NONE,
+            ));
+        }
+    });
 }
 
 /// Draw CAPACITOR display
@@ -411,9 +450,12 @@ fn draw_capacitor_rings(
     // Inner dark circle
     painter.circle_filled(center, inner_radius, egui::Color32::from_rgb(12, 14, 20));
 
-    // Subtle yellow glow in center when cap is high
-    if cap_pct > 0.5 {
-        let glow_alpha = ((cap_pct - 0.5) * 0.6 * 255.0 * pulse) as u8;
+    // Subtle yellow glow in center when cap is high. Ramps from 0 at
+    // 40% to full alpha at 100% with a quadratic ease-in, so the
+    // glow builds smoothly rather than snapping on at 50%.
+    if cap_pct > 0.4 {
+        let t = ((cap_pct - 0.4) / 0.6).clamp(0.0, 1.0);
+        let glow_alpha = (t * t * 0.6 * 255.0 * pulse) as u8;
         painter.circle_filled(
             center,
             inner_radius * 0.6,
@@ -438,63 +480,85 @@ fn draw_cap_cell(
     let start_angle = center_angle - half_arc;
     let end_angle = center_angle + half_arc;
 
-    // Create trapezoid shape
-    let points = vec![
-        egui::pos2(
+    POINT_BUF.with(|buf| {
+        let mut points = buf.borrow_mut();
+        points.clear();
+
+        // Trapezoid vertices (inner-start, outer-start, outer-end, inner-end)
+        points.push(egui::pos2(
             center.x + inner_radius * start_angle.cos(),
             center.y + inner_radius * start_angle.sin(),
-        ),
-        egui::pos2(
+        ));
+        points.push(egui::pos2(
             center.x + outer_radius * start_angle.cos(),
             center.y + outer_radius * start_angle.sin(),
-        ),
-        egui::pos2(
+        ));
+        points.push(egui::pos2(
             center.x + outer_radius * end_angle.cos(),
             center.y + outer_radius * end_angle.sin(),
-        ),
-        egui::pos2(
+        ));
+        points.push(egui::pos2(
             center.x + inner_radius * end_angle.cos(),
             center.y + inner_radius * end_angle.sin(),
-        ),
-    ];
+        ));
 
-    // Fill
-    painter.add(egui::Shape::convex_polygon(
-        points.clone(),
-        fill_color,
-        egui::Stroke::NONE,
-    ));
-
-    // Border
-    painter.add(egui::Shape::closed_line(
-        points.clone(),
-        egui::Stroke::new(0.5, border_color),
-    ));
-
-    // Add highlight on filled cells (top edge glow)
-    if is_filled {
-        let highlight_points = vec![
-            egui::pos2(
-                center.x + (outer_radius - 1.0) * start_angle.cos(),
-                center.y + (outer_radius - 1.0) * start_angle.sin(),
-            ),
-            egui::pos2(
-                center.x + outer_radius * start_angle.cos(),
-                center.y + outer_radius * start_angle.sin(),
-            ),
-            egui::pos2(
-                center.x + outer_radius * end_angle.cos(),
-                center.y + outer_radius * end_angle.sin(),
-            ),
-            egui::pos2(
-                center.x + (outer_radius - 1.0) * end_angle.cos(),
-                center.y + (outer_radius - 1.0) * end_angle.sin(),
-            ),
-        ];
+        // Fill polygon — mem::take hands the buffer to the Shape.
+        let fill_points = std::mem::take(&mut *points);
         painter.add(egui::Shape::convex_polygon(
-            highlight_points,
-            egui::Color32::from_rgba_unmultiplied(255, 255, 200, 40),
+            fill_points,
+            fill_color,
             egui::Stroke::NONE,
         ));
-    }
+
+        // Reuse the (now empty) buffer for the border outline.
+        points.push(egui::pos2(
+            center.x + inner_radius * start_angle.cos(),
+            center.y + inner_radius * start_angle.sin(),
+        ));
+        points.push(egui::pos2(
+            center.x + outer_radius * start_angle.cos(),
+            center.y + outer_radius * start_angle.sin(),
+        ));
+        points.push(egui::pos2(
+            center.x + outer_radius * end_angle.cos(),
+            center.y + outer_radius * end_angle.sin(),
+        ));
+        points.push(egui::pos2(
+            center.x + inner_radius * end_angle.cos(),
+            center.y + inner_radius * end_angle.sin(),
+        ));
+
+        let border_points = std::mem::take(&mut *points);
+        painter.add(egui::Shape::closed_line(
+            border_points,
+            egui::Stroke::new(0.5, border_color),
+        ));
+
+        // Highlight on filled cells (top-edge glow).
+        if is_filled {
+            points.push(egui::pos2(
+                center.x + (outer_radius - 1.0) * start_angle.cos(),
+                center.y + (outer_radius - 1.0) * start_angle.sin(),
+            ));
+            points.push(egui::pos2(
+                center.x + outer_radius * start_angle.cos(),
+                center.y + outer_radius * start_angle.sin(),
+            ));
+            points.push(egui::pos2(
+                center.x + outer_radius * end_angle.cos(),
+                center.y + outer_radius * end_angle.sin(),
+            ));
+            points.push(egui::pos2(
+                center.x + (outer_radius - 1.0) * end_angle.cos(),
+                center.y + (outer_radius - 1.0) * end_angle.sin(),
+            ));
+
+            let highlight_points = std::mem::take(&mut *points);
+            painter.add(egui::Shape::convex_polygon(
+                highlight_points,
+                egui::Color32::from_rgba_unmultiplied(255, 255, 200, 40),
+                egui::Stroke::NONE,
+            ));
+        }
+    });
 }

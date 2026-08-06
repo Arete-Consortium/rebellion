@@ -679,4 +679,53 @@ were dead code), and 5 LOW cosmetic items. The user chose the
 - The remaining 5 LOW cosmetic items above are real polish opportunities but not correctness bugs. Deferred to a "capacitor polish" pass.
 - The health arc segment math (`draw_health_arc` lines 262-308) is generic and accepts any `num_segments`, but the asymmetry on odd values is undocumented. A test or doc-comment guard would help.
 - No source-level test for the wheel rendering (it is egui-based and runs only in a windowed Bevy build). The headless test suite can't exercise the visual layout.
+
+## Phase 9 — Capacitor Polish (the 5 deferred LOWs)
+
+The Phase 8 audit deferred 5 LOW cosmetic items to a follow-up
+"capacitor polish" pass. This phase ships all 5.
+
+### Fixes shipped
+
+| # | Item | File:line | Fix |
+|---|---|---|---|
+| 1 | Anchor drift (the `fixed_pos` math produced a rect whose center was 5px right and 15px down from the intended `(center_x, center_y)`) | `capacitor.rs:114-145` | Migrated `Area::new(...).fixed_pos(...)` to `Area::new(...).anchor(Align2::CENTER_CENTER, [center_x, center_y]).default_size(...)`. The rect's center is now exactly `(center_x, center_y)`. Comment updated to reflect the new layout (34px bottom margin, not 19px). |
+| 2 | First-frame pulse phase desync (a long pause could jump `pulse` straight to its clamp bound) | `capacitor.rs:60-77` | Clamped `dt = time.delta_secs().clamp(0.0, 0.1)` so the worst case is 100ms (6 frames at 60fps), the natural pause ceiling. Rotation has its own wrap so the clamp doesn't need to interact with it. |
+| 3 | Health arc asymmetry on odd `fill_pct` (every `fill_pct` not on a quarter mark gave one side an extra cell) | `capacitor.rs:289-305` | Quantize `fill_pct` to the nearest half-segment before computing `filled_segments`. Now 25%, 50%, 75%, 100% produce perfectly symmetric fills (left_count == right_count). Between quarter marks the asymmetry is unavoidable but documented. |
+| 4 | Hard on/off glow threshold at `cap_pct > 0.5` (the glow snapped on at exactly 50%) | `capacitor.rs:455-466` | Glow now ramps from 0 at `cap_pct=0.4` to full alpha at `cap_pct=1.0` with a quadratic ease-in (`t * t`). The "suddenly on" feel at 50% is replaced by a smooth build-up. |
+| 5 | Per-frame allocations in hot loop (~78 small Vec allocations at 60fps = ~4.7k allocs/sec) | `capacitor.rs:24-28` (declaration), `356-393` (`draw_arc_segment`), `481-540` (`draw_cap_cell`) | Added a thread-local scratch buffer `POINT_BUF: RefCell<Vec<Pos2>>`. Both `draw_arc_segment` and `draw_cap_cell` now `clear()` + reuse + `mem::take` into the `egui::Shape`. Steady-state allocations per frame: 0. |
+
+### Why the "anchor drift" fix increases the bottom margin
+
+The previous `fixed_pos` math:
+- `fixed_pos = (center_x - 83, center_y - 63)`
+- `size = (176, 156)`
+- `rect = (center_x - 83, center_y - 63, center_x + 93, center_y + 93)`
+- `rect.center() = (center_x + 5, center_y + 15)` — drifted 5px right and 15px down from the intended `(center_x, center_y)`.
+
+The new `anchor(CENTER_CENTER, [center_x, center_y]).default_size(176, 156)`:
+- `rect = (center_x - 88, center_y - 78, center_x + 88, center_y + 78)`
+- `rect.center() = (center_x, center_y)` — exactly where the comment said it should be.
+
+With `center_y = height - 80` and outer sensor ring radius `46 = wheel_radius + 8`:
+- Old bottom: `height - 80 + 15 + 46 = height - 19` (19px margin)
+- New bottom: `height - 80 + 46 = height - 34` (34px margin)
+- Old right: `width - 70 + 5 + 46 = width - 19` (19px margin)
+- New right: `width - 70 + 46 = width - 24` (24px margin)
+
+The wheel is now properly centered on `(center_x, center_y)` with more bottom margin and slightly less right margin. The Phase 8 layout fix (tightening `center_y` to `height - 80`) was based on the old drifted math; the new anchor gives 34px bottom margin which is comfortable.
+
+### Verification
+
+- Full test suite: **449 tests still pass** (no test changes).
+- `cargo build --release` clean.
+- `cargo clippy --all-targets` clean on touched files (single pre-existing warning at `src/core/game_state.rs:646` for `ItchMode::default` is unrelated).
+- Allocation reduction is observable in the source: zero `Vec::with_capacity` or `vec![...]` calls in `draw_arc_segment` and `draw_cap_cell`. All polygon construction uses the same thread-local `POINT_BUF`.
+
+### Known limits (deferred to future passes)
+
+- The `CapacitorAnimation` resource lacks `Debug`, `Clone`, and `Reflect` derives. Minor housekeeping — does not affect runtime behavior.
+- The glow ease-in curve (`t * t`) is hand-tuned. A future pass could parameterize the ease curve and let users tune it via dev-only debug controls.
+- The thread-local scratch buffer is `pub(crate)`-invisible; if a future feature adds a second egui HUD (e.g., a mini-map) that uses the same `draw_arc_segment` helper, the buffer is shared but `clear()` makes that safe.
+- No source-level test for the wheel rendering (still egui-only).
 - No new Cargo deps.
