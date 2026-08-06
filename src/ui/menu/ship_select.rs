@@ -167,9 +167,12 @@ pub(crate) fn spawn_ship_menu(
                         });
                 });
 
-            // Navigation hint
+            // Navigation hint. The forward action is "Continue to
+            // Briefing", not "Launch" — gameplay does not begin
+            // immediately after ship selection. The wording names
+            // the actual transition (ShipSelect → MissionBriefing).
             parent.spawn((
-                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
+                Text::new("↑↓ Navigate  •  A / Enter: Continue to Briefing  •  Esc Back"),
                 TextFont {
                     font_size: 12.0,
                     ..default()
