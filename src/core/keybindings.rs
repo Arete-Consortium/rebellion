@@ -143,7 +143,7 @@ pub fn key_label(k: KeyCode) -> String {
 }
 
 /// Authoritative binding table.
-#[derive(Resource, Debug, Clone, Serialize, Deserialize)]
+#[derive(Resource, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KeyBindings {
     /// Backing store. `#[serde(default)]` lets a save blob that
     /// pre-dates the feature deserialize to an empty map; the

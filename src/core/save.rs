@@ -4,6 +4,7 @@
 
 #![allow(dead_code)]
 
+use crate::core::KeyBindings;
 use crate::systems::{RumbleSettings, ScreenShake, SoundSettings};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -39,6 +40,14 @@ pub struct SaveData {
     pub high_scores: Vec<HighScore>,
     /// Settings
     pub settings: GameSettings,
+    /// Player's remapped control layout.
+    ///
+    /// Migrations:
+    /// - Pre-keybindings save (no `keybindings` field) → defaults via `KeyBindings::default()`.
+    /// - Default save (no remap ever) → defaults.
+    /// - Custom remap → exactly what the player saved.
+    #[serde(default)]
+    pub keybindings: super::KeyBindings,
     /// Unlocked achievements
     #[serde(default)]
     pub achievements: HashSet<super::Achievement>,
@@ -543,6 +552,7 @@ fn apply_saved_settings(
     mut sound: ResMut<SoundSettings>,
     mut shake: ResMut<ScreenShake>,
     mut rumble: ResMut<RumbleSettings>,
+    mut keybindings: ResMut<KeyBindings>,
 ) {
     let settings = &save.settings;
 
@@ -557,8 +567,16 @@ fn apply_saved_settings(
     // Apply rumble intensity
     rumble.intensity = settings.rumble_intensity;
 
+    // Apply the saved binding layout. `KeyBindingsPlugin` already
+    // registered `KeyBindings` with defaults; this overwrites them
+    // with the saved values. If the field is missing in the save blob
+    // (legacy pre-keybindings save), serde filled it with the
+    // hand-written `Default::default()` which returns
+    // `KeyBindings::defaults()` — the canonical layout.
+    *keybindings = save.keybindings.clone();
+
     info!(
-        "Applied saved settings: master={:.0}%, sfx={:.0}%, music={:.0}%, shake={:.0}%, rumble={:.0}%",
+        "Applied saved settings: master={:.0}%, sfx={:.0}%, music={:.0}%, shake={:.0}%, rumble={:.0}%, keybindings=loaded",
         settings.master_volume * 100.0,
         settings.sfx_volume * 100.0,
         settings.music_volume * 100.0,
@@ -568,15 +586,21 @@ fn apply_saved_settings(
 }
 
 /// Sync runtime settings changes back to SaveData
-/// Only runs when SoundSettings, ScreenShake, or RumbleSettings resources change
+/// Only runs when SoundSettings, ScreenShake, RumbleSettings, or
+/// KeyBindings resources change.
 fn sync_settings_to_save(
     sound: Res<SoundSettings>,
     shake: Res<ScreenShake>,
     rumble: Res<RumbleSettings>,
+    keybindings: Res<KeyBindings>,
     mut save: ResMut<SaveData>,
 ) {
     // Only process if any resource changed this frame
-    if !sound.is_changed() && !shake.is_changed() && !rumble.is_changed() {
+    if !sound.is_changed()
+        && !shake.is_changed()
+        && !rumble.is_changed()
+        && !keybindings.is_changed()
+    {
         return;
     }
 
@@ -587,8 +611,9 @@ fn sync_settings_to_save(
         || (settings.music_volume - sound.music_volume).abs() > 0.001;
     let shake_changed = (settings.screen_shake_intensity - shake.multiplier).abs() > 0.001;
     let rumble_changed = (settings.rumble_intensity - rumble.intensity).abs() > 0.001;
+    let keybindings_changed = *keybindings != save.keybindings;
 
-    if !sound_changed && !shake_changed && !rumble_changed {
+    if !sound_changed && !shake_changed && !rumble_changed && !keybindings_changed {
         return;
     }
 
@@ -606,13 +631,30 @@ fn sync_settings_to_save(
         settings.rumble_intensity = rumble.intensity;
     }
 
+    // The `&mut save.settings` reborrow above prevents touching other
+    // fields of `save`, so we read the final values for logging first;
+    // the borrow ends after the last use below, then we write
+    // `save.keybindings`.
+    let post_settings = (
+        settings.master_volume,
+        settings.sfx_volume,
+        settings.music_volume,
+        settings.screen_shake_intensity,
+        settings.rumble_intensity,
+    );
+
+    if keybindings_changed {
+        save.keybindings = keybindings.clone();
+    }
+
     info!(
-        "Settings synced to save: master={:.0}%, sfx={:.0}%, music={:.0}%, shake={:.0}%, rumble={:.0}%",
-        settings.master_volume * 100.0,
-        settings.sfx_volume * 100.0,
-        settings.music_volume * 100.0,
-        settings.screen_shake_intensity * 100.0,
-        settings.rumble_intensity * 100.0
+        "Settings synced to save: master={:.0}%, sfx={:.0}%, music={:.0}%, shake={:.0}%, rumble={:.0}%, keybindings={}",
+        post_settings.0 * 100.0,
+        post_settings.1 * 100.0,
+        post_settings.2 * 100.0,
+        post_settings.3 * 100.0,
+        post_settings.4 * 100.0,
+        if keybindings_changed { "synced" } else { "unchanged" }
     );
 }
 

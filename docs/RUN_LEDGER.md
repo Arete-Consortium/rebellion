@@ -366,3 +366,120 @@ Modify:
   OnEnter/Update/OnExit systems for the Controls screen do not run
   during integration tests. The tests verify resource-level rules
   and source-level invariants instead.
+
+---
+
+## Phase 6 — KeyBindings Disk Persistence (thread carried from Phase 5)
+
+### Scope (locked)
+
+- Add `pub keybindings: super::KeyBindings` to `SaveData` with
+  `#[serde(default)]` so pre-feature saves migrate to the canonical
+  layout.
+- Load the saved binding table into the runtime `KeyBindings`
+  resource on startup via `apply_saved_settings`.
+- Sync runtime `KeyBindings` changes back to `SaveData` via
+  `sync_settings_to_save`, gated on `is_changed()` and a full
+  equality check so it integrates with the existing `auto_save`
+  debounce.
+- Add four new integration tests: roundtrip, missing-field migration,
+  partial-load authoritativeness, source-level guard.
+- Add `PartialEq` and `Eq` to `KeyBindings` (drop-in safe — the
+  inner map is `BTreeMap<Action, Binding>` where both keys and
+  values already derive both).
+
+### Files
+
+Modify:
+- `src/core/save.rs` — new field on `SaveData`; extended
+  `apply_saved_settings`; extended `sync_settings_to_save`;
+  `use crate::core::KeyBindings;` import added.
+- `src/core/keybindings.rs` — added `PartialEq, Eq` to the
+  `KeyBindings` derives (used by the `sync_settings_to_save`
+  diffing branch — `*keybindings != save.keybindings`).
+- `tests/integration_keybindings.rs` — 4 new tests appended.
+
+### Architecture
+
+- `SaveData.keybindings` is a top-level field, not nested inside
+  `GameSettings`. Audio/haptics and input mapping are separate
+  evolution paths, and the six precedent `#[serde(default)]`
+  fields on `SaveData` (achievements, lifetime_stats, etc.) all
+  group by domain at the top level rather than by structural
+  family.
+- `apply_saved_settings` does a wholesale `*keybindings = save.keybindings.clone()`
+  instead of per-field diffing (unlike the existing volume sliders).
+  The Controls screen is a separate state from `Playing`, so the
+  load-on-startup write does not race against an in-flight change.
+- `sync_settings_to_save` short-circuits on
+  `!is_changed()` and then re-checks full equality
+  (`*keybindings != save.keybindings`). The clone-back runs only
+  when the resource's actual byte content differs from the saved
+  copy. The mutation of `SaveData` triggers the existing
+  `run_if(resource_changed::<SaveData>)` guard on `auto_save`,
+  which writes the file once per change.
+
+### Test results
+
+- 4 new integration tests in `tests/integration_keybindings.rs`:
+  - `save_data_serialization_roundtrip_includes_keybindings` —
+    confirms a remap survives `SaveData → JSON → SaveData`.
+  - `save_data_without_keybindings_field_loads_defaults` —
+    strips the `,"keybindings":{...}` substring from a
+    freshly-defaulted blob and confirms the loader falls back to
+    the canonical layout.
+  - `save_data_partial_keybindings_field_is_loaded_unchanged` —
+    a save with one entry is loaded exactly as written; `Fire`
+    (not present) stays unbound rather than being silently
+    re-defaulted.
+  - `save_data_has_keybindings_field` — source-level guard
+    protects the new field, its `#[serde(default)]` decoration,
+    the load call in `apply_saved_settings`, and the write-back
+    call in `sync_settings_to_save`.
+- Full test suite: 432 tests passing (up from 428). Unit: 350.
+  Integration: 82 (78 previous + 4 new).
+- `cargo build --release` clean.
+- `cargo clippy --all-targets` clean on touched files
+  (single pre-existing warning at `src/core/game_state.rs:646`
+  for `ItchMode::default` is untouched by this pass).
+- Source-level guards verified:
+  - `grep -n 'pub keybindings' src/core/save.rs` returns the
+    new field.
+  - `grep -n 'save.keybindings' src/core/save.rs` returns the
+    load + sync read/write sites.
+  - `grep -n 'save.keybindings = keybindings.clone()' src/core/save.rs`
+    returns the sync write site.
+
+### Manual smoke protocol
+
+For QA in the next session:
+
+```
+cargo build --release
+cargo run --release
+# In-game:
+#   MainMenu → Options → Controls
+#   Re-bind Move Up to gamepad button A
+#   Back → Back → Quit
+cargo run --release
+# In-game:
+#   MainMenu → Options → Controls
+#   Confirm Move Up still shows as "A"
+```
+
+(Not run in this session — the headless build does not write to a
+real disk file, but the round-trip serialization tests above cover
+the format contract end-to-end.)
+
+### Known limits (out of scope, future pass)
+
+- The save is `auto_save`-triggered, which fires on the next frame
+  after a `SaveData` change. If a crash happens between a remap and
+  the next frame, the remap is lost. Acceptable today; a future
+  pass could add a dedicated flush on `OnExit(GameState::Controls)`
+  if needed.
+- No `SaveData.schema_version` field yet. If the format ever changes
+  incompatibly, the existing `serde_json::from_str` failure falls
+  back to `Self::default()` (a silent reset). A schema-version +
+  migration table would harden this; deferred to a future pass.
+- No new Cargo deps.
