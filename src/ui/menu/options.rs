@@ -12,12 +12,12 @@ pub(crate) struct OptionsMenuRoot;
 
 #[derive(Component)]
 pub(crate) struct VolumeSlider {
-    pub(crate) setting: VolumeSetting,
+    pub(crate) setting: SliderSetting,
 }
 
 #[derive(Component)]
 pub(crate) struct VolumeLabel {
-    pub(crate) setting: VolumeSetting,
+    pub(crate) setting: SliderSetting,
 }
 
 /// Marker for the CONTROLS navigation row in the Options menu.
@@ -25,11 +25,20 @@ pub(crate) struct VolumeLabel {
 #[derive(Component)]
 pub(crate) struct ControlsNavItem;
 
+/// Marker for the RESET TO DEFAULTS navigation row. A confirm-press
+/// restores `SoundSettings`, `ScreenShake.multiplier`, and
+/// `RumbleSettings.intensity` to their `Default::default()` values
+/// and refreshes every slider bar / label in one pass.
+#[derive(Component)]
+pub(crate) struct ResetNavItem;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum VolumeSetting {
+pub(crate) enum SliderSetting {
     Master,
     Music,
     Sfx,
+    Shake,
+    Rumble,
 }
 
 #[derive(Resource)]
@@ -37,9 +46,11 @@ pub(crate) struct OptionsMenuState {
     pub(crate) selected: usize,
     pub(crate) cooldown: f32,
     /// Total items in the menu — used as the wrap modulus for nav.
-    /// Includes the 3 audio sliders (0..=2) plus the CONTROLS nav row
-    /// at index 3. Default is 4. If more rows are added later, bump
-    /// this constant.
+    /// Layout (7 rows total):
+    ///   0 = Master Volume   3 = Screen Shake       5 = RESET
+    ///   1 = Music  Volume   4 = Controller Rumble  6 = CONTROLS
+    ///   2 = SFX    Volume
+    /// If more rows are added later, bump this constant.
     pub(crate) total: usize,
 }
 
@@ -48,7 +59,7 @@ impl Default for OptionsMenuState {
         Self {
             selected: 0,
             cooldown: 0.0,
-            total: 4,
+            total: 7,
         }
     }
 }
@@ -56,6 +67,8 @@ impl Default for OptionsMenuState {
 pub(crate) fn spawn_options_menu(
     mut commands: Commands,
     sound_settings: Res<crate::systems::audio::SoundSettings>,
+    screen_shake: Res<crate::systems::effects::screen_effects::ScreenShake>,
+    rumble: Res<crate::systems::joystick::RumbleSettings>,
 ) {
     commands.init_resource::<OptionsMenuState>();
 
@@ -107,26 +120,86 @@ pub(crate) fn spawn_options_menu(
             spawn_volume_row(
                 parent,
                 "Master Volume",
-                VolumeSetting::Master,
+                SliderSetting::Master,
                 sound_settings.master_volume,
                 0,
             );
             spawn_volume_row(
                 parent,
                 "Music Volume",
-                VolumeSetting::Music,
+                SliderSetting::Music,
                 sound_settings.music_volume,
                 1,
             );
             spawn_volume_row(
                 parent,
                 "SFX Volume",
-                VolumeSetting::Sfx,
+                SliderSetting::Sfx,
                 sound_settings.sfx_volume,
                 2,
             );
 
-            // CONTROLS nav row (index 3) — opens the controller remapping screen.
+            // Feedback section header — separates haptics from audio.
+            parent.spawn((
+                Text::new("FEEDBACK"),
+                TextFont {
+                    font_size: 24.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.6, 0.5, 0.55)),
+                Node {
+                    margin: UiRect::top(Val::Px(10.0))
+                        .with_bottom(Val::Px(20.0)),
+                    ..default()
+                },
+            ));
+
+            spawn_volume_row(
+                parent,
+                "Screen Shake",
+                SliderSetting::Shake,
+                screen_shake.multiplier,
+                3,
+            );
+            spawn_volume_row(
+                parent,
+                "Controller Rumble",
+                SliderSetting::Rumble,
+                rumble.intensity,
+                4,
+            );
+
+            // RESET TO DEFAULTS row (index 5) — restores every slider
+            // to its resource's `Default::default()` value.
+            parent
+                .spawn((
+                    ResetNavItem,
+                    Node {
+                        width: Val::Px(400.0),
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        padding: UiRect::all(Val::Px(10.0)),
+                        margin: UiRect::top(Val::Px(10.0))
+                            .with_bottom(Val::Px(10.0)),
+                        border: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    },
+                    BackgroundColor(Color::srgba(0.15, 0.1, 0.05, 0.9)),
+                    BorderColor(Color::srgba(0.4, 0.3, 0.2, 0.5)),
+                ))
+                .with_children(|row| {
+                    row.spawn((
+                        Text::new("RESET TO DEFAULTS"),
+                        TextFont {
+                            font_size: 18.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.9, 0.7, 0.5)),
+                    ));
+                });
+
+            // CONTROLS nav row (index 6) — opens the controller remapping screen.
             parent
                 .spawn((
                     ControlsNavItem,
@@ -181,7 +254,7 @@ pub(crate) fn spawn_options_menu(
 fn spawn_volume_row(
     parent: &mut ChildBuilder,
     label: &str,
-    setting: VolumeSetting,
+    setting: SliderSetting,
     value: f32,
     index: usize,
 ) {
@@ -267,11 +340,14 @@ pub(crate) fn options_menu_input(
     time: Res<Time>,
     mut state: ResMut<OptionsMenuState>,
     mut sound_settings: ResMut<crate::systems::audio::SoundSettings>,
+    mut screen_shake: ResMut<crate::systems::effects::screen_effects::ScreenShake>,
+    mut rumble: ResMut<crate::systems::joystick::RumbleSettings>,
     mut next_state: ResMut<NextState<GameState>>,
     mut sliders: Query<(&VolumeSlider, &mut BorderColor), Without<VolumeLabel>>,
     mut bars: Query<(&VolumeSlider, &mut Node), (Without<VolumeLabel>, Without<BorderColor>)>,
     mut labels: Query<(&VolumeLabel, &mut Text)>,
-    mut controls_nav: Query<&mut BorderColor, With<ControlsNavItem>>,
+    mut reset_nav: Query<&mut BorderColor, (With<ResetNavItem>, Without<ControlsNavItem>)>,
+    mut controls_nav: Query<&mut BorderColor, (With<ControlsNavItem>, Without<ResetNavItem>)>,
 ) {
     let dt = time.delta_secs();
     state.cooldown = (state.cooldown - dt).max(0.0);
@@ -284,8 +360,8 @@ pub(crate) fn options_menu_input(
             state.cooldown = 0.15;
         }
 
-        // Adjust volume (left/right) — only on slider rows.
-        if state.selected < 3 {
+        // Adjust slider value (left/right) — only on the 5 slider rows.
+        if state.selected < 5 {
             let adjust = if keyboard.pressed(KeyCode::ArrowLeft) || joystick.dpad_x < 0 {
                 -0.05
             } else if keyboard.pressed(KeyCode::ArrowRight) || joystick.dpad_x > 0 {
@@ -296,28 +372,43 @@ pub(crate) fn options_menu_input(
 
             if adjust != 0.0 {
                 let current_setting = match state.selected {
-                    0 => VolumeSetting::Master,
-                    1 => VolumeSetting::Music,
-                    2 => VolumeSetting::Sfx,
-                    _ => VolumeSetting::Master,
+                    0 => SliderSetting::Master,
+                    1 => SliderSetting::Music,
+                    2 => SliderSetting::Sfx,
+                    3 => SliderSetting::Shake,
+                    4 => SliderSetting::Rumble,
+                    _ => SliderSetting::Master,
                 };
 
-                // Update the setting
+                // Update the setting through its resource. The
+                // `is_changed()` flag fires on every `ResMut` deref,
+                // which `sync_settings_to_save` watches on the next
+                // frame and writes the new value to `SaveData.settings`.
                 let new_value = match current_setting {
-                    VolumeSetting::Master => {
+                    SliderSetting::Master => {
                         sound_settings.master_volume =
                             (sound_settings.master_volume + adjust).clamp(0.0, 1.0);
                         sound_settings.master_volume
                     }
-                    VolumeSetting::Music => {
+                    SliderSetting::Music => {
                         sound_settings.music_volume =
                             (sound_settings.music_volume + adjust).clamp(0.0, 1.0);
                         sound_settings.music_volume
                     }
-                    VolumeSetting::Sfx => {
+                    SliderSetting::Sfx => {
                         sound_settings.sfx_volume =
                             (sound_settings.sfx_volume + adjust).clamp(0.0, 1.0);
                         sound_settings.sfx_volume
+                    }
+                    SliderSetting::Shake => {
+                        screen_shake.multiplier =
+                            (screen_shake.multiplier + adjust).clamp(0.0, 1.0);
+                        screen_shake.multiplier
+                    }
+                    SliderSetting::Rumble => {
+                        rumble.intensity =
+                            (rumble.intensity + adjust).clamp(0.0, 1.0);
+                        rumble.intensity
                     }
                 };
 
@@ -340,21 +431,67 @@ pub(crate) fn options_menu_input(
         }
     }
 
+    // Confirm on the RESET row restores every slider to its resource's
+    // canonical default and refreshes all bar/label visuals in one pass.
+    if state.cooldown <= 0.0
+        && state.selected == 5
+        && is_confirm(&keyboard, &joystick)
+    {
+        let sound_default = crate::systems::audio::SoundSettings::default();
+        sound_settings.master_volume = sound_default.master_volume;
+        sound_settings.sfx_volume = sound_default.sfx_volume;
+        sound_settings.music_volume = sound_default.music_volume;
+
+        let shake_default = crate::systems::effects::screen_effects::ScreenShake::default();
+        // Only the persisted multiplier is reset — runtime intensity /
+        // duration / timer are gameplay state, not player preferences.
+        screen_shake.multiplier = shake_default.multiplier;
+
+        rumble.intensity = crate::systems::joystick::RumbleSettings::default().intensity;
+
+        // Refresh every bar + label in one pass so the player sees the
+        // reset take effect immediately.
+        for (slider, mut node) in bars.iter_mut() {
+            let v = match slider.setting {
+                SliderSetting::Master => sound_settings.master_volume,
+                SliderSetting::Music => sound_settings.music_volume,
+                SliderSetting::Sfx => sound_settings.sfx_volume,
+                SliderSetting::Shake => screen_shake.multiplier,
+                SliderSetting::Rumble => rumble.intensity,
+            };
+            node.width = Val::Percent(v * 100.0);
+        }
+        for (label, mut text) in labels.iter_mut() {
+            let v = match label.setting {
+                SliderSetting::Master => sound_settings.master_volume,
+                SliderSetting::Music => sound_settings.music_volume,
+                SliderSetting::Sfx => sound_settings.sfx_volume,
+                SliderSetting::Shake => screen_shake.multiplier,
+                SliderSetting::Rumble => rumble.intensity,
+            };
+            **text = format!("{}%", (v * 100.0) as i32);
+        }
+
+        state.cooldown = 0.25;
+    }
+
     // Confirm on the CONTROLS row opens the controller remapping screen.
     if state.cooldown <= 0.0
-        && state.selected == 3
+        && state.selected == 6
         && is_confirm(&keyboard, &joystick)
     {
         next_state.set(GameState::Controls);
         state.cooldown = 0.25;
     }
 
-    // Update selection highlighting
+    // Update selection highlighting across the 5 slider rows.
     for (slider, mut border) in sliders.iter_mut() {
         let is_selected = match slider.setting {
-            VolumeSetting::Master => state.selected == 0,
-            VolumeSetting::Music => state.selected == 1,
-            VolumeSetting::Sfx => state.selected == 2,
+            SliderSetting::Master => state.selected == 0,
+            SliderSetting::Music => state.selected == 1,
+            SliderSetting::Sfx => state.selected == 2,
+            SliderSetting::Shake => state.selected == 3,
+            SliderSetting::Rumble => state.selected == 4,
         };
         *border = if is_selected {
             BorderColor(Color::srgb(0.4, 0.6, 0.8))
@@ -363,9 +500,18 @@ pub(crate) fn options_menu_input(
         };
     }
 
+    // Highlight the RESET row when selected.
+    for mut border in reset_nav.iter_mut() {
+        *border = if state.selected == 5 {
+            BorderColor(Color::srgb(0.4, 0.6, 0.8))
+        } else {
+            BorderColor(Color::srgba(0.4, 0.3, 0.2, 0.5))
+        };
+    }
+
     // Highlight the CONTROLS row when selected.
     for mut border in controls_nav.iter_mut() {
-        *border = if state.selected == 3 {
+        *border = if state.selected == 6 {
             BorderColor(Color::srgb(0.4, 0.6, 0.8))
         } else {
             BorderColor(Color::srgba(0.3, 0.3, 0.4, 0.5))

@@ -482,4 +482,159 @@ the format contract end-to-end.)
   incompatibly, the existing `serde_json::from_str` failure falls
   back to `Self::default()` (a silent reset). A schema-version +
   migration table would harden this; deferred to a future pass.
+
+## Phase 7 — Options Slider Parity (task #60–#62)
+
+The Phase 6 persistence layer exposes all five persisted settings
+through `SaveData.settings` — `SoundSettings.{master,sfx,music}`,
+`ScreenShake.multiplier`, `RumbleSettings.intensity` — but the UI
+only surfaced the three audio sliders. Screen shake and rumble
+loaded silently from disk but had no in-game control.
+
+Phase 7 finishes the player-facing surface:
+
+- **`src/ui/menu/options.rs`**:
+  - Renamed `VolumeSetting` → `SliderSetting` and added
+    `Shake` + `Rumble` variants (the old name was now lying about
+    what it covered).
+  - Bumped `OptionsMenuState.total` from 4 → 7: 5 sliders +
+    RESET TO DEFAULTS + CONTROLS.
+  - Added a `pub(crate) struct ResetNavItem;` marker (mirrors
+    the existing `ControlsNavItem` precedent).
+  - New `FEEDBACK` section header between the audio sliders and
+    the new haptics sliders.
+  - `spawn_options_menu` now takes `Res<ScreenShake>` and
+    `Res<RumbleSettings>` and spawns two extra `spawn_volume_row`
+    calls bound to the new variants.
+  - The RESET row renders with a warm tint and a bordered row,
+    matching the CONTROLS nav row treatment.
+  - `options_menu_input`:
+    - Extended the match ladder to cover indices 0..=4 (Master,
+      Music, Sfx, Shake, Rumble). Indices 3 and 4 write through
+      `ResMut<ScreenShake>` and `ResMut<RumbleSettings>` instead
+      of `SoundSettings`.
+    - Added the RESET confirm handler at index 5: overwrite all
+      three resources with their `Default::default()`, then
+      refresh every bar + label visual in one pass.
+    - Shifted the CONTROLS confirm handler from index 3 to
+      index 6.
+    - Three highlight loops: 5 sliders, RESET row, CONTROLS row.
+- **No `src/core/save.rs` changes** — `apply_saved_settings`
+  (`src/core/save.rs:550-586`) already populates
+  `ScreenShake.multiplier` and `RumbleSettings.intensity` from
+  `SaveData.settings`, and `sync_settings_to_save`
+  (`src/core/save.rs:591-655`) already writes them back via
+  the 0.001 epsilon gate. The UI just hooks into resources the
+  sync layer was already watching.
+
+### New test file: `tests/integration_options.rs` (17 tests)
+
+Two-layer coverage, mirroring the `integration_controls.rs`
+precedent:
+
+- **Group A — Source-level guards (8 tests):**
+  - `options_total_reflects_seven_rows` — pins `total: 7`.
+  - `options_exposes_all_five_slider_settings` — pins the
+    `SliderSetting::{Master,Music,Sfx,Shake,Rumble}` literal
+    usages.
+  - `options_writes_shake_and_rumble_through_resources` —
+    pins `screen_shake.multiplier` and `rumble.intensity`
+    as the write-through points.
+  - `options_handles_reset_nav_row` — pins the `ResetNavItem`
+    marker, the `state.selected == 5 && is_confirm` gate, and
+    the three `::default()` calls.
+  - `options_controls_row_is_at_index_six` — pins the shifted
+    CONTROLS gate.
+  - `options_adjust_guard_covers_five_sliders_only` — pins
+    `state.selected < 5` so nav rows can't be edited.
+  - `options_does_not_bypass_save_layer` — anti-pattern guard:
+    options.rs must NOT write to `save.settings.*` directly.
+  - `options_spawn_takes_all_three_settings_resources` — pins
+    the new `Res<ScreenShake>` and `Res<RumbleSettings>`
+    arguments.
+- **Group B — Resource-level round-trip (4 tests):**
+  - `sound_settings_master_propagates_to_save_data` — mutating
+    `ResMut<SoundSettings>.master_volume` propagates to
+    `SaveData.settings.master_volume` on the next tick.
+  - `screen_shake_multiplier_propagates_to_save_data` — same
+    shape, mutates `ScreenShake.multiplier` and asserts
+    `save.settings.screen_shake_intensity`.
+  - `rumble_intensity_propagates_to_save_data` — same shape,
+    mutates `RumbleSettings.intensity` and asserts
+    `save.settings.rumble_intensity`.
+  - `stale_save_data_is_corrected_by_sync` — proves the
+    round-trip works in both directions: a stale saved value
+    that disagrees with the runtime resource gets overwritten
+    on the next `is_changed()` tick.
+- **Group C — Reset-to-defaults (1 test):**
+  - `options_reset_restores_all_three_resources` — set every
+    persisted field to a non-default value, then overwrite each
+    resource with its canonical default, then assert
+    `SaveData.settings.{master,sfx,music,screen_shake_intensity,
+    rumble_intensity}` all reflect the defaults.
+- **Group D — Defaults shape + serde migration safety (3 tests):**
+  - `game_settings_default_has_all_five_fields` — pins the
+    canonical defaults (0.7/0.8/0.5/1.0/1.0).
+  - `legacy_save_without_shake_or_rumble_loads_defaults` — a
+    pre-Phase-7 JSON blob with only the three audio fields
+    deserializes cleanly; `#[serde(default)]` on the two new
+    fields gives 1.0 for both.
+  - `save_layer_round_trips_all_five_fields` — source-level
+    guard on `src/core/save.rs` that pins the five field names
+    and the 0.001 epsilon gate.
+- **Group E — Layout literal guard (1 test):**
+  - `options_layout_pins_reset_label_literal` — pins the
+    literal `"RESET TO DEFAULTS"` string.
+
+### Verification
+
+- Full test suite: **449 tests passing** (up from 432). Unit:
+  350. Integration: 99 (82 previous + 17 new).
+- `cargo build --release` clean.
+- `cargo clippy --all-targets` clean on touched files (single
+  pre-existing warning at `src/core/game_state.rs:646` for
+  `ItchMode::default` is untouched by this pass).
+- Source-level guards verified:
+  - `grep -n 'SliderSetting::Shake' src/ui/menu/options.rs`
+    returns the new variant usage.
+  - `grep -n 'SliderSetting::Rumble' src/ui/menu/options.rs`
+    returns the new variant usage.
+  - `grep -n 'ResetNavItem' src/ui/menu/options.rs` returns
+    the marker component usage.
+  - `grep -n 'total: 7' src/ui/menu/options.rs` returns the
+    bumped nav modulus.
+
+### Manual smoke protocol
+
+For QA in the next session:
+
+```
+cargo build --release
+cargo run --release
+# In-game:
+#   MainMenu → Options
+#   Confirm 5 sliders render (Master, Music, Sfx, Screen Shake,
+#     Controller Rumble) + a FEEDBACK section header + a
+#     RESET TO DEFAULTS row + a CONTROLS row.
+#   Move Screen Shake slider to ~50%.
+#   Move Controller Rumble slider to ~30%.
+#   Press Confirm on RESET TO DEFAULTS — both should snap back
+#     to 100%.
+#   Move Screen Shake to 50% again. Press B to back out.
+#   Quit. Re-launch.
+cargo run --release
+# In-game:
+#   MainMenu → Options
+#   Screen Shake should still show 50% — the round-trip persists.
+```
+
+### Known limits (out of scope, future pass)
+
+- No live preview sounds when adjusting the SFX slider. Deferred
+  — would require a small audio system in Options to play the
+  UI select tone at the new volume.
+- No haptic preview when adjusting rumble intensity. Deferred
+  — out of Options screen scope.
+- No audio device dropdown. The current `SoundSettings.enabled`
+  is binary and not surfaced.
 - No new Cargo deps.
