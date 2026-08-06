@@ -962,3 +962,61 @@ the file.
 - No new Cargo deps.
 - Production code touched: `src/core/save.rs` (env-var override),
   `src/entities/boss.rs` (match reorder).
+
+## Phase 13 — Process-Isolate Save Disk Tests (replace ENV_LOCK with subprocesses)
+
+The Phase 12 ledger called out that the `ENV_LOCK: Mutex<()>`
+serializing the save-disk tests was a workaround, not a fix.
+`std::env::set_var` is process-global and the lock lives in the
+same process as the reader, so reader/writer pairs still race on
+visibility. Newer Rust (1.84+) already marks `set_var` as
+`unsafe` for this exact reason.
+
+This phase replaces the mutex with **process isolation**:
+each of the four disk-cycle tests is its own Cargo test target,
+so it runs in its own process and owns `REBELLION_HOME` outright.
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `tests/common/mod.rs` | Shared helpers (`install_save_home`, `resolved_save_path`). Cargo does not auto-discover `tests/common/` as a binary (only top-level `tests/*.rs` files), so this directory is excluded from binary discovery automatically. |
+| `tests/save_disk_round_trip.rs` | `save() → load()` round-trip with stage progress, high scores, and unlocked ships. |
+| `tests/save_disk_auto_save.rs` | Two-stage save → load → mutate → save → load. |
+| `tests/save_disk_missing.rs` | `load()` against empty dir returns `default()`. Asserts `load()` does NOT write a file. |
+| `tests/save_disk_override.rs` | When `REBELLION_HOME` is set, `save()` writes to `<REBELLION_HOME>/save.json` (not the platform data dir). |
+
+### Why per-process instead of a Mutex
+
+- `std::env::set_var` is process-global. A Mutex serializes
+  tests but the lock lives in the same process as the reader,
+  so reader/writer pairs still race on visibility.
+- A subprocess that sets `REBELLION_HOME` only mutates its own
+  env block. The parent's view of the env var is unchanged.
+- Each `tests/save_disk_*.rs` is one Cargo test target, which
+  compiles into one binary and runs in one process. Splitting
+  the four scenarios into four files costs ~4 × 5 seconds of
+  compile time (the `dynamic_linking` Bevy dev-dep makes
+  per-test binary compile much cheaper than release builds),
+  but eliminates the env-var race class entirely.
+- Tests within a single binary still run in parallel by default
+  — that's fine because each test in `save_disk_*.rs` is the
+  only `#[test]` in its binary. There is nothing parallel to
+  race.
+
+### Verification
+
+- Full test suite: **475 tests pass** (was 475; +0 net — same
+  four scenarios, now in four binaries instead of one). 31 test
+  binaries (was 30; `integration_save_disk.rs` removed, four
+  `save_disk_*.rs` added).
+- Stress-tested: ran the four save-disk binaries 5 times back
+  to back — 4/4 every time. The original race manifested as
+  intermittent `left: 0, right: 7` failures under parallel
+  execution; with process isolation, those failures are no
+  longer reachable.
+- `cargo build --tests` clean.
+- `cargo clippy --all-targets` — only pre-existing warning at
+  `src/core/game_state.rs:646` for `ItchMode::default`. Unrelated.
+- No new Cargo deps.
+- Production code untouched. This phase is test-only.
