@@ -810,3 +810,87 @@ cargo build --release && cargo run --release
 - Music slider preview needs an Options-menu ambient track first
   (separate feature).
 - Master preview is intentionally absent (UX anti-pattern).
+
+## Phase 11 — Test Coverage Gap Fill (save progress + boss phases)
+
+Three candidate gaps were evaluated against the existing tests:
+
+- **Per-stage progression (save)** — chosen ✓
+- **Boss bar HP threshold** — chosen ✓ (reframed as `get_phase_threshold` + spawn health tests)
+- **Touch joystick mobile-only paths** — **skipped**, see rationale below
+
+### What shipped
+
+Two new integration test files (`+16` tests total):
+
+| File | Tests | Coverage |
+|---|---|---|
+| `tests/integration_save_progress.rs` | 8 | `complete_stage` mission-number clamp, idempotent re-record (no Vec growth), skip-ahead cascade, high-score isolation, serde round-trip (stage_progress + unlocked_ships), in-world `complete_stage` propagation, PostStartup survival. |
+| `tests/integration_boss_phases.rs` | 8 | Phase 1 = 1.0 across all totals, defensive `_ => 0.0` arm for off-the-end phase index, pinned snapshot of every `(phase, total)` threshold pair, monotonicity across all totals + explicit `total=5`, final-phase threshold ∈ (0, 0.5), `BossData::health == max_health` at spawn for all 13 bosses, `health / max_health == 1.0` at spawn. |
+
+### Why "boss bar draws at right HP threshold" became phase-table tests
+
+The boss bar is rendered by egui and isn't exercisable in headless.
+The function that drives it — `get_phase_threshold(phase, total_phases)`
+at `src/entities/boss.rs:586` — IS testable, and a wrong threshold
+would break the bar even with correct rendering. Tested it as a pure
+function plus the `BossData` spawn invariant that the bar's input
+ratio (`health / max_health`) starts at exactly 1.0.
+
+### Why touch joystick mobile-only paths were skipped
+
+`TouchJoystickPlugin` is registered only in `src/platform/mod.rs:21`
+(native path). The two mobile-only entry points are:
+
+- `spawn_joystick_ui` at `src/systems/touch_joystick.rs:152` —
+  early-returns `if !mobile.active`.
+- `spawn_fps_overlay` at `src/systems/touch_joystick.rs:427` —
+  early-returns `if !mobile.active`.
+
+To "test" the mobile path, the test must either:
+
+1. **Assert `MobileMode::default()`** — exercises nothing, just
+   checks the default `active=false` constructor works.
+2. **Write a source-level `include_str!` guard** — pins the wiring
+   literally but does not exercise the runtime code path. The
+   gating mobile branch fires only when `mobile.active=true`,
+   which can't be triggered in the headless build (no touch
+   input).
+3. **Manually simulate a mobile viewport** by running
+   `detect_mobile_mode` with a synthetic touch-points signal —
+   requires a `Window` resource and an egui context that the
+   headless build doesn't wire up.
+
+A write-it-anyway test would be theater. The mobile path is
+genuinely QA-territory: a developer or tester on a phone.
+Documented here so future maintainers don't try to "fill the
+coverage gap" with a no-op test.
+
+### Verification
+
+- Full test suite: **471 tests pass** (was 455; +16 Phase 11 tests).
+  - `cargo test --test integration_save_progress` — 8 tests.
+  - `cargo test --test integration_boss_phases` — 8 tests.
+  - All 449 Phase 7–10 tests still pass.
+- `cargo build` clean.
+- `cargo clippy --all-targets` — only pre-existing warning at
+  `src/core/game_state.rs:646` for `ItchMode::default`. Unrelated.
+- No new Cargo deps.
+- No production source code touched. This phase is test-only.
+
+### Disk-pollution mitigation (worth noting)
+
+`SaveData::load()` reads `~/.local/share/rebellion/save.json`,
+which a prior test session may have populated. Tests that exercise
+the live `SavePlugin` Startup path must overwrite the resource
+**after** `load_save_data` runs (one `app.update()` flush), not
+before. Otherwise the test sees contamination from an earlier run.
+
+This is reproducible: the local CI machine had a Minmatar/Amarr
+stage 7 entry from a previous session. The first test run failed
+exactly there. After the overwrite-on-flush pattern, tests pass
+deterministically regardless of what's on disk.
+
+A cleaner long-term fix would be to add a `REBELLION_HOME`
+env-var override to `save_path()` (deferred — this is test-only
+docs, not a new feature).
