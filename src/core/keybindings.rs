@@ -58,6 +58,38 @@ pub enum Action {
     MenuRight,
 }
 
+impl Action {
+    /// Human-readable label for the Controls UI list.
+    pub fn label(&self) -> &'static str {
+        match self {
+            Action::MoveUp => "Move Up",
+            Action::MoveDown => "Move Down",
+            Action::MoveLeft => "Move Left",
+            Action::MoveRight => "Move Right",
+            Action::AimUp => "Aim Up",
+            Action::AimDown => "Aim Down",
+            Action::AimLeft => "Aim Left",
+            Action::AimRight => "Aim Right",
+            Action::Fire => "Fire",
+            Action::CycleAmmoPrev => "Cycle Ammo -",
+            Action::CycleAmmoNext => "Cycle Ammo +",
+            Action::SelectAmmo1 => "Select Ammo 1",
+            Action::SelectAmmo2 => "Select Ammo 2",
+            Action::SelectAmmo3 => "Select Ammo 3",
+            Action::SelectAmmo4 => "Select Ammo 4",
+            Action::SelectAmmo5 => "Select Ammo 5",
+            Action::Pause => "Pause",
+            Action::ActivateAbility => "Activate Ability",
+            Action::Confirm => "Confirm",
+            Action::Cancel => "Cancel",
+            Action::MenuUp => "Menu Up",
+            Action::MenuDown => "Menu Down",
+            Action::MenuLeft => "Menu Left",
+            Action::MenuRight => "Menu Right",
+        }
+    }
+}
+
 /// A single physical input that can be bound to an action.
 ///
 /// Per project policy, `MouseButton` and `Binding::GamepadButton` are
@@ -81,6 +113,13 @@ impl Binding {
             Binding::MouseButton(0) => "LMB".into(),
             Binding::MouseButton(i) => format!("M{}", i),
         }
+    }
+
+    /// Like `label()`, but renders `"<none>"` for an unbound slot so
+    /// the Controls UI can show a uniform placeholder instead of an
+    /// empty string.
+    pub fn label_or_none(b: Option<Binding>) -> String {
+        b.map(|b| b.label()).unwrap_or_else(|| "<none>".to_string())
     }
 }
 

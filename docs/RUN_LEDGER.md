@@ -260,3 +260,109 @@ contract violation:**
   `src/ui/menu/controls.rs` are referenced in the contract's known-
   pre-existing-repo-facts list but the controller-remapping UI is
   task #29, not part of this recovery pass.
+
+---
+
+## Phase 5 — Controller Remapping UI (task #29)
+
+### Scope (locked)
+
+- **Controller-only UI.** Player-facing Controls screen is gamepad-only.
+  Keyboard bindings are shown as informational labels (dim, with a
+  `(kbd)` tag) but are not editable. The `KeyBindings` resource keeps
+  both keyboard and gamepad paths for backward compatibility and
+  test ergonomics.
+- **Nested under Options**, not a 5th main-menu item. Reading: `MainMenu
+  → Options → Controls → Back`.
+- **Single file** `src/ui/menu/controls.rs` (~400 lines, matches the
+  `options.rs` precedent).
+- **No disk persistence** in this pass. In-session mutations persist
+  across state transitions because `KeyBindings` is a global
+  `Resource`. A future pass wires `SaveData.keybindings:
+  Option<KeyBindings>` with a migration shim.
+- **No "Are you sure?" guard on reset.** Single-button action with a
+  clear verb label.
+- **No joystick-disconnected timeout.** Capture does not time out;
+  the player can sit and rebind or back out.
+
+### Files
+
+Create:
+- `src/ui/menu/controls.rs` — the new screen, capture-mode state
+  machine, refresh_labels, decay_conflict_message.
+- `tests/integration_controls.rs` — 17 integration tests.
+
+Modify:
+- `src/core/game_state.rs` — `Controls` variant between `Options`
+  and `ModuleSelect`.
+- `src/core/keybindings.rs` — `Action::label()` (per-action names for
+  the UI list) and `Binding::label_or_none()` (uniform `<none>`
+  placeholder for the menu).
+- `src/core/mod.rs` — no new re-exports (Action and Binding already
+  re-exported).
+- `src/ui/menu/common.rs` — `MenuSelection` made `pub` and its fields
+  `pub` so integration tests can drive the resource directly.
+- `src/ui/menu/options.rs` — `OptionsMenuState.total: usize` field
+  defaulting to 4; CONTROLS nav row + `ControlsNavItem` marker;
+  confirm-on-row-3 routes to `GameState::Controls`.
+- `src/ui/menu/mod.rs` — `pub mod controls;` and OnEnter/Update/OnExit
+  registrations.
+- `src/lib.rs` — `ui` module changed from `pub(crate)` to `pub` so
+  integration tests can reach `ControlsCaptureState` and `MenuSelection`.
+
+### Architecture
+
+- `ControlsCaptureState` resource with `capturing: Option<Action>` and
+  `conflict: Option<(String, Timer)>`. 2-second amber banner decays
+  via `decay_conflict_message`.
+- Two-system capture flow: `controls_menu_input` (nav + back) and
+  `controls_capture_input` (gamepad-button rising-edge → write).
+- `controls_capture_input` is the only writer to the bindings; it
+  goes through `KeyBindings::set` which returns the previous owner
+  for silent-overwrite conflict messages.
+- `refresh_binding_labels` re-reads `KeyBindings` and rewrites each
+  `ControlsBindingLabel` so a successful re-bind or a reset is visible
+  immediately.
+
+### Test results
+
+- 17 new integration tests in `tests/integration_controls.rs`:
+  - `controls_state_is_registered`
+  - `controls_screen_appears_with_all_action_rows`
+  - `controls_menu_selection_total_matches_row_count`
+  - `capturing_action_does_not_change_resource_until_input`
+  - `capturing_with_joystick_button_writes_binding_and_steals`
+  - `back_button_exits_capture_without_writing`
+  - `reset_to_defaults_via_resource_button_clears_steals`
+  - `conflict_message_decays` (source-level invariant)
+  - `required_actions_can_be_remapped_but_not_cleared`
+  - `options_screen_lists_controls_row`
+  - `back_from_controls_returns_to_options`
+  - `conflict_surfacing_appears_in_label`
+  - `controls_does_not_synthesize_keystrokes`
+  - `controls_uses_keybindings_set`
+  - `controls_does_not_invent_a_legacy_fallback`
+  - `binding_label_or_none_handles_none`
+  - `action_label_returns_readable_name`
+- Full test suite: 350 unit + 47 pre-existing integration + 5
+  keybindings + 8 ship-select + 17 controls = **428 tests passing**
+  (up from 411).
+- `cargo build --release` clean.
+- `cargo clippy --all-targets` clean (only one pre-existing warning
+  in `ItchMode::default`, untouched by this pass).
+- Source-level guards verified:
+  - `grep -n 'KeyCode::' src/ui/menu/controls.rs` returns only the
+    `KeyCode::Escape` back-out reads.
+  - `grep -n 'keyboard.press' src/ui/menu/controls.rs` returns nothing.
+
+### Known limits (out of scope, future pass)
+
+- Disk persistence: `KeyBindings` mutations are in-session only.
+  Cold-start loads `KeyBindings::defaults()`.
+- The `Controls` screen is only reachable via `Options`. Direct
+  routing from `MainMenu` would require a 5th main-menu item and
+  was rejected by user scope.
+- The headless build does not include `MenuPlugin`, so the
+  OnEnter/Update/OnExit systems for the Controls screen do not run
+  during integration tests. The tests verify resource-level rules
+  and source-level invariants instead.

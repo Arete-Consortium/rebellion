@@ -13,6 +13,7 @@ pub enum GameState {
     Loading,
     MainMenu,
     Options,       // Audio, display, and control settings
+    Controls,      // Controller remapping (sub-screen of Options)
     ModuleSelect,  // Choose game module (Elder Fleet, Caldari vs Gallente, etc.)
     FactionSelect, // Choose faction (for Caldari/Gallente module)
     StageSelect,   // Choose which stage (1-13) to play

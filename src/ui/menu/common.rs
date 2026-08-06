@@ -11,10 +11,10 @@ use bevy::prelude::*;
 // ============================================================================
 
 #[derive(Resource, Default)]
-pub(crate) struct MenuSelection {
-    pub(crate) index: usize,
-    pub(crate) total: usize,
-    pub(crate) cooldown: f32,
+pub struct MenuSelection {
+    pub index: usize,
+    pub total: usize,
+    pub cooldown: f32,
 }
 
 pub(crate) const MENU_NAV_COOLDOWN: f32 = 0.15;

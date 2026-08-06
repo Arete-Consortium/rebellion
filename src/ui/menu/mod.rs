@@ -5,6 +5,7 @@
 
 pub mod boss_intro;
 pub mod common;
+pub mod controls;
 pub mod death_screen;
 pub mod difficulty_select;
 pub mod endless_announcements;
@@ -99,6 +100,27 @@ impl Plugin for MenuPlugin {
             .add_systems(
                 OnExit(GameState::Options),
                 despawn_menu::<options::OptionsMenuRoot>,
+            )
+            // Controls Menu (sub-screen of Options)
+            .add_systems(
+                OnEnter(GameState::Controls),
+                controls::spawn_controls_menu,
+            )
+            .add_systems(
+                Update,
+                (
+                    controls::controls_menu_input,
+                    controls::controls_capture_input,
+                    controls::refresh_binding_labels,
+                    controls::decay_conflict_message,
+                    update_menu_selection::<controls::ControlsMenuRoot>,
+                )
+                    .run_if(in_state(GameState::Controls))
+                    .chain(),
+            )
+            .add_systems(
+                OnExit(GameState::Controls),
+                despawn_menu::<controls::ControlsMenuRoot>,
             )
             // Faction Select (unified 4-faction) - only for Elder Fleet module
             .add_systems(
