@@ -2,18 +2,17 @@
 //!
 //! Capacitor-style HUD display:
 //! - Three concentric semicircular health arcs (Shield/Armor/Structure)
-//! - Central HEAT gauge with radial spoke pattern (fills as heat builds)
-//! - Speed display at bottom center
-//! - Percentage readouts on left
-//! - Heat status indicators
+//! - Capacitor ring inside the wheel center (fills as capacitor recharges)
+//! - Capacitor percentage text in the center
+//! - Pulsing red border when capacitor < 15%
+//! - Mobile / desktop position variants
 
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 use std::f32::consts::PI;
 
 use crate::core::*;
-use crate::entities::{Movement, Player, ShipStats};
-use crate::systems::ComboHeatSystem;
+use crate::entities::{Player, ShipStats};
 
 /// Capacitor wheel plugin
 pub struct CapacitorWheelPlugin;
@@ -72,13 +71,12 @@ fn update_capacitor_animation(time: Res<Time>, mut anim: ResMut<CapacitorAnimati
 /// Draw capacitor wheel using egui
 fn draw_capacitor_wheel(
     mut egui_ctx: EguiContexts,
-    player_query: Query<(&ShipStats, Option<&Movement>), With<Player>>,
-    heat_system: Res<ComboHeatSystem>,
+    player_query: Query<&ShipStats, With<Player>>,
     anim: Res<CapacitorAnimation>,
     windows: Query<&Window>,
     mobile: Res<crate::systems::touch_joystick::MobileMode>,
 ) {
-    let Ok((stats, movement)) = player_query.get_single() else {
+    let Ok(stats) = player_query.get_single() else {
         return;
     };
 
@@ -101,7 +99,10 @@ fn draw_capacitor_wheel(
         // so there's ~200-280px of clear horizontal space in the middle.
         (window.width() * 0.5, window.height() - 96.0)
     } else {
-        (window.width() - 70.0, window.height() - 55.0)
+        // center_y = height - 80 keeps the outer sensor ring's bottom
+        // edge at height - 19 (19px breathing room after the area
+        // padding, see fixed_pos / response.rect.center math).
+        (window.width() - 70.0, window.height() - 80.0)
     };
 
     // Calculate percentages
@@ -109,10 +110,6 @@ fn draw_capacitor_wheel(
     let armor_pct = (stats.armor / stats.max_armor).clamp(0.0, 1.0);
     let hull_pct = (stats.hull / stats.max_hull).clamp(0.0, 1.0);
     let cap_pct = (stats.capacitor / stats.max_capacitor).clamp(0.0, 1.0);
-    let heat_pct = heat_system.heat / 100.0;
-
-    // Get speed (reserved for future speedometer display)
-    let _speed = movement.map(|m| m.velocity.length()).unwrap_or(0.0);
 
     // Draw using egui Area
     egui::Area::new(egui::Id::new("capacitor_wheel"))
@@ -123,7 +120,7 @@ fn draw_capacitor_wheel(
         .show(ctx, |ui| {
             let size = egui::vec2((wheel_radius + 50.0) * 2.0, (wheel_radius + 40.0) * 2.0);
             let (response, painter) = ui.allocate_painter(size, egui::Sense::hover());
-            let center = egui::pos2(response.rect.center().x, response.rect.center().y - 5.0);
+            let center = response.rect.center();
 
             // === OUTER SENSOR OVERLAY RING ===
             painter.circle_stroke(
@@ -196,15 +193,19 @@ fn draw_capacitor_wheel(
             );
 
             // === CAPACITOR RINGS (concentric circles of dashes) ===
-            let cap_inner_radius = 18.0;
-            let cap_outer_radius = structure_radius - arc_width - 5.0;
+            // Inner / outer radii are hard-coded rather than derived
+            // from the structure arc — at the current wheel size
+            // (wheel_radius=38) the structure arc's inner edge sits
+            // at 23px, leaving no room for a positive-width ring.
+            // 10..22 = 12px band, well clear of the structure arc.
+            let cap_inner_radius = 10.0;
+            let cap_outer_radius = 22.0;
             draw_capacitor_rings(
                 &painter,
                 center,
                 cap_inner_radius,
                 cap_outer_radius,
                 cap_pct,
-                heat_pct,
                 anim.pulse,
             );
 
@@ -219,8 +220,6 @@ fn draw_capacitor_wheel(
                 cap_inner_radius,
                 egui::Stroke::new(1.0, egui::Color32::from_rgb(50, 60, 75)),
             );
-
-            // Heat indicators removed - capacitor display now primary
 
             // === CAPACITOR PERCENTAGE (center of wheel) ===
             let cap_color = capacitor_text_color(cap_pct);
@@ -360,7 +359,6 @@ fn draw_capacitor_rings(
     inner_radius: f32,
     outer_radius: f32,
     cap_pct: f32,
-    _heat_pct: f32,
     pulse: f32,
 ) {
     // Ring of dashes/cells

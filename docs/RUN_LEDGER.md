@@ -637,4 +637,46 @@ cargo run --release
   — out of Options screen scope.
 - No audio device dropdown. The current `SoundSettings.enabled`
   is binary and not surfaced.
+
+## Phase 8 — Capacitor Wheel Audit + Fix (task #25)
+
+Adversarial audit of `src/ui/capacitor.rs` (502 lines) surfaced
+3 HIGH-severity correctness bugs, 8 MEDIUM issues (3 of which
+were dead code), and 5 LOW cosmetic items. The user chose the
+**correctness + dead code only** scope for this pass.
+
+### Fixes shipped
+
+| Severity | File:line | Issue | Fix |
+|---|---|---|---|
+| HIGH | `capacitor.rs:200, 373-375` | `ring_width = -7.0` — `cap_inner_radius (18.0) > cap_outer_radius (13.0)` because the cap ring was forced to nest inside the structure arc's *inner* radius, which is already too small at `wheel_radius = 38.0` | Hard-coded `cap_inner_radius = 10.0`, `cap_outer_radius = 22.0` (12px ring band, well clear of the structure arc). Added an explanatory comment noting why these are not derived from `structure_radius`. |
+| HIGH | `capacitor.rs:104, 119-126` | Desktop wheel overflowed the bottom edge by ~11px (the outer sensor ring at `radius + 8 = 46` extended past `window.height()`) | Tightened desktop `center_y` from `height - 55.0` to `height - 80.0`. Removed the `-5.0` Y-offset hack on `response.rect.center().y` (line 126) — it was masking the layout bug. |
+| HIGH | `capacitor.rs:1-8` | File-level doc comment claimed a "Central HEAT gauge with radial spoke pattern", "Speed display at bottom center", "Percentage readouts on left", and "Heat status indicators" — none of which exist in the code | Replaced the doc comment with a truthful summary of what the wheel actually renders. |
+| MEDIUM | `capacitor.rs:115, 75, 15` | `let _speed = movement.map(|m| m.velocity.length()).unwrap_or(0.0);` computed every frame and discarded. The `Option<&Movement>` in the query and `Movement` import existed only for this dead line. | Removed the computation, simplified the query to `Query<&ShipStats, With<Player>>`, dropped `Movement` from the import. |
+| MEDIUM | `capacitor.rs:76, 112, 207, 363, 16, 223` | `heat_pct` computed from `Res<ComboHeatSystem>`, passed to `draw_capacitor_rings`, but the function ignored it (`_heat_pct` parameter). The heat feature was gutted earlier but the dead plumbing was never cleaned up. | Removed the `Res<ComboHeatSystem>` resource, the `heat_pct` computation, the parameter from `draw_capacitor_rings`, the `ComboHeatSystem` import, and the stale "Heat indicators removed" comment. |
+| MEDIUM | `capacitor.rs:223` | Stale comment | Covered by the heat cleanup above. |
+
+### Out-of-scope (deferred cosmetic items, Phase 9 candidate)
+
+- **Anchor drift** — partially fixed by removing the `-5` hack; the deeper refactor to `Area::anchor(Align2, Vec2)` is deferred.
+- **First-frame pulse phase desync** — `time.delta_secs()` is unbounded; first frame after unpause can jump pulse straight to clamp. Would need `.min(0.1)` or fixed-step accumulator.
+- **Health arc asymmetry on odd `filled_segments`** — the `i < filled_segments / 2` and `(num_segments - i - 1) < filled_segments.div_ceil(2)` formula produces an asymmetric fill (right side gets the extra cell) when `filled_segments` is odd. Not currently triggered at the values used (24/20/16 segments), but a latent footgun.
+- **Hard on/off glow threshold** — `glow_alpha = (cap_pct - 0.5) * 0.6 * 255 * pulse` produces 0 for `cap_pct ≤ 0.5` and ramps linearly from there. The "suddenly on" feel at exactly 50% is jarring.
+- **Per-frame allocations in hot loop** — `Vec::with_capacity((steps + 1) * 2)` at line 324 plus two `vec![...]` clones in `draw_cap_cell` produce ~78 small heap allocations per frame at 60fps = ~4.7k allocs/sec. Acceptable on desktop, marginal on low-end mobile. Would need a thread-local scratch buffer.
+
+### Verification
+
+- Full test suite: **449 tests still pass** (no test changes).
+- `cargo build --release` clean.
+- `cargo clippy --all-targets` clean on touched files (single pre-existing warning at `src/core/game_state.rs:646` for `ItchMode::default` is unrelated).
+- Math verification (manual):
+  - `cap_inner_radius = 10.0`, `cap_outer_radius = 22.0` → `ring_width = 22 - 10 - 2 = 10.0` (positive, 10px ring band).
+  - Desktop `center_y = height - 80`, no `-5` offset → 19px margin on both right and bottom edges.
+  - Mobile `center_y = height - 96`, no `-5` offset → 35px margin on bottom edge.
+
+### Known limits (out of scope, future pass)
+
+- The remaining 5 LOW cosmetic items above are real polish opportunities but not correctness bugs. Deferred to a "capacitor polish" pass.
+- The health arc segment math (`draw_health_arc` lines 262-308) is generic and accepts any `num_segments`, but the asymmetry on odd values is undocumented. A test or doc-comment guard would help.
+- No source-level test for the wheel rendering (it is egui-based and runs only in a windowed Bevy build). The headless test suite can't exercise the visual layout.
 - No new Cargo deps.
