@@ -15,6 +15,7 @@ pub mod constants;
 pub mod events;
 pub mod factions;
 pub mod game_state;
+pub mod keybindings;
 pub mod resources;
 pub mod save;
 
@@ -25,5 +26,6 @@ pub use constants::*;
 pub use events::*;
 pub use factions::*;
 pub use game_state::*;
+pub use keybindings::{Action, Binding, KeyBindings, KeyBindingsPlugin, key_label};
 pub use resources::*;
 pub use save::*;

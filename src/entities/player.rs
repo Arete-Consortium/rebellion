@@ -566,6 +566,7 @@ fn player_movement(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<crate::systems::JoystickState>,
+    keybindings: Res<crate::core::KeyBindings>,
     mut query: Query<
         (
             &mut Transform,
@@ -583,18 +584,20 @@ fn player_movement(
         return;
     };
 
-    // Get keyboard input direction
+    // Get keyboard input direction. Reading via the KeyBindings
+    // resource is authoritative: a remap of MoveUp away from W
+    // stops W from moving the ship. There is no legacy fallback.
     let mut input = Vec2::ZERO;
-    if keyboard.pressed(KeyCode::KeyW) || keyboard.pressed(KeyCode::ArrowUp) {
+    if keybindings.pressed(crate::core::Action::MoveUp, &keyboard, &joystick) {
         input.y += 1.0;
     }
-    if keyboard.pressed(KeyCode::KeyS) || keyboard.pressed(KeyCode::ArrowDown) {
+    if keybindings.pressed(crate::core::Action::MoveDown, &keyboard, &joystick) {
         input.y -= 1.0;
     }
-    if keyboard.pressed(KeyCode::KeyA) || keyboard.pressed(KeyCode::ArrowLeft) {
+    if keybindings.pressed(crate::core::Action::MoveLeft, &keyboard, &joystick) {
         input.x -= 1.0;
     }
-    if keyboard.pressed(KeyCode::KeyD) || keyboard.pressed(KeyCode::ArrowRight) {
+    if keybindings.pressed(crate::core::Action::MoveRight, &keyboard, &joystick) {
         input.x += 1.0;
     }
 
@@ -650,6 +653,7 @@ fn player_shooting(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<crate::systems::JoystickState>,
+    keybindings: Res<crate::core::KeyBindings>,
     mut query: Query<
         (
             &Transform,
@@ -680,38 +684,46 @@ fn player_shooting(
 
     // Ammo switching (only for autocannons)
     if weapon.weapon_type == WeaponType::Autocannon {
-        // Number keys 1-5 for direct selection
-        if keyboard.just_pressed(KeyCode::Digit1) {
+        // Number keys 1-5 for direct selection — read via KeyBindings
+        // so a remap of SelectAmmo* away from digits actually takes effect.
+        if keybindings.just_pressed(crate::core::Action::SelectAmmo1, &keyboard, &joystick) {
             weapon.ammo_type = AmmoType::Sabot;
-        } else if keyboard.just_pressed(KeyCode::Digit2) {
+        } else if keybindings.just_pressed(crate::core::Action::SelectAmmo2, &keyboard, &joystick) {
             weapon.ammo_type = AmmoType::EMP;
-        } else if keyboard.just_pressed(KeyCode::Digit3) {
+        } else if keybindings.just_pressed(crate::core::Action::SelectAmmo3, &keyboard, &joystick) {
             weapon.ammo_type = AmmoType::Plasma;
-        } else if keyboard.just_pressed(KeyCode::Digit4) {
+        } else if keybindings.just_pressed(crate::core::Action::SelectAmmo4, &keyboard, &joystick) {
             weapon.ammo_type = AmmoType::Fusion;
-        } else if keyboard.just_pressed(KeyCode::Digit5) {
+        } else if keybindings.just_pressed(crate::core::Action::SelectAmmo5, &keyboard, &joystick) {
             weapon.ammo_type = AmmoType::Barrage;
         }
-        // Q/E or D-pad left/right for cycling
-        else if keyboard.just_pressed(KeyCode::KeyQ) || joystick.dpad_just_left() {
+        // Q/E or D-pad left/right for cycling — D-pad is a physical
+        // input path, so it stays read directly from the joystick.
+        else if keybindings.just_pressed(crate::core::Action::CycleAmmoPrev, &keyboard, &joystick)
+            || joystick.dpad_just_left()
+        {
             weapon.ammo_type = weapon.ammo_type.prev();
-        } else if keyboard.just_pressed(KeyCode::KeyE) || joystick.dpad_just_right() {
+        } else if keybindings.just_pressed(crate::core::Action::CycleAmmoNext, &keyboard, &joystick)
+            || joystick.dpad_just_right()
+        {
             weapon.ammo_type = weapon.ammo_type.next();
         }
     }
 
-    // Update aim direction from keyboard (IJKL or arrows for aiming)
+    // Update aim direction from keyboard (IJKL or arrows for aiming).
+    // Reads go through KeyBindings so a remap of Aim* away from IJKL
+    // actually stops IJKL from steering the aim.
     let mut aim = Vec2::ZERO;
-    if keyboard.pressed(KeyCode::ArrowUp) || keyboard.pressed(KeyCode::KeyI) {
+    if keybindings.pressed(crate::core::Action::AimUp, &keyboard, &joystick) {
         aim.y += 1.0;
     }
-    if keyboard.pressed(KeyCode::ArrowDown) || keyboard.pressed(KeyCode::KeyK) {
+    if keybindings.pressed(crate::core::Action::AimDown, &keyboard, &joystick) {
         aim.y -= 1.0;
     }
-    if keyboard.pressed(KeyCode::ArrowLeft) || keyboard.pressed(KeyCode::KeyJ) {
+    if keybindings.pressed(crate::core::Action::AimLeft, &keyboard, &joystick) {
         aim.x -= 1.0;
     }
-    if keyboard.pressed(KeyCode::ArrowRight) || keyboard.pressed(KeyCode::KeyL) {
+    if keybindings.pressed(crate::core::Action::AimRight, &keyboard, &joystick) {
         aim.x += 1.0;
     }
 
@@ -728,14 +740,17 @@ fn player_shooting(
         weapon.aim_direction = aim.normalize();
     }
 
-    // Fire if: Space pressed, right stick pushed (twin-stick), or A/X held.
+    // Fire if: Fire binding pressed, right stick pushed (twin-stick),
+    // or A/X held (face buttons — physical input, not remappable).
     // Without right-stick aim, default to travel direction / up.
     let face_button_fire = joystick.buttons[0] || joystick.buttons[2];
     if face_button_fire && aim == Vec2::ZERO {
         aim = Vec2::new(0.0, 1.0);
         weapon.aim_direction = aim;
     }
-    let fire_pressed = keyboard.pressed(KeyCode::Space) || joystick_firing || face_button_fire;
+    let fire_pressed = keybindings.pressed(crate::core::Action::Fire, &keyboard, &joystick)
+        || joystick_firing
+        || face_button_fire;
 
     if fire_pressed && weapon.cooldown <= 0.0 {
         // Track heat (doesn't block firing, just affects fire rate)

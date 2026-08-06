@@ -7,8 +7,8 @@
 use bevy::prelude::*;
 
 use crate::core::{
-    ActCompleteEvent, CampaignBossSpawned, GameEventsPlugin, GameState, MissionCompleteEvent,
-    MissionStartEvent, SavePlugin, WaveCompleteEvent,
+    ActCompleteEvent, CampaignBossSpawned, GameEventsPlugin, GameState, KeyBindingsPlugin,
+    MissionCompleteEvent, MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
 use crate::core::events::BossDefeatedEvent;
 use crate::gameplay::GameplayPlugin;
@@ -128,6 +128,12 @@ impl RebellionAppConfig {
 
         // Core simulation (authoritative — no presentation)
         app.add_plugins(SimulationPlugin);
+
+        // KeyBindings is the authoritative input table. Registered in
+        // configure_shared so both native and headless app paths
+        // guarantee the resource exists before any gameplay system
+        // reads it. See `core::keybindings` for the binding rules.
+        app.add_plugins(KeyBindingsPlugin);
     }
 
     // -- Mode-specific plugin configuration --
