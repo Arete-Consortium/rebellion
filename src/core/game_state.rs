@@ -643,13 +643,16 @@ pub struct ItchMode {
     pub completed_first_run: bool,
 }
 
+// Clippy 1.92 sees `cfg!(target_arch = "wasm32")` and thinks this could
+// be `#[derive(Default)]` since it can't constant-fold the cfg expression.
+// Newer clippy (1.97+) handles this correctly; the allow keeps the
+// platform-aware default without fighting the lint version skew.
+#[allow(clippy::derivable_impls)]
 impl Default for ItchMode {
     fn default() -> Self {
         Self {
-            #[cfg(target_arch = "wasm32")]
-            enabled: true,
-            #[cfg(not(target_arch = "wasm32"))]
-            enabled: false,
+            // Web build skips selection screens on first run; native always shows menus.
+            enabled: cfg!(target_arch = "wasm32"),
             completed_first_run: false,
         }
     }

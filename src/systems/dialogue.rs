@@ -237,7 +237,9 @@ fn update_dialogue_timer(time: Res<Time>, mut dialogue: ResMut<DialogueSystem>) 
 
             // Process queue (highest priority first)
             if !dialogue.queue.is_empty() {
-                dialogue.queue.sort_by(|a, b| b.2.cmp(&a.2));
+                dialogue
+                    .queue
+                    .sort_by_key(|entry| std::cmp::Reverse(entry.2));
                 if let Some((text, duration, priority)) = dialogue.queue.pop() {
                     dialogue.show(text, duration, priority);
                 }
