@@ -6,7 +6,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Gamepad Test".into(),
-                resolution: (400.0, 300.0).into(),
+                resolution: (400.0_f32, 300.0_f32).into(),
                 ..default()
             }),
             ..default()

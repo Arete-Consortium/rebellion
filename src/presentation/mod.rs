@@ -16,9 +16,9 @@ use crate::systems::{
 use crate::ui::UiPlugin;
 
 use combat_reactions::{
-    boss_health_callouts, enemy_death_reactions, enemy_hit_reactions, environment_destroyed_reactions,
-    environment_hit_reactions, player_death_reactions, player_hit_reactions, spawn_chain_bolts,
-    tick_chain_bolts,
+    boss_health_callouts, enemy_death_reactions, enemy_hit_reactions,
+    environment_destroyed_reactions, environment_hit_reactions, player_death_reactions,
+    player_hit_reactions, spawn_chain_bolts, tick_chain_bolts,
 };
 use debug_overlay::{draw_environment_colliders, DevConfig};
 
@@ -65,8 +65,7 @@ impl Plugin for PresentationPlugin {
             )
             .add_systems(
                 Update,
-                draw_environment_colliders
-                    .run_if(in_state(crate::core::GameState::Playing)),
+                draw_environment_colliders.run_if(in_state(crate::core::GameState::Playing)),
             );
     }
 }

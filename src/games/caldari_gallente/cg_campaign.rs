@@ -2,7 +2,7 @@
 //!
 //! Boss encounters, mission flow, and boss intro UI for the campaign.
 
-use super::campaign::{CGBossType, CGCampaignState, CG_INTER_WAVE_DELAY, ShiigeruNightmare};
+use super::campaign::{CGBossType, CGCampaignState, ShiigeruNightmare, CG_INTER_WAVE_DELAY};
 use crate::core::{DamageType, Difficulty, Faction, GameSession, GameState};
 use crate::entities::enemy::EnemyBehavior;
 use crate::entities::projectile::ProjectilePhysics;
@@ -129,10 +129,7 @@ pub fn check_cg_wave_complete(
     // Only start the inter-wave delay for waves > 1 so wave 1 spawns immediately
     // (preserves the "10-second to action" feel).
     let enemy_count = enemy_query.iter().count();
-    if enemy_count == 0
-        && cg_campaign.current_wave > 1
-        && cg_campaign.in_mission
-    {
+    if enemy_count == 0 && cg_campaign.current_wave > 1 && cg_campaign.in_mission {
         if let Some(mission) = cg_campaign.current_mission() {
             if cg_campaign.current_wave <= mission.waves {
                 info!("CG Wave {} complete!", cg_campaign.current_wave);
@@ -169,12 +166,7 @@ pub fn spawn_cg_wave(
             let base_count = 4 + wave as usize;
             let spawn_mult = difficulty.spawn_rate_mult();
             let count = (base_count as f32 * spawn_mult) as usize;
-            spawn_cg_telegraphs(
-                &mut commands,
-                count,
-                wave,
-                session.enemy_faction,
-            );
+            spawn_cg_telegraphs(&mut commands, count, wave, session.enemy_faction);
         }
         cg_campaign.wave_delay_timer -= time.delta_secs();
         return;
@@ -301,17 +293,12 @@ fn cg_spawn_position(i: usize, count: usize, wave: u32) -> (f32, f32) {
 /// Spawn visual telegraphs (warning indicators) at the positions where the
 /// next wave will appear. Gives the player ~2.5 s to read the pattern and
 /// reposition before enemies actually spawn.
-fn spawn_cg_telegraphs(
-    commands: &mut Commands,
-    count: usize,
-    wave: u32,
-    enemy_faction: Faction,
-) {
+fn spawn_cg_telegraphs(commands: &mut Commands, count: usize, wave: u32, enemy_faction: Faction) {
     let color = match enemy_faction {
-        Faction::Caldari => Color::srgba(0.4, 0.6, 0.9, 0.35),   // Caldari blue
+        Faction::Caldari => Color::srgba(0.4, 0.6, 0.9, 0.35), // Caldari blue
         Faction::Gallente => Color::srgba(0.4, 0.9, 0.5, 0.35), // Gallente green
-        Faction::Amarr => Color::srgba(0.9, 0.6, 0.2, 0.35),    // Amarr gold
-        Faction::Minmatar => Color::srgba(0.9, 0.3, 0.2, 0.35),  // Minmatar red
+        Faction::Amarr => Color::srgba(0.9, 0.6, 0.2, 0.35),   // Amarr gold
+        Faction::Minmatar => Color::srgba(0.9, 0.3, 0.2, 0.35), // Minmatar red
     };
 
     for i in 0..count {
@@ -337,9 +324,7 @@ fn despawn_cg_telegraphs(commands: &mut Commands, query: &Query<Entity, With<CGS
 /// Animate telegraphs: fast pulse in opacity so the player notices them.
 pub fn update_cg_telegraphs(
     time: Res<Time>,
-    mut query: Query<(&mut Sprite,
-        &mut CGSpawnTelegraph,
-    )>,
+    mut query: Query<(&mut Sprite, &mut CGSpawnTelegraph)>,
 ) {
     let dt = time.delta_secs();
     for (mut sprite, mut telegraph) in query.iter_mut() {
@@ -439,14 +424,16 @@ fn apply_cg_mission_scaling(
     };
 
     let scaled_dmg = base_dmg * dmg_mult;
-    commands.entity(entity).insert(crate::entities::EnemyWeapon {
-        weapon_type,
-        fire_rate,
-        damage: scaled_dmg,
-        bullet_speed,
-        cooldown: 0.5 + fastrand::f32() * 1.0,
-        pattern: crate::entities::FiringPattern::Single,
-    });
+    commands
+        .entity(entity)
+        .insert(crate::entities::EnemyWeapon {
+            weapon_type,
+            fire_rate,
+            damage: scaled_dmg,
+            bullet_speed,
+            cooldown: 0.5 + fastrand::f32() * 1.0,
+            pattern: crate::entities::FiringPattern::Single,
+        });
 }
 
 /// Spawn CG boss for current mission

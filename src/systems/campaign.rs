@@ -5,7 +5,10 @@
 use crate::assets::{ShipModelCache, ShipSpriteCache};
 use crate::core::events::BossDefeatedEvent;
 use crate::core::*;
-use crate::entities::{spawn_boss, spawn_enemy, spawn_variant, Boss, BossData, BossState, Enemy, EnemyBehavior, EnemyVariant, EscortData, Friendly};
+use crate::entities::{
+    spawn_boss, spawn_enemy, spawn_variant, Boss, BossData, BossState, Enemy, EnemyBehavior,
+    EnemyVariant, EscortData, Friendly,
+};
 use crate::games::ActiveModule;
 use bevy::ecs::schedule::common_conditions::not;
 use bevy::prelude::*;
@@ -532,8 +535,8 @@ fn check_boss_defeated(
 
             // Evaluate bonus objective
             if let Some(mission) = campaign.current_mission() {
-                campaign.bonus_complete = campaign.no_damage_taken
-                    || campaign.mission_souls >= mission.souls_to_liberate;
+                campaign.bonus_complete =
+                    campaign.no_damage_taken || campaign.mission_souls >= mission.souls_to_liberate;
             }
 
             // Send event
@@ -608,9 +611,7 @@ mod tests {
         let mut state = bevy::ecs::system::SystemState::<(
             ResMut<CampaignState>,
             Query<&EscortData, With<Friendly>>,
-        )>::new(
-            &mut world
-        );
+        )>::new(&mut world);
         let (campaign, escort_query) = state.get_mut(&mut world);
         check_escort_survival(campaign, escort_query);
 

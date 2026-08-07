@@ -154,7 +154,9 @@ fn options_does_not_bypass_save_layer() {
 fn options_spawn_takes_all_three_settings_resources() {
     assert!(
         OPTIONS_SRC.contains("sound_settings: Res<crate::systems::audio::SoundSettings>")
-            && OPTIONS_SRC.contains("screen_shake: Res<crate::systems::effects::screen_effects::ScreenShake>")
+            && OPTIONS_SRC.contains(
+                "screen_shake: Res<crate::systems::effects::screen_effects::ScreenShake>"
+            )
             && OPTIONS_SRC.contains("rumble: Res<crate::systems::joystick::RumbleSettings>"),
         "spawn_options_menu must take Res<SoundSettings>, Res<ScreenShake>, Res<RumbleSettings>"
     );

@@ -42,8 +42,7 @@ pub fn install_save_home(test_name: &str) -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    let dir = env::temp_dir()
-        .join(format!("rebellion_save_disk_{pid}_{nonce}_{test_name}"));
+    let dir = env::temp_dir().join(format!("rebellion_save_disk_{pid}_{nonce}_{test_name}"));
     fs::create_dir_all(&dir).expect("create temp save home");
     // SAFETY: process-isolated — no other thread reads this
     // env var. If Rust upgrades `set_var` to unconditional

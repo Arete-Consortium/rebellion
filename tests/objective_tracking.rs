@@ -101,7 +101,10 @@ fn enemy_death_increments_enemies_killed() {
     // Verify starting count is 0
     {
         let campaign = app.world().resource::<CampaignState>();
-        assert_eq!(campaign.enemies_killed, 0, "enemies_killed should start at 0");
+        assert_eq!(
+            campaign.enemies_killed, 0,
+            "enemies_killed should start at 0"
+        );
     }
 
     // Player entity is spawned automatically by PlayerPlugin on OnEnter(Playing)

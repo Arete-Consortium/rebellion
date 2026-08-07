@@ -61,28 +61,17 @@ impl Plugin for TriglavianInvasionPlugin {
         // Boss systems
         app.add_systems(
             OnEnter(GameState::BossIntro),
-            (
-                spawn_trig_boss,
-                spawn_trig_boss_intro_ui,
-            )
-                .run_if(is_triglavian_invasion),
+            (spawn_trig_boss, spawn_trig_boss_intro_ui).run_if(is_triglavian_invasion),
         )
         .add_systems(
             Update,
-            (
-                trig_boss_intro,
-                update_trig_boss_intro_ui,
-            )
+            (trig_boss_intro, update_trig_boss_intro_ui)
                 .run_if(in_state(GameState::BossIntro))
                 .run_if(is_triglavian_invasion),
         )
         .add_systems(
             OnExit(GameState::BossIntro),
-            (
-                despawn_trig_boss_intro,
-                despawn_trig_boss_intro_ui,
-            )
-                .run_if(is_triglavian_invasion),
+            (despawn_trig_boss_intro, despawn_trig_boss_intro_ui).run_if(is_triglavian_invasion),
         )
         .add_systems(
             Update,
@@ -468,7 +457,10 @@ fn update_trig_boss_intro_ui(
     }
 }
 
-fn despawn_trig_boss_intro_ui(mut commands: Commands, query: Query<Entity, With<TrigBossIntroRoot>>) {
+fn despawn_trig_boss_intro_ui(
+    mut commands: Commands,
+    query: Query<Entity, With<TrigBossIntroRoot>>,
+) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }

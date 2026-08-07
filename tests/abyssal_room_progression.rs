@@ -76,8 +76,14 @@ fn abyssal_room1_clears_and_spawns_transition_gate() {
     app.update();
 
     let state = app.world().resource::<AbyssalState>();
-    assert!(state.room_cleared, "Room1 should clear after enemies despawned");
-    assert!(state.gate_spawned, "Transition gate should spawn after room clear");
+    assert!(
+        state.room_cleared,
+        "Room1 should clear after enemies despawned"
+    );
+    assert!(
+        state.gate_spawned,
+        "Transition gate should spawn after room clear"
+    );
     assert_eq!(gate_count(&mut app), 1, "Exactly one gate should exist");
 
     // Verify it's a transition gate (not extraction)
@@ -88,7 +94,10 @@ fn abyssal_room1_clears_and_spawns_transition_gate() {
         .next()
         .map(|g| g.is_extraction)
         .unwrap_or(false);
-    assert!(!is_extraction, "Room1 gate should be transition, not extraction");
+    assert!(
+        !is_extraction,
+        "Room1 gate should be transition, not extraction"
+    );
 }
 
 /// Move the first player entity to the given position.
@@ -132,10 +141,8 @@ fn abyssal_room3_extraction_gate_triggers_victory() {
     let state = app.world().resource::<AbyssalState>();
     let target_count = state.room.enemy_count() as usize;
     for i in 0..target_count {
-        app.world_mut().spawn((
-            Enemy,
-            Transform::from_xyz(i as f32 * 10.0, 100.0, 0.0),
-        ));
+        app.world_mut()
+            .spawn((Enemy, Transform::from_xyz(i as f32 * 10.0, 100.0, 0.0)));
     }
 
     // Run one update to let check_room_clear set enemies_spawned
@@ -180,10 +187,12 @@ fn abyssal_room3_extraction_gate_triggers_victory() {
     assert!(
         state.extracted,
         "Should extract after channeling. progress={}, extracting={}",
-        state.extraction_progress,
-        state.extracting
+        state.extraction_progress, state.extracting
     );
-    assert!(state.extraction_progress >= 1.0, "Extraction progress should reach 100%");
+    assert!(
+        state.extraction_progress >= 1.0,
+        "Extraction progress should reach 100%"
+    );
 
     // Note: we do NOT assert State::Victory here because headless mode lacks
     // the input-system frame that clears just_pressed. On the frame after
@@ -225,7 +234,11 @@ fn abyssal_timer_runs_out_triggers_game_over() {
     app.update();
 
     let current = *app.world().resource::<State<GameState>>().get();
-    assert_eq!(current, GameState::GameOver, "Should transition to GameOver");
+    assert_eq!(
+        current,
+        GameState::GameOver,
+        "Should transition to GameOver"
+    );
 }
 
 #[test]
@@ -355,7 +368,10 @@ fn abyssal_hazard_deals_damage_to_player() {
     // Verify hazard system ran: timer cycles back to 0 after tick(s)
     let _hazard_timer = {
         let mut q = app.world_mut().query::<&AbyssalHazard>();
-        q.iter(app.world()).next().map(|h| h.damage_timer).unwrap_or(-1.0)
+        q.iter(app.world())
+            .next()
+            .map(|h| h.damage_timer)
+            .unwrap_or(-1.0)
     };
 
     assert!(

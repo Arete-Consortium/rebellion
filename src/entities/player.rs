@@ -326,7 +326,8 @@ impl Plugin for PlayerPlugin {
             )
             .add_systems(
                 OnExit(GameState::Playing),
-                despawn_player.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+                despawn_player
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
 }

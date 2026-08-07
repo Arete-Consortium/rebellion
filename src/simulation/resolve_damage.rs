@@ -4,20 +4,20 @@
 //! then applies damage to entities.
 //! Does NOT spawn FX, mutate score, or trigger dialogue.
 
+use crate::core::constants::{SCREEN_HEIGHT, SCREEN_WIDTH};
 use crate::core::{
     ContactDetected, ContactRaw, ContactType, DamageLayer, DamageLayerEvent,
     EnemyDamageAppliedEvent, PlayerDamagedEvent, RawContactType,
 };
-use crate::core::constants::{SCREEN_HEIGHT, SCREEN_WIDTH};
+use crate::entities::environment::{
+    resolve_boundary_pin, ContactCooldown, EnvironmentCollider, EnvironmentContactDamage,
+    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent, EnvironmentHealth, EnvironmentObject,
+    EnvironmentScoreValue, PlayerEnvironmentContact, ProjectileEnvironmentContact,
+    ProjectileInteraction,
+};
 use crate::entities::{
     BurnOnHit, BurnStatus, ChainOnHit, Enemy, EnemyProjectile, EnemyStats, Hitbox, Movement,
     Pierce, Player, PlayerProjectile, PowerupEffects, ProjectileDamage, ShipStats,
-};
-use crate::entities::environment::{
-    ContactCooldown, EnvironmentCollider, EnvironmentContactDamage,
-    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent, EnvironmentHealth,
-    EnvironmentObject, EnvironmentScoreValue, PlayerEnvironmentContact, ProjectileEnvironmentContact,
-    ProjectileInteraction, resolve_boundary_pin,
 };
 use crate::systems::collision::SpatialGrid;
 use crate::systems::ManeuverState;
@@ -315,15 +315,25 @@ pub fn resolve_enemy_projectile_damage(
 pub fn resolve_player_environment_contacts(
     mut commands: Commands,
     mut contact_events: EventReader<PlayerEnvironmentContact>,
-    mut player_query: Query<(
-        &mut Transform, &mut Movement, &mut ShipStats, &ManeuverState, &Hitbox
-    ), (With<Player>, Without<EnvironmentObject>)>,
-    mut env_query: Query<(
-        &Transform,
-        &EnvironmentCollider,
-        Option<&EnvironmentContactDamage>,
-        Option<&mut ContactCooldown>,
-    ), (With<EnvironmentObject>, Without<Player>)>,
+    mut player_query: Query<
+        (
+            &mut Transform,
+            &mut Movement,
+            &mut ShipStats,
+            &ManeuverState,
+            &Hitbox,
+        ),
+        (With<Player>, Without<EnvironmentObject>),
+    >,
+    mut env_query: Query<
+        (
+            &Transform,
+            &EnvironmentCollider,
+            Option<&EnvironmentContactDamage>,
+            Option<&mut ContactCooldown>,
+        ),
+        (With<EnvironmentObject>, Without<Player>),
+    >,
     mut damage_events: EventWriter<PlayerDamagedEvent>,
     mut damage_layer_events: EventWriter<DamageLayerEvent>,
 ) {
@@ -363,7 +373,9 @@ pub fn resolve_player_environment_contacts(
 
         // ── Deflection ──
         // Nudge velocity along contact normal to prevent sliding into the object again
-        let deflection = contact.normal * contact.penetration * ((1.0 / crate::simulation::FIXED_TIMESTEP_SECS) as f32);
+        let deflection = contact.normal
+            * contact.penetration
+            * ((1.0 / crate::simulation::FIXED_TIMESTEP_SECS) as f32);
         movement.velocity += deflection;
 
         // ── Contact Damage ──
@@ -378,9 +390,11 @@ pub fn resolve_player_environment_contacts(
                 }
             } else {
                 // No cooldown component yet — insert one and apply damage this tick
-                commands.entity(contact.environment).insert(ContactCooldown {
-                    remaining_ticks: dmg.cooldown_ticks,
-                });
+                commands
+                    .entity(contact.environment)
+                    .insert(ContactCooldown {
+                        remaining_ticks: dmg.cooldown_ticks,
+                    });
                 true
             };
 
@@ -437,12 +451,15 @@ pub fn resolve_player_environment_contacts(
 pub fn resolve_projectile_environment_contacts(
     mut commands: Commands,
     mut contact_events: EventReader<ProjectileEnvironmentContact>,
-    mut env_query: Query<(
-        &mut EnvironmentHealth,
-        &EnvironmentScoreValue,
-        &ProjectileInteraction,
-        &Transform,
-    ), With<EnvironmentObject>>,
+    mut env_query: Query<
+        (
+            &mut EnvironmentHealth,
+            &EnvironmentScoreValue,
+            &ProjectileInteraction,
+            &Transform,
+        ),
+        With<EnvironmentObject>,
+    >,
     mut damage_applied_events: EventWriter<EnvironmentDamageAppliedEvent>,
     mut destroyed_events: EventWriter<EnvironmentDestroyedEvent>,
 ) {
@@ -488,7 +505,9 @@ pub fn resolve_projectile_environment_contacts(
                 // Pierce: decrement and keep projectile alive; else despawn
                 match contact.pierce_remaining {
                     Some(n) if n > 0 => {
-                        commands.entity(contact.projectile).insert(crate::entities::Pierce(n - 1));
+                        commands
+                            .entity(contact.projectile)
+                            .insert(crate::entities::Pierce(n - 1));
                     }
                     _ => {
                         commands.entity(contact.projectile).despawn_recursive();

@@ -180,9 +180,7 @@ fn final_phase_threshold_is_meaningful_not_trivial() {
 /// "phase 1 is full" guarantee.
 #[test]
 fn spawn_data_begins_at_full_health() {
-    let bosses: Vec<BossData> = (1..=13)
-        .filter_map(get_boss_for_stage)
-        .collect();
+    let bosses: Vec<BossData> = (1..=13).filter_map(get_boss_for_stage).collect();
     assert_eq!(bosses.len(), 13, "all 13 stages must have bosses");
     for boss in &bosses {
         assert!(

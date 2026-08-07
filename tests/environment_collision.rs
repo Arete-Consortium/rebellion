@@ -11,13 +11,13 @@ use bevy::prelude::*;
 
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::{AmmoType, GameState, PlayerFireEvent, WeaponType};
-use rebellion::entities::{Player, ShipStats};
 use rebellion::entities::environment::{
     spawn_environment, EnvironmentContactDamage, EnvironmentHealth, EnvironmentKind,
     EnvironmentObject, ProjectileInteraction,
 };
-use rebellion::systems::ManeuverState;
+use rebellion::entities::{Player, ShipStats};
 use rebellion::simulation::state_hash::SimStateHash;
+use rebellion::systems::ManeuverState;
 
 /// Spawn a soft hazard (destructible asteroid) overlapping the player.
 fn spawn_asteroid_over_player(
@@ -29,16 +29,16 @@ fn spawn_asteroid_over_player(
         &mut commands,
         player_pos,
         EnvironmentKind::SoftHazard,
-        25.0,                         // radius
-        None,                         // no motion
-        Some(50.0),                   // health
+        25.0,       // radius
+        None,       // no motion
+        Some(50.0), // health
         Some(EnvironmentContactDamage {
             amount: 10.0,
             damage_type: rebellion::core::DamageType::Kinetic,
             cooldown_ticks: 30,
         }),
         ProjectileInteraction::Damageable,
-        100,                          // score
+        100, // score
     );
 }
 
@@ -75,7 +75,9 @@ fn environment_pipeline_e2e() {
 
     // Disable respawn invincibility so contact damage applies
     {
-        let mut q = app.world_mut().query_filtered::<&mut ManeuverState, With<Player>>();
+        let mut q = app
+            .world_mut()
+            .query_filtered::<&mut ManeuverState, With<Player>>();
         let mut maneuver = q.single_mut(app.world_mut());
         maneuver.invincible = false;
         maneuver.invincibility_timer = 0.0;
@@ -83,9 +85,14 @@ fn environment_pipeline_e2e() {
 
     // Verify initial player position and total health
     let (player_initial_pos, player_initial_total_hp) = {
-        let mut q = app.world_mut().query_filtered::<(&Transform, &ShipStats), With<Player>>();
+        let mut q = app
+            .world_mut()
+            .query_filtered::<(&Transform, &ShipStats), With<Player>>();
         let (transform, stats) = q.single(app.world());
-        (transform.translation.truncate(), stats.shield + stats.armor + stats.hull)
+        (
+            transform.translation.truncate(),
+            stats.shield + stats.armor + stats.hull,
+        )
     };
 
     // Spawn asteroid overlapping player
@@ -100,7 +107,9 @@ fn environment_pipeline_e2e() {
 
     // Verify asteroid exists
     let asteroid_entity = {
-        let mut q = app.world_mut().query::<(Entity, &EnvironmentObject, &EnvironmentHealth)>();
+        let mut q = app
+            .world_mut()
+            .query::<(Entity, &EnvironmentObject, &EnvironmentHealth)>();
         let (entity, _, _) = q.iter(app.world()).next().expect("asteroid spawned");
         entity
     };
@@ -113,9 +122,14 @@ fn environment_pipeline_e2e() {
 
     // Player should have moved away from origin and taken damage
     let (player_after_contact, player_total_hp_after) = {
-        let mut q = app.world_mut().query_filtered::<(&Transform, &ShipStats), With<Player>>();
+        let mut q = app
+            .world_mut()
+            .query_filtered::<(&Transform, &ShipStats), With<Player>>();
         let (transform, stats) = q.single(app.world());
-        (transform.translation.truncate(), stats.shield + stats.armor + stats.hull)
+        (
+            transform.translation.truncate(),
+            stats.shield + stats.armor + stats.hull,
+        )
     };
 
     assert!(
@@ -126,7 +140,8 @@ fn environment_pipeline_e2e() {
     assert!(
         player_total_hp_after < player_initial_total_hp,
         "player should take contact damage: {} >= {}",
-        player_total_hp_after, player_initial_total_hp
+        player_total_hp_after,
+        player_initial_total_hp
     );
 
     // Capture state hash before projectile fire
@@ -142,10 +157,15 @@ fn environment_pipeline_e2e() {
 
     // Verify projectile spawned
     let proj_count_before = {
-        let mut q = app.world_mut().query_filtered::<Entity, With<rebellion::entities::PlayerProjectile>>();
+        let mut q = app
+            .world_mut()
+            .query_filtered::<Entity, With<rebellion::entities::PlayerProjectile>>();
         q.iter(app.world()).count()
     };
-    assert!(proj_count_before > 0, "projectile should spawn after fire event");
+    assert!(
+        proj_count_before > 0,
+        "projectile should spawn after fire event"
+    );
 
     // Run ticks until projectile collides (~10 frames at ~600 px/s)
     for _ in 0..20 {
@@ -207,8 +227,13 @@ fn environment_stress_test_survives() {
 
     // All 100 should still exist (nothing destroys them in this test)
     let remaining = {
-        let mut q = app.world_mut().query_filtered::<Entity, With<EnvironmentObject>>();
+        let mut q = app
+            .world_mut()
+            .query_filtered::<Entity, With<EnvironmentObject>>();
         q.iter(app.world()).count()
     };
-    assert_eq!(remaining, 100, "all 100 stress-test asteroids should survive");
+    assert_eq!(
+        remaining, 100,
+        "all 100 stress-test asteroids should survive"
+    );
 }

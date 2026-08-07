@@ -102,10 +102,7 @@ impl Plugin for MenuPlugin {
                 despawn_menu::<options::OptionsMenuRoot>,
             )
             // Controls Menu (sub-screen of Options)
-            .add_systems(
-                OnEnter(GameState::Controls),
-                controls::spawn_controls_menu,
-            )
+            .add_systems(OnEnter(GameState::Controls), controls::spawn_controls_menu)
             .add_systems(
                 Update,
                 (

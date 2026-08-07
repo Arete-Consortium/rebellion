@@ -7,9 +7,7 @@ use bevy::prelude::*;
 
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::{CampaignState, GameState};
-use rebellion::entities::{
-    Boss, BossAttack, BossData, BossMovement, BossState, Enemy, Hitbox,
-};
+use rebellion::entities::{Boss, BossAttack, BossData, BossMovement, BossState, Enemy, Hitbox};
 
 #[test]
 fn generic_campaign_spawns_enemies_on_wave_start() {
@@ -33,7 +31,10 @@ fn generic_campaign_spawns_enemies_on_wave_start() {
     );
     let campaign = app.world().resource::<CampaignState>();
     assert!(campaign.in_mission, "Campaign should be in a mission");
-    assert_eq!(campaign.current_wave, 2, "First wave should spawn and advance to 2");
+    assert_eq!(
+        campaign.current_wave, 2,
+        "First wave should spawn and advance to 2"
+    );
 
     // Count spawned enemies
     let enemy_count = {

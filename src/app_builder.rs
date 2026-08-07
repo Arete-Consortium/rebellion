@@ -6,11 +6,11 @@
 
 use bevy::prelude::*;
 
+use crate::core::events::BossDefeatedEvent;
 use crate::core::{
     ActCompleteEvent, CampaignBossSpawned, GameEventsPlugin, GameState, KeyBindingsPlugin,
     MissionCompleteEvent, MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
-use crate::core::events::BossDefeatedEvent;
 use crate::gameplay::GameplayPlugin;
 use crate::simulation::{SimulationPlugin, FIXED_TIMESTEP_SECS};
 

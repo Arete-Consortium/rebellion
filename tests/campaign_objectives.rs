@@ -34,7 +34,10 @@ fn player_damage_sets_no_damage_taken_false() {
 
     // CampaignState starts fresh with no_damage_taken = true
     let start = app.world().resource::<CampaignState>().no_damage_taken;
-    assert!(start, "CampaignState should start with no_damage_taken=true");
+    assert!(
+        start,
+        "CampaignState should start with no_damage_taken=true"
+    );
 
     // Emit a player-damage event
     app.world_mut().send_event(PlayerDamagedEvent {

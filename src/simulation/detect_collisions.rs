@@ -4,11 +4,11 @@
 //! Does NOT mutate health, spawn FX, or mutate score.
 
 use crate::core::{ContactRaw, RawContactType};
-use crate::entities::*;
 use crate::entities::environment::{
     circle_contact, EnvironmentCollider, EnvironmentObject, PlayerEnvironmentContact,
     ProjectileEnvironmentContact,
 };
+use crate::entities::*;
 use crate::systems::collision::SpatialGrid;
 use bevy::prelude::*;
 
@@ -116,7 +116,10 @@ pub fn detect_enemy_projectile_hits(
 /// Emits `ProjectileEnvironmentContact` for each contact.
 pub fn detect_player_projectile_environment_hits(
     grid: Res<SpatialGrid>,
-    projectile_query: Query<(Entity, &Transform, &ProjectileDamage, Option<&Pierce>), With<PlayerProjectile>>,
+    projectile_query: Query<
+        (Entity, &Transform, &ProjectileDamage, Option<&Pierce>),
+        With<PlayerProjectile>,
+    >,
     mut contact_events: EventWriter<ProjectileEnvironmentContact>,
 ) {
     for (proj_entity, proj_transform, proj_damage, pierce) in projectile_query.iter() {

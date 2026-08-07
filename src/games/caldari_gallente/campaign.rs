@@ -92,15 +92,15 @@ impl CGBossType {
         use crate::core::Faction;
         match (self, enemy_faction) {
             // Caldari bosses (player is Gallente, fighting Caldari)
-            (CGBossType::PatrolCommander, Faction::Caldari) => 630,   // Moa (cruiser)
-            (CGBossType::FleetCommander, Faction::Caldari) => 24696,  // Ferox (battlecruiser)
-            (CGBossType::EliteSquadron, Faction::Caldari) => 24688,   // Drake (battlecruiser)
-            (CGBossType::FleetAdmiral, Faction::Caldari) => 11566,     // Raven (battleship)
+            (CGBossType::PatrolCommander, Faction::Caldari) => 630, // Moa (cruiser)
+            (CGBossType::FleetCommander, Faction::Caldari) => 24696, // Ferox (battlecruiser)
+            (CGBossType::EliteSquadron, Faction::Caldari) => 24688, // Drake (battlecruiser)
+            (CGBossType::FleetAdmiral, Faction::Caldari) => 11566,  // Raven (battleship)
             // Gallente bosses (player is Caldari, fighting Gallente)
-            (CGBossType::PatrolCommander, Faction::Gallente) => 638,  // Vexor (cruiser)
+            (CGBossType::PatrolCommander, Faction::Gallente) => 638, // Vexor (cruiser)
             (CGBossType::FleetCommander, Faction::Gallente) => 24700, // Myrmidon (battlecruiser)
-            (CGBossType::EliteSquadron, Faction::Gallente) => 11567,  // Megathron (battleship)
-            (CGBossType::FleetAdmiral, Faction::Gallente) => 23911,   // Thanatos (carrier)
+            (CGBossType::EliteSquadron, Faction::Gallente) => 11567, // Megathron (battleship)
+            (CGBossType::FleetAdmiral, Faction::Gallente) => 23911,  // Thanatos (carrier)
             // Fallback
             _ => 0,
         }

@@ -2,7 +2,7 @@
 name = "rebellion"
 version = "2.0.0"
 edition = "2021"
-rust-version = "1.82"
+rust-version = "1.85"
 authors = ["ARETE"]
 description = "Space arcade shooter suite built with Rust and Bevy"
 license = "MIT"

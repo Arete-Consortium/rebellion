@@ -15,17 +15,15 @@
 //!   arrives without a `keybindings` field. They are written
 //!   through to the next save cycle, not re-applied per check.
 
-use bevy::prelude::*;
 use bevy::prelude::KeyCode;
+use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 /// A single remappable gameplay or menu action.
 ///
 /// New actions go here **and** into [`KeyBindings::required_actions`].
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Action {
     // Movement (always required)
     MoveUp,
@@ -360,11 +358,7 @@ mod tests {
     fn defaults_cover_every_action() {
         let b = KeyBindings::defaults();
         for action in KeyBindings::all_actions() {
-            assert!(
-                b.get(*action).is_some(),
-                "defaults missing {:?}",
-                action
-            );
+            assert!(b.get(*action).is_some(), "defaults missing {:?}", action);
         }
     }
 
@@ -382,8 +376,7 @@ mod tests {
         // A save that pre-dates the feature deserializes to an empty
         // `map` (because the field is serde-defaulted). Migration
         // replaces the empty map with defaults once.
-        let b: KeyBindings =
-            serde_json::from_str(r#"{"map":{}}"#).unwrap();
+        let b: KeyBindings = serde_json::from_str(r#"{"map":{}}"#).unwrap();
         let migrated = if b.map.is_empty() {
             KeyBindings::defaults()
         } else {
@@ -447,7 +440,10 @@ mod tests {
         let mut b = KeyBindings::defaults();
         let prev = b.set(Action::Confirm, Binding::Keyboard(KeyCode::Space));
         assert_eq!(prev, Some(Action::Fire));
-        assert_eq!(b.get(Action::Confirm), Some(Binding::Keyboard(KeyCode::Space)));
+        assert_eq!(
+            b.get(Action::Confirm),
+            Some(Binding::Keyboard(KeyCode::Space))
+        );
         assert_eq!(b.get(Action::Fire), None);
     }
 
@@ -494,8 +490,14 @@ mod tests {
 
         let json = serde_json::to_string(&b).unwrap();
         let restored: KeyBindings = serde_json::from_str(&json).unwrap();
-        assert_eq!(restored.get(Action::Fire), Some(Binding::Keyboard(KeyCode::KeyF)));
-        assert_eq!(restored.get(Action::MoveUp), Some(Binding::Keyboard(KeyCode::KeyT)));
+        assert_eq!(
+            restored.get(Action::Fire),
+            Some(Binding::Keyboard(KeyCode::KeyF))
+        );
+        assert_eq!(
+            restored.get(Action::MoveUp),
+            Some(Binding::Keyboard(KeyCode::KeyT))
+        );
         assert_eq!(restored.get(Action::AimUp), None);
         // Defaults for actions that weren't touched must survive.
         assert_eq!(

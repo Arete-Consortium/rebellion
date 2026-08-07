@@ -383,7 +383,7 @@ impl SaveData {
             session,
         };
         self.leaderboard.push(entry);
-        self.leaderboard.sort_by(|a, b| b.score.cmp(&a.score));
+        self.leaderboard.sort_by_key(|e| std::cmp::Reverse(e.score));
         self.leaderboard.truncate(10);
 
         // Find position of this session entry (it has a unique session id)

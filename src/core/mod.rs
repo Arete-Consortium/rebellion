@@ -26,6 +26,6 @@ pub use constants::*;
 pub use events::*;
 pub use factions::*;
 pub use game_state::*;
-pub use keybindings::{Action, Binding, KeyBindings, KeyBindingsPlugin, key_label};
+pub use keybindings::{key_label, Action, Binding, KeyBindings, KeyBindingsPlugin};
 pub use resources::*;
 pub use save::*;
