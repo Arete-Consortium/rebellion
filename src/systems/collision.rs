@@ -23,12 +23,8 @@ impl SpatialGrid {
     pub fn new() -> Self {
         let cell_count = GRID_WIDTH * GRID_HEIGHT;
         Self {
-            enemy_cells: (0..cell_count)
-                .map(|_| Vec::with_capacity(8))
-                .collect(),
-            environment_cells: (0..cell_count)
-                .map(|_| Vec::with_capacity(4))
-                .collect(),
+            enemy_cells: (0..cell_count).map(|_| Vec::with_capacity(8)).collect(),
+            environment_cells: (0..cell_count).map(|_| Vec::with_capacity(4)).collect(),
         }
     }
 

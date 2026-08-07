@@ -77,10 +77,7 @@ const CAPTURE_DEBOUNCE_SECONDS: f32 = 0.5;
 // Spawn
 // ============================================================================
 
-pub(crate) fn spawn_controls_menu(
-    mut commands: Commands,
-    keybindings: Res<KeyBindings>,
-) {
+pub(crate) fn spawn_controls_menu(mut commands: Commands, keybindings: Res<KeyBindings>) {
     commands.init_resource::<ControlsCaptureState>();
 
     // Build the row list outside the closure so we can also compute

@@ -8,9 +8,7 @@ use bevy::ecs::system::RunSystemOnce;
 use bevy::prelude::*;
 
 use rebellion::app_builder::build_headless_app;
-use rebellion::core::{
-    AmmoType, GameState, PlayerFireEvent, WeaponType,
-};
+use rebellion::core::{AmmoType, GameState, PlayerFireEvent, WeaponType};
 use rebellion::entities::{Enemy, EnemyBehavior, EnemyStats};
 use rebellion::simulation::state_hash::SimStateHash;
 
@@ -111,18 +109,25 @@ fn player_can_move_during_boss_fight() {
     app.update();
 
     // Spawn a player at origin with Movement component
-    let player_entity = app.world_mut().spawn((
-        rebellion::entities::Player,
-        rebellion::entities::player::Movement {
-            velocity: Vec2::new(100.0, 0.0),
-            max_speed: 300.0,
-            acceleration: 1500.0,
-            friction: 8.0,
-        },
-        Transform::from_xyz(0.0, 0.0, 0.0),
-    )).id();
+    let player_entity = app
+        .world_mut()
+        .spawn((
+            rebellion::entities::Player,
+            rebellion::entities::player::Movement {
+                velocity: Vec2::new(100.0, 0.0),
+                max_speed: 300.0,
+                acceleration: 1500.0,
+                friction: 8.0,
+            },
+            Transform::from_xyz(0.0, 0.0, 0.0),
+        ))
+        .id();
 
-    let pos_before = app.world().get::<Transform>(player_entity).unwrap().translation;
+    let pos_before = app
+        .world()
+        .get::<Transform>(player_entity)
+        .unwrap()
+        .translation;
 
     // Run player_movement system manually via a one-shot
     // Actually, player_movement requires ButtonInput<KeyCode> which is a stub
@@ -131,7 +136,11 @@ fn player_can_move_during_boss_fight() {
         app.update();
     }
 
-    let pos_after = app.world().get::<Transform>(player_entity).unwrap().translation;
+    let pos_after = app
+        .world()
+        .get::<Transform>(player_entity)
+        .unwrap()
+        .translation;
 
     // The player_movement system reads velocity and updates position
     // In headless mode with stubbed input, it may not move, but the key

@@ -4,8 +4,8 @@
 
 use super::common::*;
 use crate::core::*;
-use crate::games::ActiveModule;
 use crate::games::caldari_gallente::CGCampaignState;
+use crate::games::ActiveModule;
 use crate::systems::JoystickState;
 use crate::ui::TransitionEvent;
 use bevy::prelude::*;

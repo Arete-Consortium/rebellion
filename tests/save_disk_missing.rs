@@ -31,10 +31,7 @@ fn load_returns_default_when_save_file_missing() {
 
     // Sanity: no save.json was created — `load()` doesn't write.
     let path = common::resolved_save_path();
-    assert!(
-        !path.exists(),
-        "load() must not write a file; got {path:?}"
-    );
+    assert!(!path.exists(), "load() must not write a file; got {path:?}");
 
     let _ = std::fs::remove_dir_all(&dir);
 }

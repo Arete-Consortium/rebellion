@@ -60,13 +60,12 @@ fn mission1_spawns_scaled_enemies() {
     // Query spawned enemies
     let enemies: Vec<(EnemyStats, EnemyWeapon)> = {
         let mut q = app.world_mut().query::<(&EnemyStats, &EnemyWeapon)>();
-        q.iter(app.world()).map(|(s, w)| (s.clone(), w.clone())).collect()
+        q.iter(app.world())
+            .map(|(s, w)| (s.clone(), w.clone()))
+            .collect()
     };
 
-    assert!(
-        !enemies.is_empty(),
-        "Mission 1 wave 1 should spawn enemies"
-    );
+    assert!(!enemies.is_empty(), "Mission 1 wave 1 should spawn enemies");
 
     // Mission 1 scaling: 2x HP, 60% damage
     for (stats, weapon) in &enemies {
@@ -133,7 +132,9 @@ fn mission1_enemies_have_varied_positions() {
 
     let positions: Vec<Vec2> = {
         let mut q = app.world_mut().query::<(&Enemy, &Transform)>();
-        q.iter(app.world()).map(|(_, t)| t.translation.truncate()).collect()
+        q.iter(app.world())
+            .map(|(_, t)| t.translation.truncate())
+            .collect()
     };
 
     assert!(
@@ -175,7 +176,9 @@ fn mission2_has_moderate_scaling() {
 
     let enemies: Vec<(EnemyStats, EnemyWeapon)> = {
         let mut q = app.world_mut().query::<(&EnemyStats, &EnemyWeapon)>();
-        q.iter(app.world()).map(|(s, w)| (s.clone(), w.clone())).collect()
+        q.iter(app.world())
+            .map(|(s, w)| (s.clone(), w.clone()))
+            .collect()
     };
 
     assert!(!enemies.is_empty(), "Mission 2 wave 1 should spawn enemies");

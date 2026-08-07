@@ -9,7 +9,7 @@ use bevy::prelude::*;
 
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::{Difficulty, Faction, GameSession, GameState};
-use rebellion::games::caldari_gallente::campaign::{CGCampaignState, CGBossType};
+use rebellion::games::caldari_gallente::campaign::{CGBossType, CGCampaignState};
 use rebellion::games::caldari_gallente::cg_campaign::{CGBoss, CGBossMovement};
 use rebellion::simulation::state_hash::SimStateHash;
 
@@ -71,7 +71,9 @@ fn patrol_commander_phase_transitions() {
 
     // Find the boss entity
     let boss_entity = {
-        let mut q = app.world_mut().query::<(Entity, &rebellion::entities::EnemyStats)>();
+        let mut q = app
+            .world_mut()
+            .query::<(Entity, &rebellion::entities::EnemyStats)>();
         q.iter(app.world())
             .find(|(_, s)| s.is_boss)
             .map(|(e, _)| e)
@@ -153,7 +155,9 @@ fn fleet_commander_has_three_phases() {
     app.update();
 
     let boss_entity = {
-        let mut q = app.world_mut().query::<(Entity, &rebellion::entities::EnemyStats)>();
+        let mut q = app
+            .world_mut()
+            .query::<(Entity, &rebellion::entities::EnemyStats)>();
         q.iter(app.world())
             .find(|(_, s)| s.is_boss)
             .map(|(e, _)| e)

@@ -4,8 +4,8 @@
 
 #![allow(dead_code)]
 
-use bevy::prelude::*;
 use crate::core::GameState;
+use bevy::prelude::*;
 
 /// Campaign acts - progression through the story
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -189,7 +189,7 @@ impl BossType {
 // Act 1 Missions - "The Call"
 const ACT1_MISSIONS: [Mission; 4] = [
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m1_convoy_raid",
         name: "FIRST BLOOD",
         description: "Intercept a slave transport in the Arzad corridor.",
@@ -202,7 +202,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m2_patrol_ambush",
         name: "HUNTER HUNTED",
         description: "Amarr patrols hunt our scouts. Turn the tables.",
@@ -215,7 +215,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m3_station_raid",
         name: "STATION RAID",
         description: "Disable orbital station defenses for extraction teams.",
@@ -228,7 +228,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m4_holder_escape",
         name: "THE HOLDER'S FLIGHT",
         description: "A slave lord flees with his 'property.' End his escape.",
@@ -245,7 +245,7 @@ const ACT1_MISSIONS: [Mission; 4] = [
 // Act 2 Missions - "The Storm"
 const ACT2_MISSIONS: [Mission; 5] = [
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m5_customs_strike",
         name: "CUSTOMS CLEARANCE",
         description: "Imperial Customs bleeds our supply lines. Remove them.",
@@ -258,7 +258,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m6_inquisition",
         name: "DIVINE JUDGMENT",
         description: "The Inquisition sends a vessel to 'cleanse' liberated systems.",
@@ -271,7 +271,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m7_navy_battle",
         name: "BREAKING THE LINE",
         description: "A Navy Harbinger strike group threatens our liberation fleet.",
@@ -284,7 +284,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m8_stargate",
         name: "GATE CRASHERS",
         description: "The stargate to Arzad Prime is heavily fortified.",
@@ -297,7 +297,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m9_battlestation",
         name: "PURITY'S LIGHT",
         description: "An Amarr battlestation guards the slave processing hub.",
@@ -314,7 +314,7 @@ const ACT2_MISSIONS: [Mission; 5] = [
 // Act 3 Missions - "Liberation"
 const ACT3_MISSIONS: [Mission; 4] = [
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m10_abaddon",
         name: "GOLDEN FLEET",
         description: "The Amarr Navy deploys Abaddon battleships to stop our advance.",
@@ -327,7 +327,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m11_titan_escort",
         name: "TITAN'S SHADOW",
         description: "The Avatar titan's escort fleet blocks the approach.",
@@ -340,7 +340,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m12_champion",
         name: "IMPERIAL CHAMPION",
         description: "The Empress's personal champion challenges you.",
@@ -353,7 +353,7 @@ const ACT3_MISSIONS: [Mission; 4] = [
         escort_must_survive: false,
     },
     Mission {
-    kill_count_target: 0,
+        kill_count_target: 0,
         id: "m13_avatar",
         name: "AVATAR",
         description: "The Avatar titan. The symbol of Amarr oppression. End it.",
@@ -478,8 +478,8 @@ impl CampaignState {
         // only transition here if primary_complete was already set.
         if mission.kill_count_target > 0 || mission.timed_survival_seconds > 0.0 {
             if self.primary_complete {
-                self.bonus_complete = self.no_damage_taken
-                    || self.mission_souls >= mission.souls_to_liberate;
+                self.bonus_complete =
+                    self.no_damage_taken || self.mission_souls >= mission.souls_to_liberate;
                 return Some(GameState::StageComplete);
             }
             return None;
@@ -488,8 +488,8 @@ impl CampaignState {
         if self.current_wave > mission.enemy_waves {
             if mission.boss == BossType::None {
                 self.primary_complete = true;
-                self.bonus_complete = self.no_damage_taken
-                    || self.mission_souls >= mission.souls_to_liberate;
+                self.bonus_complete =
+                    self.no_damage_taken || self.mission_souls >= mission.souls_to_liberate;
                 Some(GameState::StageComplete)
             } else if !self.boss_spawned {
                 Some(GameState::BossIntro)
@@ -804,7 +804,10 @@ mod tests {
             ..Default::default()
         };
         state.start_mission();
-        assert_eq!(state.enemies_killed, 0, "enemies_killed should reset on mission start");
+        assert_eq!(
+            state.enemies_killed, 0,
+            "enemies_killed should reset on mission start"
+        );
     }
 
     #[test]
@@ -867,7 +870,10 @@ mod tests {
         let next = state.evaluate_post_wave(&mission);
         assert_eq!(next, Some(GameState::StageComplete));
         assert!(state.primary_complete);
-        assert!(state.bonus_complete, "bonus_complete should be true when no damage taken");
+        assert!(
+            state.bonus_complete,
+            "bonus_complete should be true when no damage taken"
+        );
     }
 
     #[test]
@@ -894,7 +900,10 @@ mod tests {
 
         let next = state.evaluate_post_wave(&mission);
         assert_eq!(next, Some(GameState::StageComplete));
-        assert!(!state.bonus_complete, "bonus_complete should be false when damage taken and souls insufficient");
+        assert!(
+            !state.bonus_complete,
+            "bonus_complete should be false when damage taken and souls insufficient"
+        );
     }
 
     #[test]

@@ -553,12 +553,8 @@ fn spawn_abyssal_hazard(commands: &mut Commands, position: Vec2) {
 /// Apply hazard damage to player when inside hazard radius.
 fn update_hazards(
     time: Res<Time>,
-    mut hazard_query: Query<(&mut AbyssalHazard,
-        &Transform,
-    )>,
-    mut player_query: Query<(&Transform,
-        &mut crate::entities::ShipStats,
-    ), With<Player>>,
+    mut hazard_query: Query<(&mut AbyssalHazard, &Transform)>,
+    mut player_query: Query<(&Transform, &mut crate::entities::ShipStats), With<Player>>,
 ) {
     let dt = time.delta_secs();
 

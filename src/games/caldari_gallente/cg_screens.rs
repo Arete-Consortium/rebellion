@@ -161,9 +161,7 @@ pub fn cg_stage_complete_input(
         } else if slice_mode.is_slice() {
             // Vertical slice complete — stop timer and show end screen
             session_timer.stop_and_log(time.elapsed_secs_f64());
-            transitions.send(crate::ui::TransitionEvent::slow(
-                GameState::SliceComplete,
-            ));
+            transitions.send(crate::ui::TransitionEvent::slow(GameState::SliceComplete));
         } else {
             // Full campaign complete!
             session_timer.stop_and_log(time.elapsed_secs_f64());

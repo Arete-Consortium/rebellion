@@ -149,8 +149,7 @@ pub(crate) fn spawn_options_menu(
                 },
                 TextColor(Color::srgb(0.6, 0.5, 0.55)),
                 Node {
-                    margin: UiRect::top(Val::Px(10.0))
-                        .with_bottom(Val::Px(20.0)),
+                    margin: UiRect::top(Val::Px(10.0)).with_bottom(Val::Px(20.0)),
                     ..default()
                 },
             ));
@@ -181,8 +180,7 @@ pub(crate) fn spawn_options_menu(
                         align_items: AlignItems::Center,
                         justify_content: JustifyContent::Center,
                         padding: UiRect::all(Val::Px(10.0)),
-                        margin: UiRect::top(Val::Px(10.0))
-                            .with_bottom(Val::Px(10.0)),
+                        margin: UiRect::top(Val::Px(10.0)).with_bottom(Val::Px(10.0)),
                         border: UiRect::all(Val::Px(2.0)),
                         ..default()
                     },
@@ -410,8 +408,7 @@ pub(crate) fn options_menu_input(
                         screen_shake.multiplier
                     }
                     SliderSetting::Rumble => {
-                        rumble.intensity =
-                            (rumble.intensity + adjust).clamp(0.0, 1.0);
+                        rumble.intensity = (rumble.intensity + adjust).clamp(0.0, 1.0);
                         rumble.intensity
                     }
                 };
@@ -449,9 +446,7 @@ pub(crate) fn options_menu_input(
                             PlaybackSettings {
                                 mode: PlaybackMode::Despawn,
                                 volume: bevy::audio::Volume::new(
-                                    sound_settings.sfx_volume
-                                        * sound_settings.master_volume
-                                        * 0.7,
+                                    sound_settings.sfx_volume * sound_settings.master_volume * 0.7,
                                 ),
                                 ..default()
                             },
@@ -459,15 +454,13 @@ pub(crate) fn options_menu_input(
                     }
                 }
                 if current_setting == SliderSetting::Rumble {
-                    rumble_writer.send(
-                        crate::systems::joystick::RumbleRequest::new(
-                            crate::systems::joystick::RumbleType::Custom {
-                                strong: 0.6,
-                                weak: 0.4,
-                                duration_ms: 120,
-                            },
-                        ),
-                    );
+                    rumble_writer.send(crate::systems::joystick::RumbleRequest::new(
+                        crate::systems::joystick::RumbleType::Custom {
+                            strong: 0.6,
+                            weak: 0.4,
+                            duration_ms: 120,
+                        },
+                    ));
                 }
 
                 state.cooldown = 0.08;
@@ -477,10 +470,7 @@ pub(crate) fn options_menu_input(
 
     // Confirm on the RESET row restores every slider to its resource's
     // canonical default and refreshes all bar/label visuals in one pass.
-    if state.cooldown <= 0.0
-        && state.selected == 5
-        && is_confirm(&keyboard, &joystick)
-    {
+    if state.cooldown <= 0.0 && state.selected == 5 && is_confirm(&keyboard, &joystick) {
         let sound_default = crate::systems::audio::SoundSettings::default();
         sound_settings.master_volume = sound_default.master_volume;
         sound_settings.sfx_volume = sound_default.sfx_volume;
@@ -520,10 +510,7 @@ pub(crate) fn options_menu_input(
     }
 
     // Confirm on the CONTROLS row opens the controller remapping screen.
-    if state.cooldown <= 0.0
-        && state.selected == 6
-        && is_confirm(&keyboard, &joystick)
-    {
+    if state.cooldown <= 0.0 && state.selected == 6 && is_confirm(&keyboard, &joystick) {
         next_state.set(GameState::Controls);
         state.cooldown = 0.25;
     }

@@ -7,10 +7,8 @@ use crate::core::{
     ChainBoltSpawnEvent, ContactDetected, EnemyDamageAppliedEvent, EnemyDestroyedEvent,
     ExplosionEvent, ExplosionSize, PlayerDamagedEvent,
 };
+use crate::entities::environment::{EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent};
 use crate::entities::{Enemy, EnemyStats, Player, ShipStats};
-use crate::entities::environment::{
-    EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent,
-};
 use crate::systems::effects::{
     spawn_damage_number, spawn_impact_sparks, CameraZoom, HitFlash, HitStop, ScreenFlash,
     ScreenShake,
@@ -264,7 +262,11 @@ pub fn environment_destroyed_reactions(
         screen_shake.trigger(3.0, 0.10);
 
         // Floating score number
-        spawn_damage_number(&mut commands, event.position, event.score_value as f32, false,
+        spawn_damage_number(
+            &mut commands,
+            event.position,
+            event.score_value as f32,
+            false,
         );
     }
 }

@@ -330,7 +330,11 @@ fn required_actions_can_be_remapped_but_not_cleared() {
     // still rejected.
     let mut bindings = KeyBindings::defaults();
     for action in KeyBindings::required_actions() {
-        assert!(!bindings.clear(*action), "{:?} clear must be rejected", action);
+        assert!(
+            !bindings.clear(*action),
+            "{:?} clear must be rejected",
+            action
+        );
         assert!(
             bindings.get(*action).is_some(),
             "{:?} must remain bound after a rejected clear",
@@ -403,7 +407,10 @@ fn conflict_surfacing_appears_in_label() {
     }
 
     let bindings = app.world().resource::<KeyBindings>();
-    assert_eq!(bindings.get(Action::Confirm), Some(Binding::GamepadButton(2)));
+    assert_eq!(
+        bindings.get(Action::Confirm),
+        Some(Binding::GamepadButton(2))
+    );
     assert_eq!(bindings.get(Action::Fire), None);
 
     // The source builds the conflict message from the action labels.
@@ -454,10 +461,7 @@ fn controls_uses_keybindings_set() {
 fn controls_does_not_invent_a_legacy_fallback() {
     let src = include_str!("../src/ui/menu/controls.rs");
     // The only KeyCode allowed is Escape (back).
-    let keycode_lines: Vec<&str> = src
-        .lines()
-        .filter(|l| l.contains("KeyCode::"))
-        .collect();
+    let keycode_lines: Vec<&str> = src.lines().filter(|l| l.contains("KeyCode::")).collect();
     for line in keycode_lines {
         assert!(
             line.contains("KeyCode::Escape"),
@@ -471,10 +475,7 @@ fn controls_does_not_invent_a_legacy_fallback() {
 #[test]
 fn binding_label_or_none_handles_none() {
     assert_eq!(Binding::label_or_none(None), "<none>");
-    assert_eq!(
-        Binding::label_or_none(Some(Binding::GamepadButton(0))),
-        "A"
-    );
+    assert_eq!(Binding::label_or_none(Some(Binding::GamepadButton(0))), "A");
     assert_eq!(
         Binding::label_or_none(Some(Binding::Keyboard(KeyCode::KeyW))),
         "W"

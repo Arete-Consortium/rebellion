@@ -8,8 +8,8 @@
 //! All authoritative behavior runs in `FixedUpdate`. Presentation reactions
 //! are decoupled via events.
 
-use bevy::prelude::*;
 use crate::core::DamageType;
+use bevy::prelude::*;
 
 // =============================================================================
 // Marker & Kind
@@ -263,18 +263,14 @@ pub fn resolve_boundary_pin(
     let mut best_dist_sq = f32::MAX;
 
     for c in candidates {
-        let bounded = Vec2::new(
-            c.x.clamp(min_x, max_x),
-            c.y.clamp(min_y, max_y),
-        );
+        let bounded = Vec2::new(c.x.clamp(min_x, max_x), c.y.clamp(min_y, max_y));
         // Must not overlap obstacle.
         let d_sq = (bounded - env_pos).length_squared();
         if d_sq < radius_sum * radius_sum {
             continue;
         }
         // Must be inside bounds.
-        if bounded.x <= min_x || bounded.x >= max_x || bounded.y <= min_y || bounded.y >= max_y
-        {
+        if bounded.x <= min_x || bounded.x >= max_x || bounded.y <= min_y || bounded.y >= max_y {
             // Edge-case: allow if it's the best we have, but prefer interior.
         }
         let to_player_sq = (bounded - player_pos).length_squared();
@@ -313,7 +309,11 @@ pub fn spawn_environment(
         kind,
         EnvironmentCollider { radius },
         MissionEnvironment,
-        Transform::from_xyz(position.x, position.y, crate::core::constants::LAYER_ENEMIES),
+        Transform::from_xyz(
+            position.x,
+            position.y,
+            crate::core::constants::LAYER_ENEMIES,
+        ),
         interaction,
         EnvironmentScoreValue(score_value),
     ));
@@ -396,9 +396,8 @@ mod tests {
         let player_pos = Vec2::new(0.0, 0.0);
         let env_pos = Vec2::new(0.0, 0.0);
         let contact = circle_contact(player_pos, 5.0, env_pos, 6.0).unwrap();
-        let resolved = resolve_boundary_pin(
-            player_pos, 5.0, env_pos, 6.0, &contact, 0.5, 800.0, 700.0,
-        );
+        let resolved =
+            resolve_boundary_pin(player_pos, 5.0, env_pos, 6.0, &contact, 0.5, 800.0, 700.0);
         let dist = (resolved - env_pos).length();
         assert!(
             dist >= 11.5,
@@ -412,9 +411,8 @@ mod tests {
         let player_pos = Vec2::new(-390.0, 0.0);
         let env_pos = Vec2::new(-405.0, 0.0);
         let contact = circle_contact(player_pos, 10.0, env_pos, 20.0).unwrap();
-        let resolved = resolve_boundary_pin(
-            player_pos, 10.0, env_pos, 20.0, &contact, 0.5, 800.0, 700.0,
-        );
+        let resolved =
+            resolve_boundary_pin(player_pos, 10.0, env_pos, 20.0, &contact, 0.5, 800.0, 700.0);
         assert!(
             resolved.x >= -390.0,
             "player should not be pushed out of bounds (got x={})",
@@ -428,9 +426,8 @@ mod tests {
         let player_pos = Vec2::new(-390.0, 0.0);
         let env_pos = Vec2::new(-380.0, 0.0);
         let contact = circle_contact(player_pos, 10.0, env_pos, 15.0).unwrap();
-        let resolved = resolve_boundary_pin(
-            player_pos, 10.0, env_pos, 15.0, &contact, 0.5, 800.0, 700.0,
-        );
+        let resolved =
+            resolve_boundary_pin(player_pos, 10.0, env_pos, 15.0, &contact, 0.5, 800.0, 700.0);
         let dist = (resolved - env_pos).length();
         assert!(
             dist >= 25.5,

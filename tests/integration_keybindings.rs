@@ -79,7 +79,10 @@ fn live_remap_takes_effect_immediately() {
     }
 
     let bindings = app.world().resource::<KeyBindings>();
-    assert_eq!(bindings.get(Action::MoveUp), Some(Binding::Keyboard(KeyCode::KeyT)));
+    assert_eq!(
+        bindings.get(Action::MoveUp),
+        Some(Binding::Keyboard(KeyCode::KeyT))
+    );
 
     // Pressing W must NOT trigger MoveUp after the remap.
     let mut keys = ButtonInput::<KeyCode>::default();
@@ -180,16 +183,14 @@ fn save_data_serialization_roundtrip_includes_keybindings() {
 
     // Player remaps Move Up to a gamepad button.
     {
-        let prev = save.keybindings.set(
-            Action::MoveUp,
-            Binding::GamepadButton(2),
-        );
+        let prev = save
+            .keybindings
+            .set(Action::MoveUp, Binding::GamepadButton(2));
         assert_eq!(prev, None, "default MoveUp should not conflict");
     }
 
     let json = serde_json::to_string(&save).expect("serialize");
-    let loaded: rebellion::core::SaveData =
-        serde_json::from_str(&json).expect("deserialize");
+    let loaded: rebellion::core::SaveData = serde_json::from_str(&json).expect("deserialize");
 
     assert_eq!(
         loaded.keybindings.get(Action::MoveUp),
@@ -214,8 +215,7 @@ fn save_data_serialization_roundtrip_includes_keybindings() {
 /// keeping every other field in its exact on-disk shape.
 #[test]
 fn save_data_without_keybindings_field_loads_defaults() {
-    let pre = serde_json::to_string(&rebellion::core::SaveData::default())
-        .expect("serialize");
+    let pre = serde_json::to_string(&rebellion::core::SaveData::default()).expect("serialize");
     let keybindings_start = pre
         .find("\"keybindings\":")
         .expect("keybindings key must be present in the default blob");

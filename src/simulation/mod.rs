@@ -9,11 +9,11 @@
 use bevy::prelude::*;
 
 use crate::core::GameState;
-use crate::entities::{CollectiblePlugin, ProjectilePlugin};
 use crate::entities::environment::{
     tick_contact_cooldowns, EnvironmentDamageAppliedEvent, EnvironmentDestroyedEvent,
     PlayerEnvironmentContact, ProjectileEnvironmentContact,
 };
+use crate::entities::{CollectiblePlugin, ProjectilePlugin};
 use crate::systems::collision::SpatialGrid;
 use crate::systems::CollisionPlugin;
 

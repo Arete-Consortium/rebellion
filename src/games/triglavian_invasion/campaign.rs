@@ -613,10 +613,7 @@ pub fn update_trig_boss(
             data.current_phase += 1;
             movement.speed *= 1.2;
             attack.fire_rate *= 0.85;
-            info!(
-                "{} entering phase {}!",
-                data.name, data.current_phase
-            );
+            info!("{} entering phase {}!", data.name, data.current_phase);
         }
 
         // -----------------------------------------------------------------

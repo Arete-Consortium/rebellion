@@ -132,10 +132,7 @@ fn draw_capacitor_wheel(
     // default_size puts the rect's center exactly at (center_x, center_y)
     // — no manual fixed_pos math, no response.rect.center drift.
     egui::Area::new(egui::Id::new("capacitor_wheel"))
-        .anchor(
-            egui::Align2::CENTER_CENTER,
-            [center_x, center_y],
-        )
+        .anchor(egui::Align2::CENTER_CENTER, [center_x, center_y])
         .default_size(egui::vec2(
             (wheel_radius + 50.0) * 2.0,
             (wheel_radius + 40.0) * 2.0,
@@ -149,7 +146,7 @@ fn draw_capacitor_wheel(
             painter.circle_stroke(
                 center,
                 wheel_radius + 8.0,
-                egui::Stroke::new(1.0, egui::Color32::from_rgb(35, 40, 50)),
+                egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(35, 40, 50)),
             );
 
             // === MAIN DARK BACKGROUND ===
@@ -161,7 +158,7 @@ fn draw_capacitor_wheel(
             painter.circle_stroke(
                 center,
                 wheel_radius + 3.0,
-                egui::Stroke::new(1.5, egui::Color32::from_rgb(40, 45, 55)),
+                egui::Stroke::new(1.5_f32, egui::Color32::from_rgb(40, 45, 55)),
             );
 
             // === HEALTH ARCS (top semicircle) ===
@@ -241,7 +238,7 @@ fn draw_capacitor_wheel(
             painter.circle_stroke(
                 center,
                 cap_inner_radius,
-                egui::Stroke::new(1.0, egui::Color32::from_rgb(50, 60, 75)),
+                egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(50, 60, 75)),
             );
 
             // === CAPACITOR PERCENTAGE (center of wheel) ===
@@ -263,7 +260,7 @@ fn draw_capacitor_wheel(
                 painter.circle_stroke(
                     center,
                     wheel_radius + 4.0,
-                    egui::Stroke::new(2.0, flash_color),
+                    egui::Stroke::new(2.0_f32, flash_color),
                 );
             }
         });
@@ -531,7 +528,7 @@ fn draw_cap_cell(
         let border_points = std::mem::take(&mut *points);
         painter.add(egui::Shape::closed_line(
             border_points,
-            egui::Stroke::new(0.5, border_color),
+            egui::Stroke::new(0.5_f32, border_color),
         ));
 
         // Highlight on filled cells (top-edge glow).
