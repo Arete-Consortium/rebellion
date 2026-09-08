@@ -60,7 +60,7 @@ The release package passed strict ad-hoc signature verification after clean ZIP 
 ## Next work
 
 1. Qualify the candidate with a human run: pickup readability while dodging, whether the Patrol Commander feels too slow in Tristan, the later power increase, sound levels, and physical controller behavior.
-2. Audit the remaining advertised hull abilities through their actual consumers. Source review found range, damage-resistance and close-range damage modifiers being assigned in `ability.rs` without corresponding reads in the current firing/damage path. Test and finish those effects before claiming each hull's full special behavior; the close-range ability needs an explicit distance rule.
+2. Audit the remaining advertised hull abilities through their actual consumers. Source review found range, damage-resistance and close-range damage modifiers being assigned in `ability.rs` without corresponding reads in the current firing/damage path. Follow-up review during Linux packaging also found that Afterburner's invulnerability flag is assigned without a damage-path consumer. Test and finish those effects before claiming each hull's full special behavior; the close-range ability needs an explicit distance rule. Exercise instant Salvo/Rocket Barrage activation while the ordinary weapon is cooling down, so paying the ability cost reliably produces the advertised burst.
 3. Review objectives that say “destroy” while permitting wave escape, and tune pickup access using human observations. Avoid changing probabilities or boss health solely to optimize this pilot's route.
 
 Public distribution, notarization and human/controller acceptance remain open. No commit, push or publication is part of this checkpoint.
