@@ -78,6 +78,12 @@ pub struct ContactRaw {
 
 #[derive(Debug, Clone, Copy)]
 pub enum RawContactType {
+    EnemyProjectileEscort {
+        projectile: Entity,
+        escort: Entity,
+        projectile_pos: Vec2,
+        escort_pos: Vec2,
+    },
     /// Player projectile collided with an enemy
     PlayerProjectileEnemy {
         projectile: Entity,
@@ -103,6 +109,14 @@ pub struct ContactDetected {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ContactType {
+    EnemyProjectileEscort {
+        projectile: Entity,
+        escort: Entity,
+        projectile_pos: Vec2,
+        escort_pos: Vec2,
+        damage: f32,
+        damage_type: DamageType,
+    },
     /// Player projectile collided with an enemy
     PlayerProjectileEnemy {
         projectile: Entity,

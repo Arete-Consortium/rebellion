@@ -333,10 +333,11 @@ fn spawn_settings_slider(
 }
 
 pub(crate) fn pause_menu_input(
-    keyboard: Res<ButtonInput<KeyCode>>,
+    (keyboard, bindings): (Res<ButtonInput<KeyCode>>, Res<KeyBindings>),
     joystick: Res<JoystickState>,
     mut selection: ResMut<PauseSelection>,
     mut next_state: ResMut<NextState<GameState>>,
+    mut pause: ResMut<PauseContext>,
     mut transitions: EventWriter<TransitionEvent>,
     mut sound_settings: ResMut<crate::systems::SoundSettings>,
     mut screen_shake: ResMut<crate::systems::ScreenShake>,
@@ -352,7 +353,7 @@ pub(crate) fn pause_menu_input(
     *cooldown -= time.delta_secs();
 
     // Navigation (up/down)
-    let nav = get_nav_input(&keyboard, &joystick);
+    let nav = get_vertical_input(&keyboard, &joystick, &bindings);
     if nav != 0 && *cooldown <= 0.0 {
         selection.index =
             (selection.index as i32 + nav).rem_euclid(PAUSE_ITEM_COUNT as i32) as usize;
@@ -360,7 +361,7 @@ pub(crate) fn pause_menu_input(
     }
 
     // Horizontal input for sliders (left/right)
-    let h_input = get_horizontal_input(&keyboard, &joystick);
+    let h_input = get_horizontal_input(&keyboard, &joystick, &bindings);
     if h_input != 0 && *cooldown <= 0.0 {
         let delta = h_input as f32 * 0.05; // 5% per press
 
@@ -430,16 +431,17 @@ pub(crate) fn pause_menu_input(
     }
 
     // Selection (confirm button)
-    if is_confirm(&keyboard, &joystick) {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         match selection.index {
             PAUSE_IDX_RESUME => {
-                next_state.set(GameState::Playing);
+                pause.resume(&mut next_state);
             }
             PAUSE_IDX_RESTART => {
                 if itch_mode.enabled {
                     // Itch mode: restart via main menu to ensure clean mission reset
                     transitions.send(TransitionEvent::to(GameState::MainMenu));
                 } else {
+                    pause.request_restart();
                     transitions.send(TransitionEvent::quick(GameState::Playing));
                 }
             }
@@ -455,7 +457,10 @@ pub(crate) fn pause_menu_input(
     }
 
     // Quick resume with ESC or Start
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.start() {
-        next_state.set(GameState::Playing);
+    if is_cancel(&keyboard, &joystick, &bindings)
+        || bindings.just_pressed(Action::Pause, &keyboard, &joystick)
+        || joystick.start()
+    {
+        pause.resume(&mut next_state);
     }
 }

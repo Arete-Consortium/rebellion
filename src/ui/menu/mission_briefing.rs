@@ -7,9 +7,11 @@
 
 #![allow(dead_code)]
 
+use crate::core::KeyBindings;
 use crate::core::*;
 use crate::games::ActiveModule;
 use crate::systems::JoystickState;
+use crate::ui::menu::common::*;
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -20,7 +22,44 @@ fn resolve_briefing(
     active_module: &ActiveModule,
     campaign: Option<&CampaignState>,
     session: Option<&GameSession>,
+    cg_campaign: Option<&crate::games::caldari_gallente::CGCampaignState>,
+    ef_campaign: Option<&crate::games::elder_fleet::ElderFleetCampaignState>,
 ) -> (String, String, String, String, String, Color) {
+    if active_module.is_caldari_gallente() {
+        if let Some((cg, mission)) =
+            cg_campaign.and_then(|cg| cg.current_mission().map(|mission| (cg, mission)))
+        {
+            return (
+                format!("CALDARI PRIME / MISSION {}", cg.mission_number()),
+                mission.name.into(),
+                mission.description.into(),
+                mission.primary_objective.into(),
+                mission
+                    .boss
+                    .map(|boss| format!("ENEMY COMMANDER: {}", boss.name()))
+                    .unwrap_or_else(|| format!("{} patrol waves", mission.waves)),
+                session
+                    .map(|s| s.player_faction.primary_color())
+                    .unwrap_or(Color::WHITE),
+            );
+        }
+    }
+
+    if active_module.is_elder_fleet() {
+        let index = ef_campaign.map(|c| c.current_mission).unwrap_or(0);
+        if let Some(mission) = crate::games::elder_fleet::mission_info(active_module, index) {
+            return (
+                format!("THE ELDER FLEET / MISSION {}", index + 1),
+                mission.name.into(),
+                mission.description.into(),
+                mission.objective.briefing().into(),
+                format!("COMMANDER: {}", mission.boss_name),
+                session
+                    .map(|s| s.player_faction.primary_color())
+                    .unwrap_or(Color::WHITE),
+            );
+        }
+    }
     // Prefer CampaignState when present (but not in Caldari/Gallente mode)
     if !active_module.is_caldari_gallente() {
         if let Some(c) = campaign {
@@ -39,11 +78,11 @@ fn resolve_briefing(
                     .map(|s| s.player_faction.primary_color())
                     .unwrap_or(Color::srgb(0.71, 0.39, 0.20));
                 return (
-                    format!("ACT {} · {}", act_num, act_title),
+                    format!("ACT {} / {}", act_num, act_title),
                     m.name.to_string(),
                     m.description.to_string(),
                     m.primary_objective.to_string(),
-                    format!("⚠ BOSS: {}", m.boss.name()),
+                    format!("BOSS: {}", m.boss.name()),
                     accent,
                 );
             }
@@ -92,7 +131,7 @@ fn resolve_briefing(
                 "Defeat {} forces. Survive all waves. Destroy the flagship.",
                 rival.short_name()
             ),
-            format!("⚠ ENEMY FLAGSHIP: {} CARRIER", rival.short_name()),
+            format!("ENEMY FLAGSHIP: {} CARRIER", rival.short_name()),
             accent,
         );
     }
@@ -102,19 +141,27 @@ fn resolve_briefing(
         "UNKNOWN SECTOR".into(),
         "Contact imminent. Prepare for engagement.".into(),
         "Survive. Destroy hostiles.".into(),
-        "⚠ HEAVY RESISTANCE".into(),
+        "HEAVY RESISTANCE".into(),
         Color::srgb(0.3, 0.6, 1.0),
     )
 }
 
 pub fn spawn_mission_briefing(
+    bindings: Res<KeyBindings>,
     mut commands: Commands,
     active_module: Res<ActiveModule>,
     campaign: Option<Res<CampaignState>>,
     session: Option<Res<GameSession>>,
+    cg_campaign: Option<Res<crate::games::caldari_gallente::CGCampaignState>>,
+    ef_campaign: Option<Res<crate::games::elder_fleet::ElderFleetCampaignState>>,
 ) {
-    let (act_line, mission_name, lore, objective, boss_line, accent) =
-        resolve_briefing(&active_module, campaign.as_deref(), session.as_deref());
+    let (act_line, mission_name, lore, objective, boss_line, accent) = resolve_briefing(
+        &active_module,
+        campaign.as_deref(),
+        session.as_deref(),
+        cg_campaign.as_deref(),
+        ef_campaign.as_deref(),
+    );
 
     commands
         .spawn((
@@ -190,7 +237,8 @@ pub fn spawn_mission_briefing(
                     padding: UiRect::all(Val::Px(16.0)),
                     border: UiRect::all(Val::Px(1.5)),
                     margin: UiRect::top(Val::Px(8.0)),
-                    min_width: Val::Px(520.0),
+                    width: Val::Percent(100.0),
+                    max_width: Val::Px(640.0),
                     row_gap: Val::Px(8.0),
                     ..default()
                 },
@@ -230,22 +278,10 @@ pub fn spawn_mission_briefing(
                 },
             ));
 
-            // Controller prompt (controller-only per design)
-            p.spawn((
-                Text::new("— PRESS A TO DEPLOY —"),
-                TextFont {
-                    font_size: 18.0,
-                    ..default()
-                },
-                TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                Node {
-                    margin: UiRect::top(Val::Px(28.0)),
-                    ..default()
-                },
-            ));
+            spawn_menu_item(p, "LAUNCH MISSION", 0);
 
             p.spawn((
-                Text::new("B: back to ship select"),
+                Text::new(menu_hint(&bindings, "Launch", "Back")),
                 TextFont {
                     font_size: 11.0,
                     ..default()
@@ -257,16 +293,14 @@ pub fn spawn_mission_briefing(
 
 pub fn mission_briefing_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     itch_mode: Res<crate::core::ItchMode>,
     mut next: ResMut<NextState<GameState>>,
 ) {
-    if joystick.confirm()
-        || keyboard.just_pressed(KeyCode::Enter)
-        || keyboard.just_pressed(KeyCode::Space)
-    {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         next.set(GameState::Playing);
-    } else if joystick.back() || keyboard.just_pressed(KeyCode::Escape) {
+    } else if is_cancel(&keyboard, &joystick, &bindings) {
         if itch_mode.enabled {
             next.set(GameState::MainMenu);
         } else {

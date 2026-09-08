@@ -5,6 +5,8 @@
 
 pub mod app_builder;
 pub(crate) mod assets;
+// Shared by collectible spawning and native asset-review tools.
+pub use assets::PowerupIconCache;
 pub(crate) mod content;
 pub mod core;
 pub(crate) mod diagnostics;

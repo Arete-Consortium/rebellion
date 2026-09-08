@@ -22,7 +22,10 @@ pub struct AnalyticsPlugin;
 impl Plugin for AnalyticsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<SessionAnalytics>()
-            .add_systems(OnEnter(GameState::Playing), start_session)
+            .add_systems(
+                OnEnter(GameState::Playing),
+                start_session.run_if(super::not_resuming_gameplay),
+            )
             .add_systems(
                 Update,
                 (bridge_enemy_destroyed, bridge_player_damaged)

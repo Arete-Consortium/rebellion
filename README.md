@@ -1,39 +1,88 @@
-# Rebellion Ship Registry Package
+# Rebellion
 
-This package contains all three requested deliverables:
+An EVE-inspired arcade space shooter built in Rust with Bevy 0.15. Fly recognizable faction ships, dodge enemy fire, fight phased bosses, and chase scores through close-range combat.
 
-1. `assets/ships/ship_manifest.schema.json`
-   - Strict JSON Schema for canonical ship visual identity.
-2. `assets/ships/ship_manifest.starter.json`
-   - Starter manifest populated from current Rebellion hull references.
-3. `scripts/audit_ship_hulls.py`
-   - Project-wide source, asset, image and identity audit.
-4. `docs/SHIP_REGISTRY_REFACTOR_PLAN.md`
-   - Ordered Rust migration plan.
-5. `src/assets/ship_registry.rs.template`
-   - Compile-ready starting point for the Bevy registry.
+Rebellion is a **free portfolio and community project**. Playable releases
+and future campaigns will remain free. Contributions, playtesting and
+constructive feedback are welcome.
 
-## Install
+The current finishing target is the **Caldari–Gallente three-mission vertical slice**: a complete route from the menu through escalating encounters to a results screen. The codebase also contains Elder Fleet, Triglavian Invasion, Abyssal Depths, and alternate survival modes. Their presence is not a claim that every route is release-ready.
 
-Copy the files into the repository, then rename:
+## Run on desktop
 
-```bash
-cp assets/ships/ship_manifest.starter.json assets/ships/ship_manifest.json
-python -m pip install pillow jsonschema
+**Ubuntu / Linux:** download the **Rebellion-linux-x86_64** test artifact or build the portable package using the [Linux playtest instructions](docs/LINUX_PLAYTEST.md). The package contains the executable, artwork/audio and launcher.
+
+Install a current stable [Rust toolchain](https://rust-lang.org/tools/install/) and your platform's compiler tools. The manifest declares Rust 1.85 or later. On macOS, install Xcode Command Line Tools; Linux builds also need ALSA, udev, XKB, and Wayland development libraries (see the CI workflow).
+
+Run from this repository's root so the game can find `assets/`.
+
+```sh
+cargo run --locked --release
 ```
 
-## First audit
+For a double-clickable macOS candidate package, use:
 
-```bash
-python scripts/audit_ship_hulls.py \
-  --root . \
-  --manifest assets/ships/ship_manifest.json \
-  --schema assets/ships/ship_manifest.schema.json \
-  --report build/ship-audit.md \
-  --json-report build/ship-audit.json \
-  --contact-sheet build/ship-contact-sheet.png
+```sh
+./scripts/package-macos-playtest.sh
+open dist/Rebellion.app
 ```
 
-The starter manifest deliberately marks every hull `pending_review`.
-Do not mark a hull `approved` until its contact-sheet image, orientation,
-centering, and identity have been checked.
+The package places `assets/` in `Rebellion.app/Contents/Resources/assets` and configures
+runtime launch to resolve assets from that folder automatically.
+
+Choose **PLAY**, select the Minmatar–Amarr or Caldari–Gallente chapter, then pick your faction, difficulty and hull. A first build takes time because Bevy compiles the rendering and audio stack. The packager refuses to overwrite an existing app; supply a new output directory as its fourth argument for subsequent candidates.
+
+Default keyboard bindings:
+
+| Action | Input |
+| --- | --- |
+| Move | W / A / S / D |
+| Aim | I / J / K / L |
+| Fire | Space |
+| Previous / next ammunition | Q / E |
+| Select ammunition | 1–5 |
+| Pause | Escape |
+| Menu navigation / confirm | Arrow keys / Enter |
+
+The game also supports Xbox-style controllers. See the [Mac controller playtest guide](docs/CONTROLLER_PLAYTEST.md) for bindings and current verification limits. For a test run that keeps existing saves separate:
+
+```sh
+REBELLION_HOME=/tmp/rebellion-playtest cargo run --locked --release
+```
+
+## Verify changes
+
+```sh
+cargo fmt --all -- --check
+cargo test --locked
+cargo clippy --locked --all-targets -- -D warnings
+cargo bench --locked --bench game_systems
+```
+
+Headless tests cover simulation and selected gameplay systems. They do not establish rendered frame rate, controller feel, audio quality, or a complete human playthrough.
+
+## Browser build
+
+The project supports WebAssembly. Install the `wasm32-unknown-unknown` Rust target and a `wasm-bindgen-cli` version matching `wasm-bindgen` in `Cargo.lock`, then use `build-wasm.sh`. Serve `web/` over local HTTP to test it. Browser build tooling still needs a reproducibility pass; see the completion plan before distributing a build.
+
+## Continue development
+
+- [Production plan, milestones and prioritized backlog](docs/PRODUCTION_PLAN.md)
+- [Current Mac candidate: booster combat fixes and three-mission probes](docs/BOOSTER_COMBAT_PLAYTEST_2026-09-08.md)
+- [Approved classic booster artwork](docs/CLASSIC_BOOSTER_PLAYTEST_2026-09-08.md)
+- [Previous booster artwork and HUD checkpoint](docs/BOOSTER_PLAYTEST_2026-09-08.md)
+- [Transport objectives and clearer shields](docs/TRANSPORT_PLAYTEST_2026-09-08.md)
+- [Save recovery and audio checkpoint](docs/PLAYTEST_2026-09-08.md)
+- [Chapter and sprite checkpoint](docs/MAC_PLAYTEST_REPORT.md)
+- [Repair baseline and current verification](docs/COMPLETION_PLAN.md)
+- [Code and dependency review](docs/CODE_REVIEW.md)
+- [Gameplay and controls review](docs/GAMEPLAY_REVIEW.md)
+- [Performance findings and measurement plan](docs/PERFORMANCE_AUDIT.md)
+- [Existing vertical slice definition](docs/VERTICAL_SLICE.md)
+- [Game positioning and faction identity](docs/PRODUCT_POSITIONING.md)
+- [Ship registry tools](docs/SHIP_REGISTRY_PACKAGE.md) and [migration plan](docs/SHIP_REGISTRY_REFACTOR_PLAN.md)
+- [Preserved ship-review versions and recovery tool](docs/ship-review/README.md)
+
+Use [Arete-Consortium/rebellion](https://github.com/Arete-Consortium/rebellion) for current source. Its description still points to an older archived `arcade/eve-rebellion` snapshot; the standalone repository contains the later gameplay and test work. The previous root README described only the ship-registry package and has been preserved under `docs/`.
+
+Code is distributed under the repository's [MIT license](LICENSE). Asset provenance is tracked separately in the ship-registry work.

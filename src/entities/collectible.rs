@@ -295,8 +295,11 @@ fn collectible_rarity_effects(
         let current = sprite.color.to_srgba();
         sprite.color = Color::srgba(current.red, current.green, current.blue, alpha);
 
-        // Slight rotation for rare/epic items
-        if matches!(rarity_data.rarity, Rarity::Rare | Rarity::Epic) {
+        // Keep item artwork upright so bottles and their tier marks stay readable.
+        // Untextured rare/epic pickups retain their rotating shape animation.
+        if sprite.image == Handle::<Image>::default()
+            && matches!(rarity_data.rarity, Rarity::Rare | Rarity::Epic)
+        {
             let rotation_speed = if rarity_data.rarity == Rarity::Epic {
                 0.5
             } else {
@@ -612,7 +615,7 @@ pub fn spawn_collectible(
         CollectibleType::ShieldBoost => (COLOR_SHIELD, 28.0, 25),
         CollectibleType::ArmorRepair => (COLOR_ARMOR, 28.0, 25),
         CollectibleType::HullRepair => (COLOR_HULL, 28.0, 25),
-        CollectibleType::CapacitorCharge => (COLOR_CAPACITOR, 14.0, 50),
+        CollectibleType::CapacitorCharge => (COLOR_CAPACITOR, 28.0, 50),
         CollectibleType::Overdrive => (Color::srgb(0.3, 0.9, 1.0), 28.0, 1),
         CollectibleType::DamageBoost => (Color::srgb(1.0, 0.3, 0.3), 28.0, 1),
         CollectibleType::Invulnerability => (Color::srgb(1.0, 1.0, 1.0), 28.0, 1),
@@ -809,8 +812,8 @@ pub fn spawn_smart_powerup(
 ) {
     let roll = fastrand::f32();
 
-    // 20% credits, 30% health, 25% temp powerups, 5% epic temp,
-    // 20% persistent weapon mods (rarity-weighted inside)
+    // 20% credits, 30% health, 30% consumable boosters, 20% weapon mods.
+    // Mindflood must be reachable here, not just defined in the icon/effect tables.
     let powerup = if roll < 0.20 {
         CollectibleType::Credits
     } else if roll < 0.50 {
@@ -827,9 +830,11 @@ pub fn spawn_smart_powerup(
                 CollectibleType::HullRepair
             }
         }
-    } else if roll < 0.60 {
+    } else if roll < 0.56 {
+        CollectibleType::CapacitorCharge
+    } else if roll < 0.64 {
         CollectibleType::Overdrive
-    } else if roll < 0.68 {
+    } else if roll < 0.70 {
         CollectibleType::DamageBoost
     } else if roll < 0.74 {
         CollectibleType::Nanite
@@ -859,6 +864,39 @@ pub fn spawn_smart_powerup(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn normal_drops_can_supply_every_consumable_including_capacitor() {
+        let mut world = World::new();
+        let mut queue = bevy::ecs::world::CommandQueue::default();
+        let mut commands = Commands::new(&mut queue, &world);
+        fastrand::seed(0xB0057);
+        for _ in 0..4096 {
+            spawn_smart_powerup(&mut commands, Vec2::ZERO, None, None);
+        }
+        queue.apply(&mut world);
+        let pickups: Vec<_> = world.query::<&CollectibleData>().iter(&world).collect();
+        for kind in [
+            CollectibleType::ShieldBoost,
+            CollectibleType::ArmorRepair,
+            CollectibleType::HullRepair,
+            CollectibleType::CapacitorCharge,
+            CollectibleType::Overdrive,
+            CollectibleType::DamageBoost,
+            CollectibleType::Invulnerability,
+            CollectibleType::Nanite,
+            CollectibleType::ExtraLife,
+        ] {
+            assert!(
+                pickups.iter().any(|pickup| pickup.collectible_type == kind),
+                "normal enemy drops must make {kind:?} reachable"
+            );
+        }
+        assert!(pickups
+            .iter()
+            .filter(|pickup| pickup.collectible_type == CollectibleType::CapacitorCharge)
+            .all(|pickup| pickup.value == 50));
+    }
 
     // Rarity system tests
     #[test]

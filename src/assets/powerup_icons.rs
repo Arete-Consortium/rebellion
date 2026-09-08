@@ -34,21 +34,24 @@ impl PowerupIconCache {
 /// Map collectible types to icon filenames
 fn get_icon_filename(collectible_type: &CollectibleType) -> Option<&'static str> {
     match collectible_type {
-        CollectibleType::ShieldBoost => Some("shield_hardener.png"),
-        CollectibleType::ArmorRepair => Some("armor_hardener.png"),
-        CollectibleType::HullRepair => Some("reinforced_bulkheads.png"),
-        CollectibleType::Overdrive => Some("microwarpdrive.png"),
-        CollectibleType::DamageBoost => Some("combat_booster.png"),
-        CollectibleType::Invulnerability => Some("assault_damage_control.png"),
-        CollectibleType::Nanite => Some("nanite_paste.png"),
-        CollectibleType::ExtraLife => Some("speed_booster.png"),
+        CollectibleType::ShieldBoost => Some("blue_pill_booster.png"),
+        CollectibleType::ArmorRepair => Some("exile_booster.png"),
+        CollectibleType::HullRepair => Some("hardshell_dose_i_booster.png"),
+        CollectibleType::CapacitorCharge => Some("mindflood_booster.png"),
+        CollectibleType::Overdrive => Some("overclocker_booster.png"),
+        CollectibleType::DamageBoost => Some("pyrolancea_booster.png"),
+        // Arcade adaptation of X-Instinct's defensive signature-reduction role.
+        CollectibleType::Invulnerability => Some("x_instinct_booster.png"),
+        CollectibleType::Nanite => Some("sunyata_booster.png"),
+        // Rebellion's arcade adaptation of the shield/armor repair booster.
+        CollectibleType::ExtraLife => Some("hardshell_booster.png"),
         // Persistent weapon-mods — faction-authentic module icons
         CollectibleType::ScatterLauncher => Some("scourge_rage_missile.png"),
         CollectibleType::RailSpike => Some("republic_fleet_barrage.png"),
         CollectibleType::PlasmaLance => Some("conflagration_pulse.png"),
         CollectibleType::HomingSwarm => Some("warrior_drone_swarm.png"),
         CollectibleType::VortonProjector => Some("vorton_projector.png"),
-        _ => None, // Credits, Refugee, Capacitor use simple shapes
+        _ => None, // Currency, liberation pods and skill points use simple shapes.
     }
 }
 
@@ -63,6 +66,7 @@ fn load_powerup_icons(mut cache: ResMut<PowerupIconCache>, asset_server: Res<Ass
         CollectibleType::ShieldBoost,
         CollectibleType::ArmorRepair,
         CollectibleType::HullRepair,
+        CollectibleType::CapacitorCharge,
         CollectibleType::Overdrive,
         CollectibleType::DamageBoost,
         CollectibleType::Invulnerability,

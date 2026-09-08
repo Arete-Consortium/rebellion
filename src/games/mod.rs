@@ -80,8 +80,8 @@ impl ActiveModule {
     }
 
     pub fn set_faction(&mut self, player: &str, enemy: &str) {
-        self.player_faction = Some(player.to_string());
-        self.enemy_faction = Some(enemy.to_string());
+        self.player_faction = Some(player.to_ascii_lowercase());
+        self.enemy_faction = Some(enemy.to_ascii_lowercase());
     }
 
     pub fn is_caldari_gallente(&self) -> bool {

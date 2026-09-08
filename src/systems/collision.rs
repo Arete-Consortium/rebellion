@@ -116,30 +116,105 @@ impl SpatialGrid {
         let gx = ((pos.x + crate::core::SCREEN_WIDTH / 2.0) / CELL_SIZE) as i32;
         let gy = ((pos.y + crate::core::SCREEN_HEIGHT / 2.0) / CELL_SIZE) as i32;
 
-        // Check 3x3 neighborhood for robustness
-        let mut indices = Vec::with_capacity(9);
-        for dy in -1..=1 {
-            for dx in -1..=1 {
-                let nx = gx + dx;
-                let ny = gy + dy;
-                if nx >= 0 && nx < GRID_WIDTH as i32 && ny >= 0 && ny < GRID_HEIGHT as i32 {
-                    indices.push((ny * GRID_WIDTH as i32 + nx) as usize);
-                }
-            }
-        }
-
-        indices
-            .into_iter()
+        // Walk the fixed neighborhood without allocating per projectile.
+        // Preserve row and insertion order because the first contact wins.
+        (-1..=1)
+            .flat_map(move |dy| {
+                (-1..=1).filter_map(move |dx| {
+                    let nx = gx + dx;
+                    let ny = gy + dy;
+                    if nx >= 0 && nx < GRID_WIDTH as i32 && ny >= 0 && ny < GRID_HEIGHT as i32 {
+                        Some((ny * GRID_WIDTH as i32 + nx) as usize)
+                    } else {
+                        None
+                    }
+                })
+            })
             .flat_map(move |idx| self.enemy_cells[idx].iter())
     }
 }
 
-/// Collision plugin — now empty. All collision systems are registered
-/// directly by SimulationPlugin and PresentationPlugin.
-pub struct CollisionPlugin;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl Plugin for CollisionPlugin {
-    fn build(&self, _app: &mut App) {
-        // Intentionally no-op — systems registered by SimulationPlugin.
+    #[test]
+    fn enemy_lookup_preserves_neighborhood_and_insertion_order() {
+        let mut world = World::new();
+        let mut grid = SpatialGrid::new();
+        let positions = [
+            Vec2::new(-25.0, -25.0),
+            Vec2::new(25.0, -25.0),
+            Vec2::new(75.0, -25.0),
+            Vec2::new(-25.0, 25.0),
+            Vec2::new(25.0, 25.0),
+            Vec2::new(75.0, 25.0),
+            Vec2::new(-25.0, 75.0),
+            Vec2::new(25.0, 75.0),
+            Vec2::new(75.0, 75.0),
+        ];
+        let entries: Vec<_> = positions
+            .into_iter()
+            .map(|pos| (world.spawn_empty().id(), pos))
+            .collect();
+
+        // Cross-cell insertion order must not change the first hit candidate.
+        for &(entity, pos) in entries.iter().rev() {
+            grid.insert_enemy(entity, pos);
+        }
+        let extra = (world.spawn_empty().id(), Vec2::new(26.0, 26.0));
+        grid.insert_enemy(extra.0, extra.1);
+        grid.insert_enemy(world.spawn_empty().id(), Vec2::new(125.0, 25.0));
+
+        let actual: Vec<_> = grid
+            .get_nearby_enemies(Vec2::new(25.0, 25.0))
+            .copied()
+            .collect();
+        let mut expected = entries;
+        expected.insert(5, extra);
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn enemy_lookup_clips_corners_and_outside_queries() {
+        let mut world = World::new();
+        let mut grid = SpatialGrid::new();
+        let lower_left = (world.spawn_empty().id(), Vec2::new(-375.0, -325.0));
+        let lower_right = (world.spawn_empty().id(), Vec2::new(-325.0, -325.0));
+        let upper_left = (world.spawn_empty().id(), Vec2::new(-375.0, -275.0));
+        let upper_right = (world.spawn_empty().id(), Vec2::new(-325.0, -275.0));
+        let padded_corner = (world.spawn_empty().id(), Vec2::new(475.0, 425.0));
+        for &(entity, pos) in &[
+            lower_left,
+            lower_right,
+            upper_left,
+            upper_right,
+            padded_corner,
+        ] {
+            grid.insert_enemy(entity, pos);
+        }
+
+        let bottom_corner: Vec<_> = grid
+            .get_nearby_enemies(Vec2::new(-400.0, -350.0))
+            .copied()
+            .collect();
+        assert_eq!(
+            bottom_corner,
+            vec![lower_left, lower_right, upper_left, upper_right]
+        );
+
+        let outside_left: Vec<_> = grid
+            .get_nearby_enemies(Vec2::new(-451.0, -350.0))
+            .copied()
+            .collect();
+        assert_eq!(outside_left, vec![lower_left, upper_left]);
+        assert_eq!(
+            grid.get_nearby_enemies(Vec2::new(500.0, 450.0))
+                .copied()
+                .collect::<Vec<_>>(),
+            vec![padded_corner]
+        );
+        assert_eq!(grid.get_nearby_enemies(Vec2::splat(-1000.0)).count(), 0);
+        assert_eq!(grid.get_nearby_enemies(Vec2::splat(1000.0)).count(), 0);
     }
 }

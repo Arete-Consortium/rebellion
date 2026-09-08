@@ -45,6 +45,25 @@ pub fn enrich_contacts(
 ) {
     for raw in raw_events.read() {
         match raw.contact_type {
+            RawContactType::EnemyProjectileEscort {
+                projectile,
+                escort,
+                projectile_pos,
+                escort_pos,
+            } => {
+                if let Ok(damage) = enemy_proj_query.get(projectile) {
+                    resolved_events.send(ContactDetected {
+                        contact_type: ContactType::EnemyProjectileEscort {
+                            projectile,
+                            escort,
+                            projectile_pos,
+                            escort_pos,
+                            damage: damage.damage,
+                            damage_type: damage.damage_type,
+                        },
+                    });
+                }
+            }
             RawContactType::PlayerProjectileEnemy {
                 projectile,
                 enemy,
@@ -95,6 +114,47 @@ pub fn enrich_contacts(
                 });
             }
         }
+    }
+}
+
+/// Resolve hostile fire against escorts through the same fixed-step contact
+/// pipeline as the player. Player fire never targets Friendly entities.
+pub fn resolve_escort_damage(
+    mut commands: Commands,
+    mut contacts: EventReader<ContactDetected>,
+    mut escorts: Query<&mut crate::entities::EscortData, With<crate::entities::Friendly>>,
+    projectiles: Query<(), With<EnemyProjectile>>,
+    mut layers: EventWriter<DamageLayerEvent>,
+) {
+    for contact in contacts.read() {
+        let ContactType::EnemyProjectileEscort {
+            projectile,
+            escort,
+            projectile_pos,
+            escort_pos,
+            damage,
+            damage_type,
+        } = contact.contact_type
+        else {
+            continue;
+        };
+        if !projectiles.contains(projectile) {
+            continue;
+        }
+        let Ok(mut data) = escorts.get_mut(escort) else {
+            continue;
+        };
+        commands.entity(projectile).despawn_recursive();
+        if data.health <= 0.0 || data.reached_end {
+            continue;
+        }
+        data.take_damage(damage, damage_type);
+        layers.send(DamageLayerEvent {
+            position: escort_pos,
+            layer: DamageLayer::Hull,
+            damage,
+            direction: (escort_pos - projectile_pos).normalize_or_zero(),
+        });
     }
 }
 
@@ -451,6 +511,7 @@ pub fn resolve_player_environment_contacts(
 pub fn resolve_projectile_environment_contacts(
     mut commands: Commands,
     mut contact_events: EventReader<ProjectileEnvironmentContact>,
+    mut projectiles: Query<Option<&mut Pierce>, With<ProjectileDamage>>,
     mut env_query: Query<
         (
             &mut EnvironmentHealth,
@@ -464,6 +525,11 @@ pub fn resolve_projectile_environment_contacts(
     mut destroyed_events: EventWriter<EnvironmentDestroyedEvent>,
 ) {
     for contact in contact_events.read() {
+        // Detection can find both a ship and terrain in the same tick. Ship
+        // resolution runs first and may already have consumed this projectile.
+        let Ok(pierce) = projectiles.get_mut(contact.projectile) else {
+            continue;
+        };
         let Ok((mut health, score_value, interaction, env_transform)) =
             env_query.get_mut(contact.environment)
         else {
@@ -480,6 +546,9 @@ pub fn resolve_projectile_environment_contacts(
                 commands.entity(contact.projectile).despawn_recursive();
             }
             ProjectileInteraction::Damageable => {
+                if health.current <= 0.0 {
+                    continue;
+                }
                 // Soft hazard / asteroid — apply damage; respect pierce
                 health.current -= contact.damage;
                 let destroyed = health.current <= 0.0;
@@ -503,11 +572,11 @@ pub fn resolve_projectile_environment_contacts(
                 }
 
                 // Pierce: decrement and keep projectile alive; else despawn
-                match contact.pierce_remaining {
-                    Some(n) if n > 0 => {
-                        commands
-                            .entity(contact.projectile)
-                            .insert(crate::entities::Pierce(n - 1));
+                // Use the live count, since an earlier ship hit may have
+                // spent a charge after the contact snapshot was produced.
+                match pierce {
+                    Some(mut remaining) if remaining.0 > 0 => {
+                        remaining.0 -= 1;
                     }
                     _ => {
                         commands.entity(contact.projectile).despawn_recursive();

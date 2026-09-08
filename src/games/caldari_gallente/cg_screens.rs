@@ -3,8 +3,10 @@
 //! UI screens shown after mission completion and campaign victory.
 
 use super::campaign::{CGCampaignState, CGSessionTimer, VerticalSliceMode};
+use crate::core::KeyBindings;
 use crate::core::{Faction, GameSession, GameState, ItchMode};
 use crate::systems::JoystickState;
+use crate::ui::menu::common::*;
 use bevy::prelude::*;
 
 // ============================================================================
@@ -16,6 +18,7 @@ use bevy::prelude::*;
 pub struct CGStageCompleteRoot;
 
 pub fn spawn_cg_stage_complete(
+    bindings: Res<KeyBindings>,
     mut commands: Commands,
     cg_campaign: Res<CGCampaignState>,
     score: Res<crate::core::ScoreSystem>,
@@ -89,7 +92,7 @@ pub fn spawn_cg_stage_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("Best Chain: {}x", score.chain)),
+                Text::new(format!("Finishing Chain: {}x", score.chain)),
                 TextFont {
                     font_size: 20.0,
                     ..default()
@@ -121,7 +124,7 @@ pub fn spawn_cg_stage_complete(
 
             // Continue prompt
             parent.spawn((
-                Text::new("Press A to continue"),
+                Text::new("Ready for the next mission"),
                 TextFont {
                     font_size: 18.0,
                     ..default()
@@ -129,9 +132,11 @@ pub fn spawn_cg_stage_complete(
                 TextColor(Color::srgb(0.6, 0.6, 0.6)),
             ));
 
+            spawn_menu_item(parent, "CONTINUE", 0);
+
             // Controller hint
             parent.spawn((
-                Text::new("A Continue  •  B Main Menu"),
+                Text::new(menu_hint(&bindings, "Continue", "Main menu")),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -143,6 +148,7 @@ pub fn spawn_cg_stage_complete(
 
 pub fn cg_stage_complete_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut cg_campaign: ResMut<CGCampaignState>,
     slice_mode: Res<VerticalSliceMode>,
@@ -150,10 +156,7 @@ pub fn cg_stage_complete_input(
     time: Res<Time>,
     mut transitions: EventWriter<crate::ui::TransitionEvent>,
 ) {
-    if keyboard.just_pressed(KeyCode::Space)
-        || keyboard.just_pressed(KeyCode::Enter)
-        || joystick.confirm()
-    {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         // Advance to next mission (returns false if campaign/slice complete)
         if cg_campaign.complete_mission(*slice_mode) {
             // More missions available
@@ -169,7 +172,7 @@ pub fn cg_stage_complete_input(
         }
     }
 
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         transitions.send(crate::ui::TransitionEvent::to(GameState::MainMenu));
     }
 }
@@ -509,23 +512,21 @@ pub fn update_cg_victory_particles(
 
 pub fn cg_victory_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut cg_campaign: ResMut<CGCampaignState>,
     mut score: ResMut<crate::core::ScoreSystem>,
     mut transitions: EventWriter<crate::ui::TransitionEvent>,
 ) {
     // Left/Right to select button (simplified - just accept any input)
-    if keyboard.just_pressed(KeyCode::Space)
-        || keyboard.just_pressed(KeyCode::Enter)
-        || joystick.confirm()
-    {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         // Reset and play again
         *cg_campaign = CGCampaignState::default();
         score.reset_game();
         transitions.send(crate::ui::TransitionEvent::to(GameState::FactionSelect));
     }
 
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         *cg_campaign = CGCampaignState::default();
         transitions.send(crate::ui::TransitionEvent::to(GameState::MainMenu));
     }
@@ -547,6 +548,7 @@ pub struct CGSliceCompleteRoot;
 
 /// Spawn "Vertical Slice Complete" screen shown after Mission 3 in slice mode
 pub fn spawn_cg_slice_complete(
+    bindings: Res<KeyBindings>,
     mut commands: Commands,
     score: Res<crate::core::ScoreSystem>,
     session: Res<GameSession>,
@@ -611,7 +613,7 @@ pub fn spawn_cg_slice_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("Best Chain: {}x", score.chain)),
+                Text::new(format!("Finishing Chain: {}x", score.chain)),
                 TextFont {
                     font_size: 20.0,
                     ..default()
@@ -647,8 +649,10 @@ pub fn spawn_cg_slice_complete(
                 ..default()
             });
 
+            spawn_menu_item(parent, "RETURN TO MAIN MENU", 0);
+
             parent.spawn((
-                Text::new("Press SPACE or ENTER for Main Menu"),
+                Text::new(menu_hint(&bindings, "Main menu", "Main menu")),
                 TextFont {
                     font_size: 16.0,
                     ..default()
@@ -661,6 +665,7 @@ pub fn spawn_cg_slice_complete(
 /// Handle input on slice complete screen
 pub fn cg_slice_complete_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut cg_campaign: ResMut<CGCampaignState>,
     mut itch_mode: ResMut<ItchMode>,
@@ -668,12 +673,7 @@ pub fn cg_slice_complete_input(
     time: Res<Time>,
     mut transitions: EventWriter<crate::ui::TransitionEvent>,
 ) {
-    if keyboard.just_pressed(KeyCode::Space)
-        || keyboard.just_pressed(KeyCode::Enter)
-        || joystick.confirm()
-        || keyboard.just_pressed(KeyCode::Escape)
-        || joystick.back()
-    {
+    if is_confirm(&keyboard, &joystick, &bindings) || is_cancel(&keyboard, &joystick, &bindings) {
         // First itch run complete — unlock full archive menu
         if itch_mode.enabled {
             itch_mode.completed_first_run = true;

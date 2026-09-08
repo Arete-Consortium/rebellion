@@ -12,7 +12,7 @@ use crate::core::{
     MissionCompleteEvent, MissionStartEvent, SavePlugin, WaveCompleteEvent,
 };
 use crate::gameplay::GameplayPlugin;
-use crate::simulation::{SimulationPlugin, FIXED_TIMESTEP_SECS};
+use crate::simulation::{SimulationDiagnostics, SimulationPlugin, FIXED_TIMESTEP_SECS};
 
 /// Runtime mode for the application.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,6 +68,8 @@ impl RebellionAppConfig {
     // -- Bevy plugin configuration --
 
     fn configure_native_bevy_plugins(&self, app: &mut App) {
+        // Uncovered combat space should remain dark behind the starfield.
+        app.insert_resource(ClearColor(Color::srgb(0.008, 0.014, 0.025)));
         app.add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: crate::core::WINDOW_TITLE.into(),
@@ -127,6 +129,11 @@ impl RebellionAppConfig {
         );
 
         // Core simulation (authoritative — no presentation)
+        // State hashing is test instrumentation, not required for normal play.
+        // Developers can explicitly enable this resource before app.run().
+        app.insert_resource(SimulationDiagnostics {
+            enabled: self.mode == RuntimeMode::Headless,
+        });
         app.add_plugins(SimulationPlugin);
 
         // KeyBindings is the authoritative input table. Registered in
@@ -201,6 +208,7 @@ impl RebellionAppConfig {
         .init_resource::<crate::assets::ShipSpriteCache>()
         .init_resource::<crate::assets::ShipModelCache>()
         .init_resource::<crate::assets::PowerupIconCache>()
+        .init_resource::<crate::assets::FactionIconCache>()
         .init_resource::<crate::systems::JoystickState>()
         .init_resource::<crate::systems::ScreenFlash>()
         .init_resource::<crate::systems::ScreenShake>()
@@ -216,4 +224,57 @@ impl RebellionAppConfig {
 /// Backward-compatible wrapper around `RebellionAppConfig::headless_test().build()`.
 pub fn build_headless_app() -> App {
     RebellionAppConfig::headless_test().build()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn native_game_system_queries_initialize_without_a_renderer() {
+        let mut app = build_headless_app();
+        // Headless tests already include gameplay, saves, input bindings and
+        // simulation. Add the native game plugins that those tests omit,
+        // without a window, rendering backend, audio output or OS input.
+        app.add_plugins((
+            crate::content::ContentPlugin,
+            crate::presentation::PresentationPlugin,
+            crate::diagnostics::DiagnosticsPlugin,
+            crate::core::AnalyticsPlugin,
+            crate::core::AchievementPlugin,
+            crate::games::GameModulesPlugin,
+        ));
+
+        // Query access is validated on schedule initialization, even for
+        // systems whose menu/module state is currently inactive. Do not run
+        // the schedules: rendering resources are intentionally absent.
+        app.world_mut().schedule_scope(Update, |world, schedule| {
+            schedule
+                .initialize(world)
+                .expect("native Update systems have compatible query access");
+        });
+        app.world_mut()
+            .schedule_scope(FixedUpdate, |world, schedule| {
+                schedule
+                    .initialize(world)
+                    .expect("native FixedUpdate systems have compatible query access");
+            });
+    }
+
+    #[test]
+    fn state_hash_instrumentation_defaults_to_headless_only() {
+        for (mode, expected) in [(RuntimeMode::Native, false), (RuntimeMode::Headless, true)] {
+            let config = RebellionAppConfig { mode };
+            let mut app = App::new();
+            // Exercise the real shared configuration for each runtime mode
+            // while keeping platform/render plugins out of this unit test.
+            config.configure_headless_bevy_plugins(&mut app);
+            config.configure_shared(&mut app);
+            assert_eq!(
+                app.world().resource::<SimulationDiagnostics>().enabled,
+                expected,
+                "unexpected diagnostics default for {mode:?}"
+            );
+        }
+    }
 }

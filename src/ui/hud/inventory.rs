@@ -21,6 +21,7 @@ pub fn spawn_inventory_hud(mut commands: Commands, itch_mode: Res<crate::core::I
     commands
         .spawn((
             InventoryHudPanel,
+            super::common::HudRoot,
             Node {
                 position_type: PositionType::Absolute,
                 right: Val::Px(14.0),
@@ -59,13 +60,21 @@ pub fn spawn_inventory_hud(mut commands: Commands, itch_mode: Res<crate::core::I
 pub fn update_inventory_hud(
     player: Query<(&Inventory, &Weapon), With<Player>>,
     mut text: Query<&mut Text, With<InventoryHudText>>,
+    mut panel: Query<&mut Node, With<InventoryHudPanel>>,
 ) {
     let (Ok((inv, weapon)), Ok(mut t)) = (player.get_single(), text.get_single_mut()) else {
         return;
     };
 
+    for mut node in &mut panel {
+        node.display = if inv.stacks.is_empty() {
+            Display::None
+        } else {
+            Display::Flex
+        };
+    }
     if inv.stacks.is_empty() {
-        t.0 = "  —".into();
+        t.0.clear();
         return;
     }
 

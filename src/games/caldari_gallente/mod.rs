@@ -40,21 +40,7 @@ impl Plugin for CaldariGallentePlugin {
         // Initialize state for mode select
         app.init_state::<CGModeSelect>();
 
-        // Faction select screen - only when this module is active
-        app.add_systems(
-            OnEnter(GameState::FactionSelect),
-            faction_select::spawn_faction_select.run_if(is_caldari_gallente),
-        )
-        .add_systems(
-            Update,
-            faction_select::faction_select_input
-                .run_if(in_state(GameState::FactionSelect))
-                .run_if(is_caldari_gallente),
-        )
-        .add_systems(
-            OnExit(GameState::FactionSelect),
-            faction_select::despawn_faction_select.run_if(is_caldari_gallente),
-        );
+        // Both chapters share the native faction picker.
 
         // Mode select screen (Campaign vs Nightmare) - Caldari only
         app.add_systems(
@@ -87,14 +73,18 @@ impl Plugin for CaldariGallentePlugin {
                 cg_campaign::start_cg_mission,
             )
                 .chain()
+                .run_if(crate::core::not_resuming_gameplay)
                 .run_if(is_caldari_gallente)
                 .run_if(not(nightmare_active))
                 .run_if(not(last_stand_active)),
         )
         .add_systems(
+            OnEnter(GameState::MainMenu),
+            cg_campaign::cleanup_cg_entities.run_if(is_caldari_gallente),
+        )
+        .add_systems(
             Update,
             (
-                cg_campaign::update_cg_mission,
                 cg_campaign::check_cg_wave_complete,
                 cg_campaign::spawn_cg_wave,
             )
@@ -158,13 +148,17 @@ impl Plugin for CaldariGallentePlugin {
         // Spawn nightmare HUD when entering Playing in nightmare mode
         app.add_systems(
             OnEnter(GameState::Playing),
-            nightmare::spawn_nightmare_hud.run_if(nightmare_active),
+            nightmare::spawn_nightmare_hud
+                .run_if(crate::core::not_resuming_gameplay)
+                .run_if(nightmare_active),
         );
 
         // Last Stand systems - fixed platform defense mode
         app.add_systems(
             OnEnter(GameState::Playing),
-            last_stand_gameplay::spawn_last_stand.run_if(last_stand_active),
+            last_stand_gameplay::spawn_last_stand
+                .run_if(crate::core::not_resuming_gameplay)
+                .run_if(last_stand_active),
         )
         .add_systems(
             Update,
@@ -181,7 +175,19 @@ impl Plugin for CaldariGallentePlugin {
         )
         .add_systems(
             OnExit(GameState::Playing),
-            last_stand_gameplay::despawn_last_stand.run_if(last_stand_active),
+            last_stand_gameplay::despawn_last_stand
+                .run_if(crate::core::not_pausing_gameplay)
+                .run_if(last_stand_active),
+        )
+        .add_systems(
+            OnExit(GameState::Paused),
+            (
+                last_stand_gameplay::despawn_last_stand,
+                reset_last_stand_on_restart,
+            )
+                .chain()
+                .run_if(crate::core::not_resuming_gameplay)
+                .run_if(last_stand_active),
         );
 
         // CG Stage Complete screen
@@ -250,6 +256,16 @@ fn nightmare_active(nightmare: Res<ShiigeruNightmare>) -> bool {
 /// Run condition: is Last Stand mode active?
 fn last_stand_active(last_stand: Res<LastStandState>) -> bool {
     last_stand.active
+}
+
+fn reset_last_stand_on_restart(
+    state: Res<State<GameState>>,
+    mut last_stand: ResMut<LastStandState>,
+) {
+    // Cleanup ends the old run. Restore this mode before Playing's entry hooks.
+    if *state.get() == GameState::Playing {
+        last_stand.start();
+    }
 }
 
 fn register_module(mut registry: ResMut<ModuleRegistry>) {

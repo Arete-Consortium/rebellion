@@ -40,6 +40,32 @@ fn setup_cg_mission1(app: &mut App) {
     }
 }
 
+/// A visible carrier now precedes the first wave. This also exercises the
+/// no-texture headless case: its animation clock must still finish.
+fn finish_carrier_arrival(app: &mut App) {
+    app.world_mut()
+        .run_system_once(rebellion::games::caldari_gallente::cg_campaign::spawn_cg_wave)
+        .unwrap();
+    assert_eq!(
+        app.world_mut()
+            .query_filtered::<Entity, With<Enemy>>()
+            .iter(app.world())
+            .count(),
+        0,
+        "enemy wave must wait for the carrier arrival"
+    );
+    for _ in 0..130 {
+        app.update();
+    }
+    for carrier in app
+        .world_mut()
+        .query::<&rebellion::systems::spawning::EnemyCarrier>()
+        .iter(app.world())
+    {
+        assert_eq!(carrier.warp_progress, 1.0);
+    }
+}
+
 #[test]
 fn mission1_spawns_scaled_enemies() {
     let mut app = build_headless_app();
@@ -50,6 +76,8 @@ fn mission1_spawns_scaled_enemies() {
         .resource_mut::<NextState<GameState>>()
         .set(GameState::Playing);
     app.update(); // process transition + start_cg_mission
+
+    finish_carrier_arrival(&mut app);
 
     // Manually invoke spawn_cg_wave since GameModulesPlugin isn't in headless
     app.world_mut()
@@ -124,6 +152,8 @@ fn mission1_enemies_have_varied_positions() {
         .set(GameState::Playing);
     app.update(); // start_cg_mission runs
 
+    finish_carrier_arrival(&mut app);
+
     // Manually invoke spawn
     app.world_mut()
         .run_system_once(rebellion::games::caldari_gallente::cg_campaign::spawn_cg_wave)
@@ -142,13 +172,17 @@ fn mission1_enemies_have_varied_positions() {
         "Mission 1 wave 1 should spawn at least 3 enemies"
     );
 
-    // Verify not all on the same Y line (formations should vary)
-    let ys: Vec<f32> = positions.iter().map(|p| p.y).collect();
-    let min_y = ys.iter().cloned().fold(f32::INFINITY, f32::min);
-    let max_y = ys.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+    // Wave 1 is deliberately a horizontal line. Its small random Y jitter can
+    // legitimately be almost equal across a wave, so verify the guaranteed
+    // horizontal spread instead of making the check depend on lucky RNG.
+    let min_x = positions.iter().map(|p| p.x).fold(f32::INFINITY, f32::min);
+    let max_x = positions
+        .iter()
+        .map(|p| p.x)
+        .fold(f32::NEG_INFINITY, f32::max);
     assert!(
-        (max_y - min_y) > 3.0,
-        "Mission 1 enemies should have varied Y positions, got min={min_y} max={max_y}"
+        (max_x - min_x) > 100.0,
+        "Mission 1 line must spread across the playfield, got min={min_x} max={max_x}"
     );
 }
 
@@ -167,6 +201,8 @@ fn mission2_has_moderate_scaling() {
         .resource_mut::<NextState<GameState>>()
         .set(GameState::Playing);
     app.update(); // start_cg_mission runs
+
+    finish_carrier_arrival(&mut app);
 
     // Manually invoke spawn
     app.world_mut()

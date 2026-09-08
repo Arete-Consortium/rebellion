@@ -17,7 +17,7 @@ Cargo.lock.bak
 .env.*
 .env.local
 
-# Python (utility scripts in assets/models/, web/server.py)
+# Python (utility scripts in tools/ship-models/, web/server.py)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -49,8 +49,15 @@ highscores.json
 *.rar
 *.7z
 
-# Orientation analyzer debug previews (regenerated via scripts/)
+# Generated ship review, orientation previews, and hull audit output
 assets/_orientation_preview/
+/build/ship-review/
+/build/audio-review/
+/build/playtest-review/
+/build/linux-smoke/
+/build/ship-audit.md
+/build/ship-audit.json
+/build/ship-contact-sheet.png
 
 # Security: prevent secret files from being committed
 .env

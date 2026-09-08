@@ -1,6 +1,6 @@
 //! Visual Effects System
 //!
-//! Starfield, explosions, particle effects, screen shake, engine trails.
+//! Explosions, particle effects, screen shake, engine trails.
 
 #![allow(dead_code)]
 #![allow(unused_imports)]
@@ -16,7 +16,6 @@ pub mod muzzle_flash;
 pub mod overlays;
 pub mod pickups;
 pub mod screen_effects;
-pub mod starfield;
 pub mod trails;
 
 pub use abilities::*;
@@ -29,7 +28,6 @@ pub use muzzle_flash::*;
 pub use overlays::*;
 pub use pickups::*;
 pub use screen_effects::*;
-pub use starfield::*;
 pub use trails::*;
 
 use crate::core::GameState;
@@ -48,12 +46,10 @@ impl Plugin for EffectsPlugin {
             .init_resource::<ScreenFlash>()
             .init_resource::<CameraZoom>()
             .init_resource::<HitStop>()
-            .add_systems(OnEnter(GameState::Playing), starfield::spawn_starfield)
             // Split into multiple system groups due to Bevy tuple limits
             .add_systems(
                 Update,
                 (
-                    starfield::update_starfield,
                     explosions::update_explosions,
                     explosions::update_shockwave_rings,
                     explosions::update_explosion_flashes,
@@ -123,7 +119,17 @@ impl Plugin for EffectsPlugin {
                     cleanup::cleanup_effects,
                     cleanup::cleanup_effects_2,
                     cleanup::cleanup_buff_visuals,
-                ),
+                )
+                    .run_if(crate::core::not_pausing_gameplay),
+            )
+            .add_systems(
+                OnExit(GameState::Paused),
+                (
+                    cleanup::cleanup_effects,
+                    cleanup::cleanup_effects_2,
+                    cleanup::cleanup_buff_visuals,
+                )
+                    .run_if(crate::core::not_resuming_gameplay),
             );
     }
 }

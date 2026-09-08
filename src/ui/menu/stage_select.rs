@@ -349,6 +349,7 @@ fn spawn_stage_card(parent: &mut ChildBuilder, stage: &StageInfo, locked: bool, 
 
 pub(crate) fn stage_select_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<MenuSelection>,
     mut campaign: ResMut<CampaignState>,
@@ -369,13 +370,9 @@ pub(crate) fn stage_select_input(
     let enemy = session.enemy_faction;
     let highest = save_data.get_highest_stage(faction.short_name(), enemy.short_name());
 
-    // Navigation - horizontal within acts
-    let nav_h = get_nav_input(&keyboard, &joystick);
-    // Vertical navigation between acts
-    let nav_v = if keyboard.just_pressed(KeyCode::ArrowUp) || joystick.dpad_just_up() {
-        -1
-    } else if keyboard.just_pressed(KeyCode::ArrowDown) || joystick.dpad_just_down() {
-        1
+    let nav_v = get_vertical_input(&keyboard, &joystick, &bindings);
+    let nav_h = if nav_v == 0 {
+        get_horizontal_input(&keyboard, &joystick, &bindings)
     } else {
         0
     };
@@ -383,7 +380,12 @@ pub(crate) fn stage_select_input(
     if selection.cooldown <= 0.0 {
         if nav_h != 0 {
             // Move within the same row where possible
-            let new_idx = (selection.index as i32 + nav_h).clamp(0, 12) as usize;
+            let (first, last) = match selection.index {
+                0..=3 => (0, 3),
+                4..=8 => (4, 8),
+                _ => (9, 12),
+            };
+            let new_idx = (selection.index as i32 + nav_h).clamp(first, last) as usize;
             selection.index = new_idx;
             selection.cooldown = MENU_NAV_COOLDOWN;
         }
@@ -393,9 +395,9 @@ pub(crate) fn stage_select_input(
             let new_idx = if nav_v < 0 {
                 // Up
                 match current {
-                    0..=3 => current,      // Act 1, stay
-                    4..=8 => current - 4,  // Act 2 -> Act 1
-                    9..=12 => current - 5, // Act 3 -> Act 2
+                    0..=3 => current,              // Act 1, stay
+                    4..=8 => (current - 4).min(3), // Act 2 -> Act 1
+                    9..=12 => current - 5,         // Act 3 -> Act 2
                     _ => current,
                 }
             } else {
@@ -448,7 +450,7 @@ pub(crate) fn stage_select_input(
     }
 
     // Confirm selection
-    if is_confirm(&keyboard, &joystick) {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         let stage = (selection.index + 1) as u32;
         let locked = stage > highest + 1;
 
@@ -482,7 +484,35 @@ pub(crate) fn stage_select_input(
     }
 
     // Back
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         next_state.set(GameState::FactionSelect);
+    }
+}
+
+#[cfg(test)]
+mod grid_tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn vertical_navigation_preserves_column_and_clamps_to_shorter_rows() {
+        let mut app = crate::app_builder::build_headless_app();
+        app.init_resource::<MenuSelection>();
+        let world = app.world_mut();
+        for (start, key, expected) in [
+            (0, KeyCode::ArrowDown, 4),
+            (8, KeyCode::ArrowUp, 3),
+            (3, KeyCode::ArrowRight, 3),
+        ] {
+            *world.resource_mut::<MenuSelection>() = MenuSelection {
+                index: start,
+                total: 13,
+                cooldown: 0.0,
+            };
+            world.resource_mut::<ButtonInput<KeyCode>>().reset_all();
+            world.resource_mut::<ButtonInput<KeyCode>>().press(key);
+            world.run_system_once(stage_select_input).unwrap();
+            assert_eq!(world.resource::<MenuSelection>().index, expected);
+        }
     }
 }

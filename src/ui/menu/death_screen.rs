@@ -62,11 +62,14 @@ pub(crate) fn spawn_death_screen(
     score: Res<ScoreSystem>,
     campaign: Res<CampaignState>,
     cg_campaign: Option<Res<CGCampaignState>>,
+    ef_campaign: Option<Res<crate::games::elder_fleet::ElderFleetCampaignState>>,
+    transport: Option<Res<crate::games::elder_fleet::transport::TransportObjective>>,
     active_module: Res<ActiveModule>,
     mut endless: ResMut<crate::core::EndlessMode>,
     mut nightmare: ResMut<crate::games::caldari_gallente::ShiigeruNightmare>,
     session: Res<GameSession>,
     save_data: Res<SaveData>,
+    bindings: Res<KeyBindings>,
 ) {
     // Initialize selection resource
     commands.insert_resource(DeathSelection::default());
@@ -115,6 +118,23 @@ pub(crate) fn spawn_death_screen(
         campaign.current_mission_name().to_string()
     };
 
+    let mission_name = if active_module.is_elder_fleet() {
+        ef_campaign
+            .as_deref()
+            .and_then(|ef| {
+                crate::games::elder_fleet::mission_info(&active_module, ef.current_mission)
+            })
+            .map(|mission| mission.name.to_string())
+            .unwrap_or(mission_name)
+    } else {
+        mission_name
+    };
+    let objective_failure = if active_module.is_elder_fleet() {
+        transport.as_deref().and_then(|t| t.failure())
+    } else {
+        None
+    };
+
     // Spawn debris field (background sprites)
     let debris_colors = [
         Color::srgb(0.31, 0.24, 0.20), // Rusty brown
@@ -147,20 +167,22 @@ pub(crate) fn spawn_death_screen(
     }
 
     // Spawn frozen corpse (center of screen)
-    commands.spawn((
-        GameOverRoot,
-        DeathCorpse {
-            velocity: Vec2::new((fastrand::f32() - 0.5) * 3.0, (fastrand::f32() - 0.5) * 2.0),
-            spin: (fastrand::f32() - 0.5) * 0.2,
-        },
-        Sprite {
-            color: Color::srgb(0.27, 0.25, 0.24), // Frozen body color
-            custom_size: Some(Vec2::new(40.0, 20.0)),
-            ..default()
-        },
-        Transform::from_xyz(0.0, 50.0, 5.0)
-            .with_rotation(Quat::from_rotation_z(fastrand::f32() * 0.5)),
-    ));
+    if objective_failure.is_none() {
+        commands.spawn((
+            GameOverRoot,
+            DeathCorpse {
+                velocity: Vec2::new((fastrand::f32() - 0.5) * 3.0, (fastrand::f32() - 0.5) * 2.0),
+                spin: (fastrand::f32() - 0.5) * 0.2,
+            },
+            Sprite {
+                color: Color::srgb(0.27, 0.25, 0.24), // Frozen body color
+                custom_size: Some(Vec2::new(40.0, 20.0)),
+                ..default()
+            },
+            Transform::from_xyz(0.0, 50.0, 5.0)
+                .with_rotation(Quat::from_rotation_z(fastrand::f32() * 0.5)),
+        ));
+    }
 
     // Spawn UI overlay
     commands
@@ -180,7 +202,11 @@ pub(crate) fn spawn_death_screen(
         .with_children(|parent| {
             // Title - "CLONE LOST"
             parent.spawn((
-                Text::new("CLONE LOST"),
+                Text::new(if objective_failure.is_some() {
+                    "OBJECTIVE FAILED"
+                } else {
+                    "CLONE LOST"
+                }),
                 TextFont {
                     font_size: 64.0,
                     ..default()
@@ -197,6 +223,21 @@ pub(crate) fn spawn_death_screen(
                 },
                 TextColor(Color::srgb(0.6, 0.4, 0.4)),
             ));
+
+            if let Some(reason) = objective_failure {
+                parent.spawn((
+                    Text::new(reason.message()),
+                    TextFont {
+                        font_size: 16.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.85, 0.9, 0.95)),
+                    Node {
+                        max_width: Val::Px(640.0),
+                        ..default()
+                    },
+                ));
+            }
 
             // Spacer
             parent.spawn(Node {
@@ -351,11 +392,29 @@ pub(crate) fn spawn_death_screen(
                         }
 
                         row.spawn((
-                            Text::new(format!(
-                                "Stage {}-{}",
-                                campaign.stage_number(),
-                                campaign.mission_in_stage()
-                            )),
+                            Text::new(if active_module.is_elder_fleet() {
+                                format!(
+                                    "Mission {}",
+                                    ef_campaign
+                                        .as_deref()
+                                        .map(|ef| ef.current_mission + 1)
+                                        .unwrap_or(1)
+                                )
+                            } else if active_module.is_caldari_gallente() {
+                                format!(
+                                    "Mission {}",
+                                    cg_campaign
+                                        .as_deref()
+                                        .map(|cg| cg.mission_number())
+                                        .unwrap_or(1)
+                                )
+                            } else {
+                                format!(
+                                    "Stage {}-{}",
+                                    campaign.stage_number(),
+                                    campaign.mission_in_stage()
+                                )
+                            }),
                             TextFont {
                                 font_size: 20.0,
                                 ..default()
@@ -384,6 +443,7 @@ pub(crate) fn spawn_death_screen(
                         DeathButton {
                             action: DeathAction::Retry,
                         },
+                        Button,
                         Node {
                             width: Val::Px(150.0),
                             height: Val::Px(50.0),
@@ -411,6 +471,7 @@ pub(crate) fn spawn_death_screen(
                         DeathButton {
                             action: DeathAction::Exit,
                         },
+                        Button,
                         Node {
                             width: Val::Px(150.0),
                             height: Val::Px(50.0),
@@ -452,7 +513,17 @@ pub(crate) fn spawn_death_screen(
 
             // Controller hint
             parent.spawn((
-                Text::new("D-PAD Navigate  •  A Select  •  B Quit"),
+                Text::new(format!(
+                    "Left/Right or D-pad: Choose  |  {} / Pad A: Select  |  {} / Pad B: Exit",
+                    bindings
+                        .get(Action::Confirm)
+                        .map(|b| b.label())
+                        .unwrap_or_default(),
+                    bindings
+                        .get(Action::Cancel)
+                        .map(|b| b.label())
+                        .unwrap_or_default()
+                )),
                 TextFont {
                     font_size: 12.0,
                     ..default()
@@ -521,6 +592,7 @@ pub(crate) fn update_death_screen_animation(
 
 pub(crate) fn death_screen_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<DeathSelection>,
     mut score: ResMut<ScoreSystem>,
@@ -530,26 +602,25 @@ pub(crate) fn death_screen_input(
     time: Res<Time>,
     itch_mode: Res<crate::core::ItchMode>,
     mut transitions: EventWriter<TransitionEvent>,
+    buttons: Query<(&DeathButton, &Interaction), Changed<Interaction>>,
 ) {
     // Navigation
-    if keyboard.just_pressed(KeyCode::ArrowLeft)
-        || keyboard.just_pressed(KeyCode::KeyA)
-        || joystick.dpad_x < 0
-    {
+    if bindings.just_pressed(Action::MenuLeft, &keyboard, &joystick) || joystick.dpad_x < 0 {
         selection.selected = DeathAction::Retry;
     }
-    if keyboard.just_pressed(KeyCode::ArrowRight)
-        || keyboard.just_pressed(KeyCode::KeyD)
-        || joystick.dpad_x > 0
-    {
+    if bindings.just_pressed(Action::MenuRight, &keyboard, &joystick) || joystick.dpad_x > 0 {
         selection.selected = DeathAction::Exit;
     }
 
-    // Confirm selection
-    if keyboard.just_pressed(KeyCode::Space)
-        || keyboard.just_pressed(KeyCode::Enter)
-        || joystick.confirm()
-    {
+    let mut clicked = false;
+    for (button, interaction) in &buttons {
+        if *interaction == Interaction::Pressed {
+            selection.selected = button.action;
+            clicked = true;
+        }
+    }
+    // Confirm by pointer, keyboard or controller.
+    if clicked || is_confirm(&keyboard, &joystick, &bindings) {
         match selection.selected {
             DeathAction::Retry => {
                 score.reset_game();
@@ -571,7 +642,7 @@ pub(crate) fn death_screen_input(
     }
 
     // Quick exit
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         session_timer.stop_and_log(time.elapsed_secs_f64());
         transitions.send(TransitionEvent::to(GameState::MainMenu));
     }

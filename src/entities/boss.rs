@@ -560,6 +560,8 @@ pub fn spawn_boss(
         }
     };
 
+    let rotation =
+        std::f32::consts::PI + super::enemy::get_ship_rotation_correction(boss_data.type_id);
     let mut entity_commands = commands.spawn(BossBundle {
         boss: Boss,
         data: boss_data,
@@ -570,9 +572,9 @@ pub fn spawn_boss(
             radius: size / 2.0 * 0.8,
         },
         sprite,
-        // Ship renders face UP, rotate 180° to face DOWN
+        // Match regular enemies: corrected hull nose points down.
         transform: Transform::from_xyz(0.0, start_y, LAYER_ENEMIES)
-            .with_rotation(Quat::from_rotation_z(std::f32::consts::PI)),
+            .with_rotation(Quat::from_rotation_z(rotation)),
     });
 
     if let Some(spawner) = drone_spawner {

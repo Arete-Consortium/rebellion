@@ -2,8 +2,10 @@
 
 #![allow(dead_code)]
 
+use crate::core::KeyBindings;
 use crate::core::*;
 use crate::systems::JoystickState;
+use crate::ui::menu::common::*;
 use crate::ui::TransitionEvent;
 use bevy::prelude::*;
 
@@ -15,13 +17,25 @@ pub(crate) fn spawn_stage_complete(
     campaign: Res<CampaignState>,
     score: Res<ScoreSystem>,
     session: Res<GameSession>,
+    active: Res<crate::games::ActiveModule>,
+    ef: Res<crate::games::elder_fleet::ElderFleetCampaignState>,
+    bindings: Res<KeyBindings>,
+    transport: Option<Res<crate::games::elder_fleet::transport::TransportObjective>>,
 ) {
-    let mission_name = campaign
-        .current_mission()
-        .map(|m| m.name)
-        .unwrap_or("MISSION");
+    let mission_name = if active.is_elder_fleet() {
+        crate::games::elder_fleet::mission_info(&active, ef.current_mission.saturating_sub(1))
+            .map(|m| m.name)
+            .unwrap_or("MISSION")
+    } else {
+        campaign
+            .current_mission()
+            .map(|m| m.name)
+            .unwrap_or("MISSION")
+    };
 
-    let bonus_text = if campaign.bonus_complete {
+    let bonus_text = if active.is_elder_fleet() {
+        "ENEMY COMMANDER DEFEATED"
+    } else if campaign.bonus_complete {
         "BONUS OBJECTIVE COMPLETE!"
     } else if let Some(m) = campaign.current_mission() {
         m.bonus_objective.unwrap_or("")
@@ -30,7 +44,11 @@ pub(crate) fn spawn_stage_complete(
     };
 
     // Check if any ships were unlocked by completing this stage
-    let completed_stage = campaign.stage_number();
+    let completed_stage = if active.is_elder_fleet() {
+        ef.current_mission
+    } else {
+        campaign.stage_number()
+    };
     let ships = session.player_ships();
     let unlocked_ships: Vec<&str> = ships
         .iter()
@@ -88,7 +106,18 @@ pub(crate) fn spawn_stage_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("Souls Liberated: {}", campaign.mission_souls)),
+                Text::new(if active.is_elder_fleet() {
+                    transport
+                        .as_deref()
+                        .filter(|t| {
+                            t.phase == crate::games::elder_fleet::transport::TransportPhase::Secured
+                        })
+                        .map(|t| t.success_label())
+                        .unwrap_or("Sector secured")
+                        .to_string()
+                } else {
+                    format!("Souls Liberated: {}", campaign.mission_souls)
+                }),
                 TextFont {
                     font_size: 20.0,
                     ..default()
@@ -97,7 +126,11 @@ pub(crate) fn spawn_stage_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("Time: {:.1}s", campaign.mission_timer)),
+                Text::new(if active.is_elder_fleet() {
+                    format!("Mission {} complete", completed_stage)
+                } else {
+                    format!("Time: {:.1}s", campaign.mission_timer)
+                }),
                 TextFont {
                     font_size: 18.0,
                     ..default()
@@ -176,9 +209,11 @@ pub(crate) fn spawn_stage_complete(
                 ..default()
             });
 
-            // Continue prompt
+            // Clickable continue action uses the same navigation event path.
             parent.spawn((
-                Text::new("A Continue  •  B Quit"),
+                MenuItem { index: 0 },
+                Interaction::default(),
+                Text::new(menu_hint(&bindings, "Continue", "Main menu")),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -190,14 +225,24 @@ pub(crate) fn spawn_stage_complete(
 
 pub(crate) fn stage_complete_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut campaign: ResMut<CampaignState>,
+    active: Res<crate::games::ActiveModule>,
+    ef: Res<crate::games::elder_fleet::ElderFleetCampaignState>,
     mut transitions: EventWriter<TransitionEvent>,
 ) {
-    if keyboard.just_pressed(KeyCode::Space)
-        || keyboard.just_pressed(KeyCode::Enter)
-        || joystick.confirm()
-    {
+    if is_confirm(&keyboard, &joystick, &bindings) {
+        if active.is_elder_fleet() {
+            transitions.send(TransitionEvent::to(
+                if ef.current_mission < ef.total_missions() {
+                    GameState::MissionBriefing
+                } else {
+                    GameState::Victory
+                },
+            ));
+            return;
+        }
         // Advance to next mission
         if campaign.complete_mission() {
             // More missions available
@@ -208,7 +253,7 @@ pub(crate) fn stage_complete_input(
         }
     }
 
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         transitions.send(TransitionEvent::to(GameState::MainMenu));
     }
 }

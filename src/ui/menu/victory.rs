@@ -363,6 +363,7 @@ pub(crate) fn update_victory_particles(
 
 pub(crate) fn victory_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<VictorySelection>,
     mut score: ResMut<ScoreSystem>,
@@ -370,24 +371,15 @@ pub(crate) fn victory_input(
     mut transitions: EventWriter<TransitionEvent>,
 ) {
     // Navigation (left/right for button selection)
-    if keyboard.just_pressed(KeyCode::ArrowLeft)
-        || keyboard.just_pressed(KeyCode::KeyA)
-        || joystick.dpad_x < 0
-    {
+    if bindings.just_pressed(Action::MenuLeft, &keyboard, &joystick) || joystick.dpad_x < 0 {
         selection.selected = VictoryAction::PlayAgain;
     }
-    if keyboard.just_pressed(KeyCode::ArrowRight)
-        || keyboard.just_pressed(KeyCode::KeyD)
-        || joystick.dpad_x > 0
-    {
+    if bindings.just_pressed(Action::MenuRight, &keyboard, &joystick) || joystick.dpad_x > 0 {
         selection.selected = VictoryAction::MainMenu;
     }
 
     // Confirm selection
-    if keyboard.just_pressed(KeyCode::Space)
-        || keyboard.just_pressed(KeyCode::Enter)
-        || joystick.confirm()
-    {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         match selection.selected {
             VictoryAction::PlayAgain => {
                 score.reset_game();
@@ -403,7 +395,7 @@ pub(crate) fn victory_input(
     }
 
     // Quick exit to menu
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         score.reset_game();
         *campaign = CampaignState::default();
         transitions.send(TransitionEvent::slow(GameState::MainMenu));

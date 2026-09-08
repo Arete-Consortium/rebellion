@@ -3,12 +3,14 @@
 //! Layout and construction of the HUD UI tree.
 
 use super::common::*;
+use crate::{assets::PowerupIconCache, core::CollectibleType};
 use bevy::prelude::*;
 
 pub fn spawn_hud(
     mut commands: Commands,
     mobile: Res<crate::systems::touch_joystick::MobileMode>,
     itch_mode: Res<crate::core::ItchMode>,
+    icon_cache: Option<Res<PowerupIconCache>>,
 ) {
     commands
         .spawn((
@@ -70,6 +72,10 @@ pub fn spawn_hud(
                         if !itch_mode.enabled {
                             left.spawn((
                                 ObjectiveText,
+                                Node {
+                                    max_width: Val::Px(360.0),
+                                    ..default()
+                                },
                                 Text::new(""),
                                 TextFont {
                                     font_size: 12.0,
@@ -249,24 +255,24 @@ pub fn spawn_hud(
                             indicators,
                             PowerupType::Overdrive,
                             "OVERDRIVE",
-                            Color::srgb(0.3, 0.9, 1.0),
-                            5.0, // max duration
+                            PowerupType::Overdrive.color(),
+                            icon_cache.as_deref(),
                         );
                         // Damage boost status box (red/orange)
                         spawn_powerup_status_box(
                             indicators,
                             PowerupType::DamageBoost,
                             "DAMAGE x2",
-                            Color::srgb(1.0, 0.4, 0.2),
-                            10.0, // max duration
+                            PowerupType::DamageBoost.color(),
+                            icon_cache.as_deref(),
                         );
                         // Invulnerability status box (gold/white)
                         spawn_powerup_status_box(
                             indicators,
                             PowerupType::Invulnerability,
                             "INVULN",
-                            Color::srgb(1.0, 0.9, 0.4),
-                            3.0, // max duration
+                            PowerupType::Invulnerability.color(),
+                            icon_cache.as_deref(),
                         );
                     });
             }
@@ -275,7 +281,8 @@ pub fn spawn_hud(
             parent
                 .spawn(Node {
                     width: Val::Percent(100.0),
-                    height: Val::Px(80.0),
+                    height: Val::Auto,
+                    flex_shrink: 0.0,
                     flex_direction: FlexDirection::Row,
                     justify_content: JustifyContent::SpaceBetween,
                     padding: UiRect::all(Val::Px(10.0)),
@@ -697,8 +704,13 @@ pub fn spawn_powerup_status_box(
     powerup_type: PowerupType,
     label: &str,
     color: Color,
-    _max_duration: f32,
+    icon_cache: Option<&PowerupIconCache>,
 ) {
+    let (collectible, item_name) = match powerup_type {
+        PowerupType::Overdrive => (CollectibleType::Overdrive, "OVERCLOCKER"),
+        PowerupType::DamageBoost => (CollectibleType::DamageBoost, "PYROLANCEA"),
+        PowerupType::Invulnerability => (CollectibleType::Invulnerability, "X-INSTINCT"),
+    };
     // Get the appropriate marker component based on type
     let (marker_overdrive, marker_damage, marker_invuln) = match powerup_type {
         PowerupType::Overdrive => (Some(OverdriveIndicator), None, None),
@@ -710,8 +722,9 @@ pub fn spawn_powerup_status_box(
     let mut container = parent.spawn((
         PowerupStatusBox { powerup_type },
         Node {
-            width: Val::Px(140.0),
-            height: Val::Px(36.0),
+            width: Val::Px(174.0),
+            height: Val::Px(50.0),
+            flex_shrink: 0.0,
             flex_direction: FlexDirection::Row,
             align_items: AlignItems::Center,
             padding: UiRect::all(Val::Px(4.0)),
@@ -735,16 +748,19 @@ pub fn spawn_powerup_status_box(
     }
 
     container.with_children(|box_parent| {
-        // Left: Icon placeholder (colored square)
-        box_parent.spawn((
-            Node {
-                width: Val::Px(24.0),
-                height: Val::Px(24.0),
-                ..default()
-            },
-            BackgroundColor(color),
-            BorderRadius::all(Val::Px(3.0)),
-        ));
+        // Use the same texture as the pickup. Headless fixtures can omit assets;
+        // the effect label still identifies the status in that case.
+        if let Some(icon) = icon_cache.and_then(|cache| cache.get(&collectible)) {
+            box_parent.spawn((
+                ImageNode::new(icon),
+                Node {
+                    width: Val::Px(32.0),
+                    height: Val::Px(32.0),
+                    flex_shrink: 0.0,
+                    ..default()
+                },
+            ));
+        }
 
         // Right: Label and timer bar
         box_parent
@@ -755,7 +771,15 @@ pub fn spawn_powerup_status_box(
                 ..default()
             })
             .with_children(|right| {
-                // Label text
+                right.spawn((
+                    Text::new(item_name),
+                    TextFont {
+                        font_size: 10.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.8, 0.83, 0.88)),
+                ));
+                // Keep the actual arcade effect visible beneath the item name.
                 right.spawn((
                     Text::new(label),
                     TextFont {

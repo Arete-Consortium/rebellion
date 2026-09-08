@@ -237,3 +237,100 @@ fn environment_stress_test_survives() {
         "all 100 stress-test asteroids should survive"
     );
 }
+
+/// A ship and an asteroid can overlap. Detection queues both contacts before
+/// resolution consumes the shot on the ship; terrain must respect that result.
+#[test]
+fn overlapping_ship_and_terrain_respect_projectile_lifetime_and_live_pierce() {
+    use rebellion::entities::environment::{EnvironmentCollider, EnvironmentScoreValue};
+    use rebellion::entities::{Enemy, EnemyStats, Pierce, PlayerProjectile, ProjectileDamage};
+    use rebellion::simulation::detect_collisions::{
+        detect_player_projectile_environment_hits, detect_player_projectile_hits,
+        update_spatial_grid,
+    };
+    use rebellion::simulation::resolve_damage::{
+        enrich_contacts, resolve_player_projectile_damage, resolve_projectile_environment_contacts,
+    };
+
+    for interaction in [
+        ProjectileInteraction::Damageable,
+        ProjectileInteraction::Absorb,
+    ] {
+        for pierce in [None, Some(0), Some(1), Some(2)] {
+            let mut app = build_headless_app();
+            let world = app.world_mut();
+            let enemy = world
+                .spawn((
+                    Enemy,
+                    EnemyStats {
+                        health: 100.0,
+                        max_health: 100.0,
+                        ..default()
+                    },
+                    Transform::default(),
+                ))
+                .id();
+            let terrain = world
+                .spawn((
+                    EnvironmentObject,
+                    EnvironmentCollider { radius: 20.0 },
+                    EnvironmentHealth {
+                        current: 100.0,
+                        maximum: 100.0,
+                    },
+                    EnvironmentScoreValue(10),
+                    interaction,
+                    Transform::default(),
+                ))
+                .id();
+            let shot = world
+                .spawn((
+                    PlayerProjectile,
+                    ProjectileDamage {
+                        damage: 10.0,
+                        crit_chance: 0.0,
+                        ..default()
+                    },
+                    Transform::default(),
+                ))
+                .id();
+            if let Some(count) = pierce {
+                world.entity_mut(shot).insert(Pierce(count));
+            }
+            let mut schedule = Schedule::default();
+            // Actual production phase order, including deferred despawns.
+            schedule.add_systems(
+                (
+                    update_spatial_grid,
+                    detect_player_projectile_hits,
+                    detect_player_projectile_environment_hits,
+                    enrich_contacts,
+                    resolve_player_projectile_damage,
+                    resolve_projectile_environment_contacts,
+                )
+                    .chain(),
+            );
+            schedule.run(world);
+            assert!(world.get::<EnemyStats>(enemy).unwrap().health < 100.0);
+            let reached_terrain = pierce.is_some_and(|count| count > 0);
+            let damages_terrain =
+                reached_terrain && interaction == ProjectileInteraction::Damageable;
+            assert_eq!(
+                world.get::<EnvironmentHealth>(terrain).unwrap().current,
+                if damages_terrain { 90.0 } else { 100.0 }
+            );
+            if damages_terrain && pierce == Some(2) {
+                assert_eq!(
+                    world.get::<Pierce>(shot).unwrap().0,
+                    0,
+                    "both contacts must consume their own pierce charge"
+                );
+            } else {
+                assert!(
+                    world.get_entity(shot).is_err(),
+                    "spent shot must stay consumed"
+                );
+            }
+        }
+    }
+}

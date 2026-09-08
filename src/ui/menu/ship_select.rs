@@ -15,17 +15,16 @@ pub(crate) struct ShipMenuRoot;
 #[derive(Component)]
 pub(crate) struct ShipDetailPanel;
 
-/// Marker for ship detail text elements
+/// All mutable detail text is updated through one query, keeping values and
+/// labels tied to the same selected hull without overlapping Text queries.
 #[derive(Component)]
-pub(crate) struct ShipDetailName;
-#[derive(Component)]
-pub(crate) struct ShipDetailClass;
-#[derive(Component)]
-pub(crate) struct ShipDetailRole;
-#[derive(Component)]
-pub(crate) struct ShipDetailSpecial;
-#[derive(Component)]
-pub(crate) struct ShipDetailWeapon;
+pub(crate) enum ShipDetailText {
+    Name,
+    Class,
+    Role,
+    Special,
+    Stat(StatType),
+}
 /// Preview image node that shows the selected hull's sprite.
 #[derive(Component)]
 pub(crate) struct ShipDetailSprite;
@@ -46,6 +45,7 @@ pub(crate) fn spawn_ship_menu(
     mut commands: Commands,
     mut selection: ResMut<MenuSelection>,
     difficulty: Res<Difficulty>,
+    bindings: Res<KeyBindings>,
     session: Res<GameSession>,
     save_data: Res<crate::core::SaveData>,
     sprite_cache: Res<crate::assets::ShipSpriteCache>,
@@ -56,7 +56,9 @@ pub(crate) fn spawn_ship_menu(
     let enemy = session.enemy_faction;
     let faction_color = faction.primary_color();
 
-    selection.index = 0;
+    selection.index = session
+        .selected_ship_index
+        .min(ships.len().saturating_sub(1));
     selection.total = ships.len();
 
     // Calculate stat ranges for normalization
@@ -75,7 +77,7 @@ pub(crate) fn spawn_ship_menu(
                 align_items: AlignItems::Center,
                 flex_direction: FlexDirection::Column,
                 row_gap: Val::Px(20.0),
-                padding: UiRect::all(Val::Px(40.0)),
+                padding: UiRect::all(Val::Px(24.0)),
                 ..default()
             },
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.5)),
@@ -131,13 +133,13 @@ pub(crate) fn spawn_ship_menu(
                     if !mobile_active {
                         spawn_ship_detail_panel(
                             content,
-                            &ships[0],
+                            &ships[selection.index],
                             faction_color,
                             max_speed,
                             max_damage,
                             max_health,
                             max_fire_rate,
-                            sprite_cache.get(ships[0].type_id),
+                            sprite_cache.get(ships[selection.index].type_id),
                         );
                     }
 
@@ -172,7 +174,7 @@ pub(crate) fn spawn_ship_menu(
             // immediately after ship selection. The wording names
             // the actual transition (ShipSelect → MissionBriefing).
             parent.spawn((
-                Text::new("↑↓ Navigate  •  A / Enter: Continue to Briefing  •  Esc Back"),
+                Text::new(menu_hint(&bindings, "Continue to Briefing", "Back")),
                 TextFont {
                     font_size: 12.0,
                     ..default()
@@ -209,7 +211,7 @@ fn spawn_ship_detail_panel(
         .with_children(|panel| {
             // Ship name (large)
             panel.spawn((
-                ShipDetailName,
+                ShipDetailText::Name,
                 Text::new(ship.name),
                 TextFont {
                     font_size: 32.0,
@@ -227,7 +229,7 @@ fn spawn_ship_detail_panel(
                 })
                 .with_children(|row| {
                     row.spawn((
-                        ShipDetailClass,
+                        ShipDetailText::Class,
                         Text::new(ship.class.name()),
                         TextFont {
                             font_size: 14.0,
@@ -244,7 +246,7 @@ fn spawn_ship_detail_panel(
                         TextColor(Color::srgb(0.6, 0.6, 0.6)),
                     ));
                     row.spawn((
-                        ShipDetailRole,
+                        ShipDetailText::Role,
                         Text::new(ship.role),
                         TextFont {
                             font_size: 14.0,
@@ -335,7 +337,7 @@ fn spawn_ship_detail_panel(
                         TextColor(Color::srgb(0.5, 0.5, 0.5)),
                     ));
                     special.spawn((
-                        ShipDetailSpecial,
+                        ShipDetailText::Special,
                         Text::new(ship.special),
                         TextFont {
                             font_size: 13.0,
@@ -351,7 +353,7 @@ fn spawn_ship_detail_panel(
                 .spawn((
                     Node {
                         width: Val::Percent(100.0),
-                        height: Val::Px(220.0),
+                        height: Val::Px(180.0),
                         margin: UiRect::top(Val::Px(8.0)),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
@@ -368,8 +370,8 @@ fn spawn_ship_detail_panel(
                     frame.spawn((
                         ShipDetailSprite,
                         Node {
-                            width: Val::Px(200.0),
-                            height: Val::Px(200.0),
+                            width: Val::Px(160.0),
+                            height: Val::Px(160.0),
                             ..default()
                         },
                         image_node,
@@ -413,6 +415,7 @@ fn spawn_stat_bar(
                     TextColor(color),
                 ));
                 row.spawn((
+                    ShipDetailText::Stat(stat_type),
                     Text::new(format!("{:.0}", value)),
                     TextFont {
                         font_size: 12.0,
@@ -561,47 +564,15 @@ fn spawn_ship_list_item(
 pub(crate) fn update_ship_detail_panel(
     selection: Res<MenuSelection>,
     session: Res<GameSession>,
-    mut name_query: Query<
-        &mut Text,
-        (
-            With<ShipDetailName>,
-            Without<ShipDetailClass>,
-            Without<ShipDetailRole>,
-            Without<ShipDetailSpecial>,
-        ),
-    >,
-    mut class_query: Query<
-        &mut Text,
-        (
-            With<ShipDetailClass>,
-            Without<ShipDetailName>,
-            Without<ShipDetailRole>,
-            Without<ShipDetailSpecial>,
-        ),
-    >,
-    mut role_query: Query<
-        &mut Text,
-        (
-            With<ShipDetailRole>,
-            Without<ShipDetailName>,
-            Without<ShipDetailClass>,
-            Without<ShipDetailSpecial>,
-        ),
-    >,
-    mut special_query: Query<
-        &mut Text,
-        (
-            With<ShipDetailSpecial>,
-            Without<ShipDetailName>,
-            Without<ShipDetailClass>,
-            Without<ShipDetailRole>,
-        ),
-    >,
+    mut detail_text: Query<(&ShipDetailText, &mut Text)>,
     mut stat_bars: Query<(&StatBarFill, &mut Node)>,
-    mut sprite_query: Query<&mut ImageNode, With<ShipDetailSprite>>,
+    mut sprite_query: Query<
+        (&mut ImageNode, &mut Transform, &mut Visibility),
+        With<ShipDetailSprite>,
+    >,
     sprite_cache: Res<crate::assets::ShipSpriteCache>,
 ) {
-    if !selection.is_changed() {
+    if !selection.is_changed() && !session.is_changed() && !sprite_cache.is_changed() {
         return;
     }
 
@@ -618,18 +589,22 @@ pub(crate) fn update_ship_detail_panel(
     let max_health = ships.iter().map(|s| s.health).fold(0.0_f32, f32::max);
     let max_fire_rate = ships.iter().map(|s| s.fire_rate).fold(0.0_f32, f32::max);
 
-    // Update text fields
-    for mut text in name_query.iter_mut() {
-        **text = ship.name.to_string();
-    }
-    for mut text in class_query.iter_mut() {
-        **text = ship.class.name().to_string();
-    }
-    for mut text in role_query.iter_mut() {
-        **text = ship.role.to_string();
-    }
-    for mut text in special_query.iter_mut() {
-        **text = ship.special.to_string();
+    for (field, mut text) in &mut detail_text {
+        **text = match field {
+            ShipDetailText::Name => ship.name.into(),
+            ShipDetailText::Class => ship.class.name().into(),
+            ShipDetailText::Role => ship.role.into(),
+            ShipDetailText::Special => ship.special.into(),
+            ShipDetailText::Stat(stat) => format!(
+                "{:.0}",
+                match stat {
+                    StatType::Speed => ship.speed,
+                    StatType::Damage => ship.damage,
+                    StatType::Health => ship.health,
+                    StatType::FireRate => ship.fire_rate,
+                }
+            ),
+        };
     }
 
     // Update stat bars
@@ -644,16 +619,25 @@ pub(crate) fn update_ship_detail_panel(
         node.width = Val::Percent(percent);
     }
 
-    // Swap preview sprite to the newly-selected hull.
-    if let Some(handle) = sprite_cache.get(ship.type_id) {
-        for mut image_node in sprite_query.iter_mut() {
-            image_node.image = handle.clone();
-        }
+    // Clear a missing preview instead of displaying the previously selected hull.
+    for (mut image_node, mut transform, mut visibility) in &mut sprite_query {
+        let handle = sprite_cache.get(ship.type_id);
+        *visibility = if handle.is_some() {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
+        image_node.image = handle.unwrap_or_default();
+        // UI projection has a downward-positive Y axis, opposite the game world.
+        transform.rotation = Quat::from_rotation_z(
+            -crate::entities::enemy::get_ship_rotation_correction(ship.type_id),
+        );
     }
 }
 
 pub(crate) fn ship_menu_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<MenuSelection>,
     mut session: ResMut<GameSession>,
@@ -663,7 +647,7 @@ pub(crate) fn ship_menu_input(
 ) {
     selection.cooldown -= time.delta_secs();
 
-    let nav = get_nav_input(&keyboard, &joystick);
+    let nav = get_nav_input(&keyboard, &joystick, &bindings);
     if nav != 0 && selection.cooldown <= 0.0 {
         selection.index =
             (selection.index as i32 + nav).rem_euclid(selection.total as i32) as usize;
@@ -674,7 +658,7 @@ pub(crate) fn ship_menu_input(
     let faction = session.player_faction;
     let enemy = session.enemy_faction;
 
-    if is_confirm(&keyboard, &joystick) && selection.index < ships.len() {
+    if is_confirm(&keyboard, &joystick, &bindings) && selection.index < ships.len() {
         let ship = &ships[selection.index];
         let is_unlocked = save_data.is_ship_unlocked(
             ship.type_id,
@@ -696,7 +680,65 @@ pub(crate) fn ship_menu_input(
         }
     }
 
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         transitions.send(TransitionEvent::quick(GameState::DifficultySelect));
+    }
+}
+
+#[cfg(test)]
+mod detail_tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn preview_and_numeric_stats_follow_selection_and_late_assets() {
+        let mut app = crate::app_builder::build_headless_app();
+        app.init_resource::<MenuSelection>();
+        app.init_resource::<crate::systems::touch_joystick::MobileMode>();
+        let world = app.world_mut();
+        *world.resource_mut::<GameSession>() = GameSession::new(Faction::Minmatar, Faction::Amarr);
+        let first = Handle::<Image>::weak_from_u128(1);
+        world
+            .resource_mut::<crate::assets::ShipSpriteCache>()
+            .sprites
+            .insert(587, first.clone());
+        world.run_system_once(spawn_ship_menu).unwrap();
+        let mut update = Schedule::default();
+        update.add_systems(update_ship_detail_panel);
+        update.run(world);
+        world.resource_mut::<MenuSelection>().index = 1;
+        update.run(world);
+        let ship = world.resource::<GameSession>().player_ships()[1];
+        let (_, image, visibility) = world
+            .query_filtered::<(&ShipDetailSprite, &ImageNode, &Visibility), With<ShipDetailSprite>>(
+            )
+            .single(world);
+        assert_ne!(
+            image.image, first,
+            "missing sprite must not retain the last hull"
+        );
+        assert_eq!(*visibility, Visibility::Hidden);
+        for (field, text) in world.query::<(&ShipDetailText, &Text)>().iter(world) {
+            if let ShipDetailText::Stat(StatType::Speed) = field {
+                assert_eq!(text.0, format!("{:.0}", ship.speed));
+            }
+        }
+        let second = Handle::<Image>::weak_from_u128(2);
+        world
+            .resource_mut::<crate::assets::ShipSpriteCache>()
+            .sprites
+            .insert(ship.type_id, second.clone());
+        update.run(world);
+        let (image, transform, visibility) = world
+            .query_filtered::<(&ImageNode, &Transform, &Visibility), With<ShipDetailSprite>>()
+            .single(world);
+        assert_eq!(image.image, second);
+        assert_eq!(*visibility, Visibility::Inherited);
+        assert!(transform.rotation.abs_diff_eq(
+            Quat::from_rotation_z(-crate::entities::enemy::get_ship_rotation_correction(
+                ship.type_id
+            )),
+            0.0001
+        ));
     }
 }

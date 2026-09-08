@@ -14,6 +14,9 @@ pub struct BackgroundPlugin;
 
 impl Plugin for BackgroundPlugin {
     fn build(&self, app: &mut App) {
+        for destination in crate::core::NON_COMBAT_STATES {
+            app.add_systems(OnEnter(destination), despawn_starfield);
+        }
         app.init_resource::<BackgroundAssets>()
             .init_resource::<StarfieldConfig>()
             .init_resource::<BackgroundShipConfig>()
@@ -28,20 +31,23 @@ impl Plugin for BackgroundPlugin {
             .add_systems(OnExit(GameState::ShipSelect), despawn_menu_background)
             .add_systems(OnExit(GameState::Loading), despawn_menu_background)
             // Starfield for gameplay
-            .add_systems(OnEnter(GameState::Playing), spawn_starfield)
+            .add_systems(
+                OnEnter(GameState::Playing),
+                spawn_starfield.run_if(not_resuming_gameplay),
+            )
             .add_systems(
                 Update,
                 (
                     update_starfield,
                     update_background_ship_spawning,
                     update_background_ships,
+                    update_distant_battle,
                 )
                     .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             )
             .add_systems(
-                OnExit(GameState::Playing),
-                despawn_starfield
-                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+                OnExit(GameState::Paused),
+                despawn_starfield.run_if(not_resuming_gameplay),
             );
     }
 }
@@ -117,8 +123,8 @@ impl Default for BackgroundShipConfig {
     fn default() -> Self {
         Self {
             max_ships: 8,
-            spawn_interval: 120, // ~2 seconds at 60fps
-            spawn_chance: 0.5,
+            spawn_interval: 60, // ~2 seconds at 60fps
+            spawn_chance: 0.85,
         }
     }
 }
@@ -126,7 +132,7 @@ impl Default for BackgroundShipConfig {
 /// Spawn timer for background ships
 #[derive(Resource, Default)]
 pub struct BackgroundShipSpawnTimer {
-    pub frames: u32,
+    pub elapsed: f32,
 }
 
 /// Ship class for background ships (affects size)
@@ -530,217 +536,117 @@ fn despawn_starfield(mut commands: Commands, stars: Query<Entity, With<Starfield
 // =============================================================================
 
 /// Spawn a new background ship
-fn spawn_background_ship(commands: &mut Commands, window: &Window) {
+fn spawn_background_ship(
+    commands: &mut Commands,
+    window: &Window,
+    session: &GameSession,
+    sprites: &crate::assets::ShipSpriteCache,
+) {
     let mut rng = rand::thread_rng();
-
-    let faction = BackgroundShipFaction::random();
-    let ship_class = BackgroundShipClass::random();
-
-    // Distance affects size and alpha
-    let distance = rng.gen_range(0.3..0.8);
-    let size = ship_class.base_size() * distance;
-    let alpha = 0.25 + distance * 0.5; // 0.25-0.65 range
-
-    let half_width = window.width() / 2.0;
-    let half_height = window.height() / 2.0;
-
-    // Starting position based on faction
-    let (x, vx) = if faction.flies_right() {
-        // Minmatar: start left, fly right
-        let x = -half_width - size;
-        let vx = rng.gen_range(0.8..1.5) * distance * 60.0; // pixels/sec
-        (x, vx)
+    // Direction describes the two battle lines; hull and weapon colours come
+    // from the selected conflict, including Caldari/Gallente.
+    let direction = BackgroundShipFaction::random();
+    let allied = direction.flies_right();
+    let faction = if allied {
+        session.player_faction
     } else {
-        // Amarr: start right, fly left
-        let x = half_width + size;
-        let vx = rng.gen_range(-1.5..-0.8) * distance * 60.0;
-        (x, vx)
+        session.enemy_faction
     };
-
-    let y = rng.gen_range(-half_height + 50.0..half_height - 50.0);
-    let vy = rng.gen_range(-0.15..0.15) * 60.0;
-
-    let ship = BackgroundShip {
-        faction,
-        ship_class,
-        distance,
-        size,
-        alpha,
-        velocity: Vec2::new(vx, vy),
-        engine_phase: rng.gen_range(0.0..TAU),
+    let roster = faction.player_ships();
+    let type_id = roster[fastrand::usize(..3.min(roster.len()))].type_id;
+    let Some(image) = sprites.get(type_id) else {
+        return;
     };
+    let distance = rng.gen_range(0.3..0.65);
+    let size = 55.0 * distance;
+    let x = (window.width() / 2.0 + size) * if allied { -1.0 } else { 1.0 };
+    let y = rng.gen_range(-window.height() / 2.0 + 50.0..window.height() / 2.0 - 50.0);
+    let vx = if allied { 45.0 } else { -45.0 };
+    let facing = if allied {
+        -std::f32::consts::FRAC_PI_2
+    } else {
+        std::f32::consts::FRAC_PI_2
+    };
+    commands.spawn((
+        BackgroundShip {
+            faction: direction,
+            ship_class: BackgroundShipClass::Frigate,
+            distance,
+            size,
+            alpha: 0.35,
+            velocity: Vec2::new(vx, -10.0),
+            engine_phase: 0.0,
+        },
+        Starfield,
+        Sprite {
+            image,
+            color: Color::srgba(0.7, 0.75, 0.85, 0.35),
+            custom_size: Some(Vec2::splat(size)),
+            ..default()
+        },
+        Transform::from_xyz(x, y, -90.0).with_rotation(Quat::from_rotation_z(
+            facing + crate::entities::get_ship_rotation_correction(type_id),
+        )),
+    ));
+    // Distant exchanges stay behind the carrier and have no collision or score.
+    commands.spawn((
+        DistantBattleFire {
+            velocity: Vec2::new(vx * 6.0, -16.0),
+            remaining: 4.0,
+        },
+        Starfield,
+        Sprite {
+            color: faction.primary_color().with_alpha(0.25),
+            custom_size: Some(Vec2::new(18.0, 1.2)),
+            ..default()
+        },
+        Transform::from_xyz(x, y, -85.0),
+    ));
+}
 
-    // Ship dimensions
-    let ship_width = size;
-    let ship_height = size * 0.35;
+#[derive(Component)]
+struct DistantBattleFire {
+    velocity: Vec2,
+    remaining: f32,
+}
 
-    // Create hull color with transparency
-    let hull_color = faction.hull_color();
-    let hull_rgba = hull_color.to_srgba();
-    let color_with_alpha = Color::srgba(hull_rgba.red, hull_rgba.green, hull_rgba.blue, alpha);
-
-    // Engine glow color
-    let engine_color = faction.engine_color();
-    let engine_rgba = engine_color.to_srgba();
-    let engine_glow = Color::srgba(
-        engine_rgba.red,
-        engine_rgba.green,
-        engine_rgba.blue,
-        alpha * 0.8,
-    );
-
-    // Direction multiplier for nose/engine position
-    let dir = if faction.flies_right() { 1.0 } else { -1.0 };
-
-    // Spawn ship as parent with children for detailed silhouette
-    commands
-        .spawn((
-            ship,
-            Starfield, // Use same marker for cleanup
-            Transform::from_xyz(x, y, -98.0),
-            Visibility::default(),
-        ))
-        .with_children(|parent| {
-            // Main hull body (center mass)
-            parent.spawn((
-                BackgroundShipHull,
-                Sprite {
-                    color: color_with_alpha,
-                    custom_size: Some(Vec2::new(ship_width * 0.65, ship_height)),
-                    ..default()
-                },
-                Transform::from_xyz(0.0, 0.0, 0.0),
-            ));
-
-            // Nose section (pointed front)
-            let nose_width = match ship_class {
-                BackgroundShipClass::Frigate => ship_width * 0.35,
-                BackgroundShipClass::Cruiser => ship_width * 0.38,
-                BackgroundShipClass::Battleship => ship_width * 0.4,
-            };
-            let nose_height = match ship_class {
-                BackgroundShipClass::Frigate => ship_height * 0.6,
-                BackgroundShipClass::Cruiser => ship_height * 0.7,
-                BackgroundShipClass::Battleship => ship_height * 0.65,
-            };
-
-            parent.spawn((
-                Sprite {
-                    color: color_with_alpha,
-                    custom_size: Some(Vec2::new(nose_width, nose_height)),
-                    ..default()
-                },
-                Transform::from_xyz(ship_width * 0.4 * dir, 0.0, 0.01)
-                    .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4 * dir)),
-            ));
-
-            // Engine block (rear section)
-            let engine_width = ship_width * 0.2;
-            let engine_height = ship_height * 0.8;
-
-            parent.spawn((
-                Sprite {
-                    color: color_with_alpha,
-                    custom_size: Some(Vec2::new(engine_width, engine_height)),
-                    ..default()
-                },
-                Transform::from_xyz(-ship_width * 0.38 * dir, 0.0, 0.01),
-            ));
-
-            // Engine glow (bright spot at rear)
-            parent.spawn((
-                BackgroundShipEngine,
-                Sprite {
-                    color: engine_glow,
-                    custom_size: Some(Vec2::new(engine_width * 0.6, engine_height * 0.5)),
-                    ..default()
-                },
-                Transform::from_xyz(-ship_width * 0.48 * dir, 0.0, 0.02),
-            ));
-
-            // Add wing/fin for cruisers and battleships
-            if matches!(
-                ship_class,
-                BackgroundShipClass::Cruiser | BackgroundShipClass::Battleship
-            ) {
-                let fin_width = ship_width * 0.15;
-                let fin_height = ship_height * 1.3;
-
-                // Upper fin
-                parent.spawn((
-                    Sprite {
-                        color: color_with_alpha.with_alpha(alpha * 0.8),
-                        custom_size: Some(Vec2::new(fin_width, fin_height * 0.4)),
-                        ..default()
-                    },
-                    Transform::from_xyz(-ship_width * 0.1 * dir, ship_height * 0.5, 0.0),
-                ));
-
-                // Lower fin
-                parent.spawn((
-                    Sprite {
-                        color: color_with_alpha.with_alpha(alpha * 0.8),
-                        custom_size: Some(Vec2::new(fin_width, fin_height * 0.4)),
-                        ..default()
-                    },
-                    Transform::from_xyz(-ship_width * 0.1 * dir, -ship_height * 0.5, 0.0),
-                ));
-            }
-
-            // Add extra detail for battleships
-            if matches!(ship_class, BackgroundShipClass::Battleship) {
-                // Bridge/superstructure
-                parent.spawn((
-                    Sprite {
-                        color: color_with_alpha.with_alpha(alpha * 0.9),
-                        custom_size: Some(Vec2::new(ship_width * 0.12, ship_height * 0.3)),
-                        ..default()
-                    },
-                    Transform::from_xyz(ship_width * 0.1 * dir, ship_height * 0.35, 0.01),
-                ));
-
-                // Secondary engine glow
-                parent.spawn((
-                    BackgroundShipEngine,
-                    Sprite {
-                        color: engine_glow.with_alpha(alpha * 0.5),
-                        custom_size: Some(Vec2::new(engine_width * 0.4, engine_height * 0.3)),
-                        ..default()
-                    },
-                    Transform::from_xyz(-ship_width * 0.48 * dir, ship_height * 0.25, 0.02),
-                ));
-                parent.spawn((
-                    BackgroundShipEngine,
-                    Sprite {
-                        color: engine_glow.with_alpha(alpha * 0.5),
-                        custom_size: Some(Vec2::new(engine_width * 0.4, engine_height * 0.3)),
-                        ..default()
-                    },
-                    Transform::from_xyz(-ship_width * 0.48 * dir, -ship_height * 0.25, 0.02),
-                ));
-            }
-        });
+fn update_distant_battle(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut fire: Query<(Entity, &mut Transform, &mut DistantBattleFire)>,
+) {
+    for (entity, mut transform, mut bolt) in &mut fire {
+        bolt.remaining -= time.delta_secs();
+        if bolt.remaining <= 0.0 {
+            commands.entity(entity).despawn();
+            continue;
+        }
+        transform.translation += (bolt.velocity * time.delta_secs()).extend(0.0);
+    }
 }
 
 /// Update background ship spawn timer and spawn new ships
 fn update_background_ship_spawning(
     mut commands: Commands,
     mut timer: ResMut<BackgroundShipSpawnTimer>,
+    time: Res<Time>,
+    session: Res<GameSession>,
+    sprites: Res<crate::assets::ShipSpriteCache>,
     config: Res<BackgroundShipConfig>,
     ships: Query<&BackgroundShip>,
     windows: Query<&Window>,
 ) {
-    timer.frames += 1;
+    timer.elapsed += time.delta_secs();
 
-    if timer.frames >= config.spawn_interval {
-        timer.frames = 0;
+    if timer.elapsed >= config.spawn_interval as f32 / 60.0 {
+        timer.elapsed = 0.0;
 
         // Check if we can spawn more
         if ships.iter().count() < config.max_ships {
             // Random chance to actually spawn
             if fastrand::f32() < config.spawn_chance {
                 if let Ok(window) = windows.get_single() {
-                    spawn_background_ship(&mut commands, window);
+                    spawn_background_ship(&mut commands, window, &session, &sprites);
                 }
             }
         }

@@ -14,14 +14,19 @@ pub(super) fn enemy_movement(
     time: Res<Time>,
     player_tracker: Res<PlayerTracker>,
     mut query: Query<
-        (&mut Transform, &EnemyStats, &mut EnemyAI),
+        (
+            &mut Transform,
+            &EnemyStats,
+            &mut EnemyAI,
+            Option<&EnemySpriteRotation>,
+        ),
         (With<Enemy>, Without<crate::entities::Player>),
     >,
 ) {
     let dt = time.delta_secs();
     let player_pos = player_tracker.position;
 
-    for (mut transform, stats, mut ai) in query.iter_mut() {
+    for (mut transform, stats, mut ai, sprite_rotation) in query.iter_mut() {
         ai.timer += dt;
         let pos = transform.translation.truncate();
 
@@ -108,7 +113,9 @@ pub(super) fn enemy_movement(
 
         // Slight tilt based on horizontal movement (visual effect only)
         let tilt = (total_velocity.x / stats.speed.max(1.0)).clamp(-1.0, 1.0) * 0.2;
-        transform.rotation = Quat::from_rotation_z(tilt);
+        if let Some(base) = sprite_rotation {
+            transform.rotation = Quat::from_rotation_z(base.0 + tilt);
+        }
     }
 }
 
@@ -118,13 +125,22 @@ pub(super) fn enemy_shooting(
     mut commands: Commands,
     time: Res<Time>,
     player_tracker: Res<PlayerTracker>,
-    mut query: Query<(&Transform, &mut EnemyWeapon, &EnemyAI), With<Enemy>>,
+    mut query: Query<
+        (
+            &Transform,
+            &mut EnemyWeapon,
+            &EnemyAI,
+            Option<&crate::entities::escort::EscortAttacker>,
+        ),
+        With<Enemy>,
+    >,
+    escorts: Query<(&Transform, &crate::entities::EscortData), With<crate::entities::Friendly>>,
 ) {
     let dt = time.delta_secs();
     let player_pos = player_tracker.position;
     let player_vel = player_tracker.velocity;
 
-    for (transform, mut weapon, ai) in query.iter_mut() {
+    for (transform, mut weapon, ai, escort_target) in query.iter_mut() {
         if !ai.active {
             continue;
         }
@@ -139,7 +155,11 @@ pub(super) fn enemy_shooting(
             let accuracy = ai.behavior.aim_accuracy();
             let distance = (player_pos - pos).length();
             let flight_time = distance / weapon.bullet_speed.max(1.0);
-            let predicted_pos = player_pos + player_vel * flight_time * accuracy;
+            let predicted_pos = escort_target
+                .and_then(|target| escorts.get(target.0).ok())
+                .filter(|(_, escort)| escort.health > 0.0 && !escort.reached_end)
+                .map(|(transform, _)| transform.translation.truncate())
+                .unwrap_or(player_pos + player_vel * flight_time * accuracy);
 
             let dir = (predicted_pos - pos).normalize_or_zero();
 
@@ -329,5 +349,62 @@ pub(super) fn update_enemy_ship_rotation(
         transform.rotation = transform
             .rotation
             .slerp(target_rotation, (model_rot.smoothing * dt).min(1.0));
+    }
+}
+
+#[cfg(test)]
+mod sprite_rotation_tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn moving_sprite_keeps_its_spawn_facing_and_models_keep_their_rotation() {
+        let mut app = crate::app_builder::build_headless_app();
+        app.world_mut()
+            .run_system_once(|mut commands: Commands| {
+                for type_id in [587, 602, 593, 638] {
+                    super::super::spawn_enemy(
+                        &mut commands,
+                        type_id,
+                        Vec2::new(0.0, 200.0),
+                        EnemyBehavior::Linear,
+                        Some(Handle::weak_from_u128(1)),
+                        None,
+                    );
+                }
+            })
+            .unwrap();
+        let world = app.world_mut();
+        let before: Vec<_> = world
+            .query_filtered::<(Entity, &Transform), With<Enemy>>()
+            .iter(world)
+            .map(|(entity, t)| (entity, t.rotation))
+            .collect();
+        // An entity without sprite banking metadata must not have its model
+        // rotation overwritten by the 2D movement effect.
+        let model_rotation = Quat::from_rotation_x(0.7);
+        let model = world
+            .spawn((
+                Enemy,
+                EnemyStats::default(),
+                EnemyAI::default(),
+                Transform::default().with_rotation(model_rotation),
+            ))
+            .id();
+        world
+            .resource_mut::<Time>()
+            .advance_by(std::time::Duration::from_secs_f32(1.0 / 60.0));
+        for _ in 0..3 {
+            world.run_system_once(enemy_movement).unwrap();
+        }
+        for (entity, rotation) in before {
+            let current = world.get::<Transform>(entity).unwrap();
+            assert!(current.translation.y < 200.0);
+            assert!(current.rotation.abs_diff_eq(rotation, 0.0001));
+        }
+        assert_eq!(
+            world.get::<Transform>(model).unwrap().rotation,
+            model_rotation
+        );
     }
 }

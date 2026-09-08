@@ -3,7 +3,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use bevy::ecs::world::World;
 use bevy::math::Vec2;
 
-use rebellion::core::{ScoreSystem, StyleGrade};
+use rebellion::core::{ScoreSystem, StyleGrade, SCREEN_HEIGHT, SCREEN_WIDTH};
 use rebellion::systems::collision::SpatialGrid;
 use rebellion::systems::scoring_v2::{ComboHeatSystem, HeatLevel};
 
@@ -20,29 +20,49 @@ fn bench_score_on_kill(c: &mut Criterion) {
 }
 
 fn bench_spatial_grid(c: &mut Criterion) {
-    c.bench_function("spatial_grid_insert_query_500", |b| {
-        let mut world = World::new();
-        let entities: Vec<_> = (0..500).map(|_| world.spawn_empty().id()).collect();
+    let mut world = World::new();
+    // Keep every enemy on screen; the old 16-column layout placed almost
+    // half of its 500 entries beyond the grid and silently dropped them.
+    let entries: Vec<_> = (0..500)
+        .map(|i| {
+            let x = ((i % 25) as f32 + 0.5) * SCREEN_WIDTH / 25.0 - SCREEN_WIDTH / 2.0;
+            let y = ((i / 25) as f32 + 0.5) * SCREEN_HEIGHT / 20.0 - SCREEN_HEIGHT / 2.0;
+            (world.spawn_empty().id(), Vec2::new(x, y))
+        })
+        .collect();
+    let query_positions: Vec<_> = entries.iter().map(|&(_, pos)| pos).collect();
+    let mut grid = SpatialGrid::new();
+    for &(entity, pos) in &entries {
+        grid.insert_enemy(entity, pos);
+    }
 
+    c.bench_function("spatial_grid_query_500_enemies_500_projectiles", |b| {
         b.iter(|| {
-            let mut grid = SpatialGrid::new();
-            // Insert 500 entities across the grid
-            for (i, &entity) in entities.iter().enumerate() {
-                let x = (i % 16) as f32 * 50.0 - 400.0;
-                let y = (i / 16) as f32 * 50.0 - 350.0;
-                grid.insert_enemy(entity, Vec2::new(x, y));
-            }
-            // Query from 10 positions
             let mut count = 0usize;
-            for j in 0..10 {
-                let qx = (j as f32 - 5.0) * 80.0;
-                count += grid
-                    .get_nearby_enemies(black_box(Vec2::new(qx, 0.0)))
-                    .count();
+            for &pos in &query_positions {
+                count += grid.get_nearby_enemies(black_box(pos)).count();
             }
-            count
+            black_box(count)
         });
     });
+
+    c.bench_function(
+        "spatial_grid_rebuild_query_500_enemies_500_projectiles",
+        |b| {
+            b.iter(|| {
+                // Production retains cell capacity and rebuilds contents each tick.
+                grid.clear();
+                for &(entity, pos) in &entries {
+                    grid.insert_enemy(entity, black_box(pos));
+                }
+                let mut count = 0usize;
+                for &pos in &query_positions {
+                    count += grid.get_nearby_enemies(black_box(pos)).count();
+                }
+                black_box(count)
+            });
+        },
+    );
 }
 
 fn bench_heat_classify(c: &mut Criterion) {

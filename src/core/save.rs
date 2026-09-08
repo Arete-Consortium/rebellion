@@ -10,7 +10,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 #[cfg(not(target_arch = "wasm32"))]
-use std::fs;
+mod native;
 #[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
 
@@ -179,21 +179,7 @@ impl SaveData {
     /// Load from disk (native)
     #[cfg(not(target_arch = "wasm32"))]
     pub fn load() -> Self {
-        let path = Self::save_path();
-        if path.exists() {
-            match fs::read_to_string(&path) {
-                Ok(data) => match serde_json::from_str(&data) {
-                    Ok(save) => {
-                        info!("Loaded save data from {:?}", path);
-                        return save;
-                    }
-                    Err(e) => warn!("Failed to parse save data: {}", e),
-                },
-                Err(e) => warn!("Failed to read save file: {}", e),
-            }
-        }
-        info!("No save data found, using defaults");
-        Self::default()
+        native::load(&Self::save_path())
     }
 
     /// Load from localStorage (WASM)
@@ -219,24 +205,11 @@ impl SaveData {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn save(&self) {
         let path = Self::save_path();
-
-        // Create directory if needed
-        if let Some(parent) = path.parent() {
-            if let Err(e) = fs::create_dir_all(parent) {
-                warn!("Failed to create save directory: {}", e);
-                return;
-            }
-        }
-
-        match serde_json::to_string_pretty(self) {
-            Ok(data) => {
-                if let Err(e) = fs::write(&path, data) {
-                    warn!("Failed to write save file: {}", e);
-                } else {
-                    info!("Saved progress to {:?}", path);
-                }
-            }
-            Err(e) => warn!("Failed to serialize save data: {}", e),
+        if let Err(error) = native::save(self, &path) {
+            warn!(
+                "Save transaction at {:?} was not confirmed: {}",
+                path, error
+            );
         }
     }
 

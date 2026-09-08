@@ -138,7 +138,7 @@ fn input_parity_keyboard_controller_mouse_touch() {
         "is_confirm must exist as the keyboard + controller confirm path"
     );
     assert!(
-        src_ship.contains("is_confirm(&keyboard, &joystick)"),
+        src_ship.contains("is_confirm(&keyboard, &joystick, &bindings)"),
         "ship_select must consume the keyboard + controller confirm path"
     );
 

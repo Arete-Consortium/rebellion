@@ -61,6 +61,13 @@ fn mission3_all_waves_spawn_bounded_enemies() {
 
     // Mission 3 has 5 waves. Spawn each and assert bounded counts.
     for wave in 1..=5 {
+        // Arm this wave's carrier arrival, then advance its real animation.
+        app.world_mut()
+            .run_system_once(rebellion::games::caldari_gallente::cg_campaign::spawn_cg_wave)
+            .unwrap();
+        for _ in 0..130 {
+            app.update();
+        }
         app.world_mut()
             .run_system_once(rebellion::games::caldari_gallente::cg_campaign::spawn_cg_wave)
             .expect("spawn_cg_wave should run");

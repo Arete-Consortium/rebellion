@@ -5,6 +5,7 @@
 #![allow(dead_code)]
 
 use bevy::prelude::*;
+use bevy::state::state::StateTransitionSteps;
 
 /// Main game state - controls which systems run and what's displayed
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -29,6 +30,96 @@ pub enum GameState {
     GameOver,
     Victory,
     Paused,
+}
+
+/// Destinations that must not retain a live combat scene. Pause and boss intro
+/// intentionally preserve it so resuming cannot duplicate or reset actors.
+pub const NON_COMBAT_STATES: [GameState; 14] = [
+    GameState::MainMenu,
+    GameState::Options,
+    GameState::Controls,
+    GameState::ModuleSelect,
+    GameState::FactionSelect,
+    GameState::StageSelect,
+    GameState::DifficultySelect,
+    GameState::ShipSelect,
+    GameState::MissionBriefing,
+    GameState::UpgradeShop,
+    GameState::StageComplete,
+    GameState::SliceComplete,
+    GameState::GameOver,
+    GameState::Victory,
+];
+
+/// Remembers the suspended combat state and distinguishes resume from restart.
+#[derive(Resource)]
+pub struct PauseContext {
+    resume_state: GameState,
+    restart_requested: bool,
+    resuming: bool,
+}
+
+impl Default for PauseContext {
+    fn default() -> Self {
+        Self {
+            resume_state: GameState::Playing,
+            restart_requested: false,
+            resuming: false,
+        }
+    }
+}
+
+impl PauseContext {
+    /// Resume the combat phase that was active when the pause menu opened.
+    pub fn resume(&self, next_state: &mut NextState<GameState>) {
+        next_state.set(self.resume_state);
+    }
+
+    /// Allow normal mission initialization after an explicit restart request.
+    pub fn request_restart(&mut self) {
+        self.restart_requested = true;
+    }
+}
+
+/// Tracks transitions before any exit or entry hooks can reset gameplay.
+pub struct PauseLifecyclePlugin;
+
+impl Plugin for PauseLifecyclePlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<PauseContext>().add_systems(
+            StateTransition,
+            track_pause_transition
+                .after(StateTransitionSteps::DependentTransitions)
+                .before(StateTransitionSteps::ExitSchedules),
+        );
+    }
+}
+
+fn track_pause_transition(
+    mut transitions: EventReader<StateTransitionEvent<GameState>>,
+    mut pause: ResMut<PauseContext>,
+) {
+    for transition in transitions.read() {
+        if transition.entered == Some(GameState::Paused) {
+            if let Some(state @ (GameState::Playing | GameState::BossFight)) = transition.exited {
+                pause.resume_state = state;
+            }
+        }
+        pause.resuming = transition.exited == Some(GameState::Paused)
+            && transition.entered == Some(pause.resume_state)
+            && !pause.restart_requested;
+        pause.restart_requested = false;
+    }
+}
+
+/// Run entry initialization and paused-state cleanup only for a fresh start.
+pub fn not_resuming_gameplay(pause: Res<PauseContext>) -> bool {
+    !pause.resuming
+}
+
+/// Preserve live entities while the pause menu overlays combat.
+pub fn not_pausing_gameplay(state: Res<State<GameState>>) -> bool {
+    *state.get() != GameState::Paused
 }
 
 /// Game difficulty settings

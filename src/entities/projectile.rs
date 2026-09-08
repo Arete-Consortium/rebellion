@@ -162,6 +162,9 @@ pub struct ProjectilePlugin;
 
 impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
+        for destination in NON_COMBAT_STATES {
+            app.add_systems(OnEnter(destination), cleanup_projectiles);
+        }
         app.init_resource::<DisintegratorHeat>().add_systems(
             FixedUpdate,
             (
@@ -175,6 +178,23 @@ impl Plugin for ProjectilePlugin {
                 .chain()
                 .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
         );
+    }
+}
+
+fn cleanup_projectiles(
+    mut commands: Commands,
+    query: Query<
+        Entity,
+        Or<(
+            With<PlayerProjectile>,
+            With<EnemyProjectile>,
+            With<PlayerDisintegratorBeam>,
+            With<ChainBolt>,
+        )>,
+    >,
+) {
+    for entity in &query {
+        commands.entity(entity).despawn_recursive();
     }
 }
 

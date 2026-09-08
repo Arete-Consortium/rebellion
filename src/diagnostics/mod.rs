@@ -50,11 +50,12 @@ impl Default for BossFrameProfiler {
 }
 
 impl BossFrameProfiler {
-    pub fn add_sample(&mut self, dt_secs: f32) {
+    /// Record a frame-time sample in Bevy's diagnostic unit: milliseconds.
+    pub fn add_sample(&mut self, frame_time_ms: f32) {
         if self.samples.len() >= self.max_samples {
             self.samples.remove(0);
         }
-        self.samples.push(dt_secs);
+        self.samples.push(frame_time_ms);
     }
 
     /// Average frame time in milliseconds.
@@ -62,7 +63,7 @@ impl BossFrameProfiler {
         if self.samples.is_empty() {
             0.0
         } else {
-            self.samples.iter().sum::<f32>() / self.samples.len() as f32 * 1000.0
+            self.samples.iter().sum::<f32>() / self.samples.len() as f32
         }
     }
 }
@@ -77,15 +78,44 @@ fn log_boss_frame_time_spikes(
         .get(&FrameTimeDiagnosticsPlugin::FRAME_TIME)
         .and_then(|d| d.smoothed())
     {
-        let ft = frame_time as f32;
-        profiler.add_sample(ft);
-        if ft > 0.020 {
+        // FRAME_TIME is already measured in milliseconds by Bevy.
+        let frame_time_ms = frame_time as f32;
+        profiler.add_sample(frame_time_ms);
+        if frame_time_ms > 20.0 {
             warn!(
                 "FRAME TIME SPIKE during boss fight: {:.2} ms (rolling avg {:.2} ms over {} frames)",
-                ft * 1000.0,
+                frame_time_ms,
                 profiler.average_ms(),
                 profiler.samples.len(),
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn frame_average_preserves_millisecond_samples() {
+        let mut profiler = BossFrameProfiler::default();
+        assert_eq!(profiler.average_ms(), 0.0);
+
+        profiler.add_sample(16.0);
+        assert_eq!(profiler.average_ms(), 16.0);
+        profiler.add_sample(33.0);
+        assert_eq!(profiler.average_ms(), 24.5);
+    }
+
+    #[test]
+    fn frame_average_retains_only_the_latest_sixty_samples() {
+        let mut profiler = BossFrameProfiler::default();
+        profiler.add_sample(33.0);
+        for _ in 0..60 {
+            profiler.add_sample(16.0);
+        }
+
+        assert_eq!(profiler.samples.len(), 60);
+        assert_eq!(profiler.average_ms(), 16.0);
     }
 }

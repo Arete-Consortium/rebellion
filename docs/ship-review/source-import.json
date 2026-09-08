@@ -1,0 +1,559 @@
+{
+  "repository": "AreteDriver/eve-ship-sprites",
+  "commit": "992bab5e19548744f3038e15bae599c93a1a1342",
+  "files": [
+    {
+      "type_id": 583,
+      "name": "Condor",
+      "path": "caldari/frigate/condor.png",
+      "sha": "c4b46ab4e3e3737be61212251fd1e3c3158e0b1f",
+      "size": 192356
+    },
+    {
+      "type_id": 585,
+      "name": "Slasher",
+      "path": "minmatar/frigate/slasher.png",
+      "sha": "5849475b7f423a2f0e85f2795b06ec5fee7a3779",
+      "size": 201756
+    },
+    {
+      "type_id": 586,
+      "name": "Probe",
+      "path": "minmatar/frigate/probe.png",
+      "sha": "cca6acdb9f72d32db79391e661882ae8c7331863",
+      "size": 181378
+    },
+    {
+      "type_id": 587,
+      "name": "Rifter",
+      "path": "minmatar/frigate/rifter.png",
+      "sha": "f1f74eaad0cd476ae40f1c168844a9552e3da8b1",
+      "size": 199390
+    },
+    {
+      "type_id": 589,
+      "name": "Executioner",
+      "path": "amarr/frigate/executioner.png",
+      "sha": "cebbdd4fc83681dfe469c96d21bf58c73920f775",
+      "size": 207228
+    },
+    {
+      "type_id": 591,
+      "name": "Tormentor",
+      "path": "amarr/frigate/tormentor.png",
+      "sha": "e1bb7fc23bf4314da691999c20365200da41b369",
+      "size": 169945
+    },
+    {
+      "type_id": 592,
+      "name": "Navitas",
+      "path": "gallente/frigate/navitas.png",
+      "sha": "8f16744ccac99fb8e864b8410b755b032dfd5a09",
+      "size": 161026
+    },
+    {
+      "type_id": 593,
+      "name": "Tristan",
+      "path": "gallente/frigate/tristan.png",
+      "sha": "5e5479997eb714ac4ced43f5e68f75a6035bf3ec",
+      "size": 213981
+    },
+    {
+      "type_id": 594,
+      "name": "Incursus",
+      "path": "gallente/frigate/incursus.png",
+      "sha": "3ceff05a5aba9dd30e6c48024925bfe662a8d0ca",
+      "size": 166960
+    },
+    {
+      "type_id": 597,
+      "name": "Punisher",
+      "path": "amarr/frigate/punisher.png",
+      "sha": "081916ecc87cc34901acdc7a535371470373c424",
+      "size": 165199
+    },
+    {
+      "type_id": 598,
+      "name": "Breacher",
+      "path": "minmatar/frigate/breacher.png",
+      "sha": "a710f393772c883f4bf89fe339d803e26345dff8",
+      "size": 144021
+    },
+    {
+      "type_id": 602,
+      "name": "Kestrel",
+      "path": "caldari/frigate/kestrel.png",
+      "sha": "1122dbf762e55bdeb4aeae7a698ba1c16e01f948",
+      "size": 180093
+    },
+    {
+      "type_id": 603,
+      "name": "Merlin",
+      "path": "caldari/frigate/merlin.png",
+      "sha": "258ee4f15436502f36f7b1b8afb78c386b505224",
+      "size": 160831
+    },
+    {
+      "type_id": 605,
+      "name": "Heron",
+      "path": "caldari/frigate/heron.png",
+      "sha": "5fded27aeaff0b6aff88658cb7ecd78d9f59326a",
+      "size": 137263
+    },
+    {
+      "type_id": 608,
+      "name": "Atron",
+      "path": "gallente/frigate/atron.png",
+      "sha": "fc892eb75345d1dcbb4eff51a7ae00d1d1ed2307",
+      "size": 194385
+    },
+    {
+      "type_id": 621,
+      "name": "Caracal",
+      "path": "caldari/cruiser/caracal.png",
+      "sha": "e88cbd23c3ad0ca2c7e76da7628d8654f0bc1b41",
+      "size": 160010
+    },
+    {
+      "type_id": 624,
+      "name": "Maller",
+      "path": "amarr/cruiser/maller.png",
+      "sha": "ec2562e6261cde25d88c508c0b06d567057fd53b",
+      "size": 233331
+    },
+    {
+      "type_id": 625,
+      "name": "Augoror",
+      "path": "amarr/cruiser/augoror.png",
+      "sha": "906698fb2dd7175d2495431e0228bd096efa46da",
+      "size": 205407
+    },
+    {
+      "type_id": 626,
+      "name": "Vexor",
+      "path": "gallente/cruiser/vexor.png",
+      "sha": "65e536fcd84110a1aff499d2cb996d73e6d1ad9a",
+      "size": 205912
+    },
+    {
+      "type_id": 630,
+      "name": "Bellicose",
+      "path": "minmatar/cruiser/bellicose.png",
+      "sha": "1be5a6c82331b4fdae9ef59acb00c3107b02a800",
+      "size": 158301
+    },
+    {
+      "type_id": 638,
+      "name": "Raven",
+      "path": "caldari/battleship/raven.png",
+      "sha": "7e0254daf0f1768891f5daa06451e198be33c5b8",
+      "size": 208071
+    },
+    {
+      "type_id": 639,
+      "name": "Tempest",
+      "path": "minmatar/battleship/tempest.png",
+      "sha": "b16a90c742333892d1626754ead95329203502a8",
+      "size": 130610
+    },
+    {
+      "type_id": 640,
+      "name": "Scorpion",
+      "path": "caldari/battleship/scorpion.png",
+      "sha": "2b2cd4d50e9d5f00eb6123a15792d9fa055b5fb2",
+      "size": 217202
+    },
+    {
+      "type_id": 641,
+      "name": "Megathron",
+      "path": "gallente/battleship/megathron.png",
+      "sha": "351aa2a1ae8de3563e33f2461722729b120f235b",
+      "size": 201482
+    },
+    {
+      "type_id": 643,
+      "name": "Armageddon",
+      "path": "amarr/battleship/armageddon.png",
+      "sha": "be40b77042685f0c78ba394cb703a0c6a6a1898e",
+      "size": 147688
+    },
+    {
+      "type_id": 645,
+      "name": "Dominix",
+      "path": "gallente/battleship/dominix.png",
+      "sha": "def5071fd5f5cf128f81e71ff7aac730c5b041c2",
+      "size": 233658
+    },
+    {
+      "type_id": 1944,
+      "name": "Bestower",
+      "path": "amarr/industrial/bestower.png",
+      "sha": "20dc6833b3497e38104bc772e3772e3df4d05f67",
+      "size": 229298
+    },
+    {
+      "type_id": 2006,
+      "name": "Omen",
+      "path": "amarr/cruiser/omen.png",
+      "sha": "3add376f8ad305f9468e7fadd037608bb8e5d804",
+      "size": 167302
+    },
+    {
+      "type_id": 3764,
+      "name": "Leviathan",
+      "path": "caldari/capital/leviathan.png",
+      "sha": "7558acb2e896f2d2ae83811f5681b438964bbdd5",
+      "size": 149520
+    },
+    {
+      "type_id": 11184,
+      "name": "Crusader",
+      "path": "amarr/frigate/crusader.png",
+      "sha": "9f44cf22e0fbb420a2e295e96602811b9b38d82b",
+      "size": 209376
+    },
+    {
+      "type_id": 11186,
+      "name": "Malediction",
+      "path": "amarr/frigate/malediction.png",
+      "sha": "a0134727d65edb18a5c53c6338d4e1bf97c66231",
+      "size": 216186
+    },
+    {
+      "type_id": 11371,
+      "name": "Wolf",
+      "path": "minmatar/frigate/wolf.png",
+      "sha": "b484c91f0dcb891795f73bd271eb4ec8bfa6f9ef",
+      "size": 195435
+    },
+    {
+      "type_id": 11377,
+      "name": "Nemesis",
+      "path": "gallente/frigate/nemesis.png",
+      "sha": "cf9addac50d0441c81ad8570aeb1fd4a62ce4b62",
+      "size": 215314
+    },
+    {
+      "type_id": 11381,
+      "name": "Harpy",
+      "path": "caldari/frigate/harpy.png",
+      "sha": "bca717287f04323545a8ab54c030897a5f8f0719",
+      "size": 157479
+    },
+    {
+      "type_id": 11387,
+      "name": "Hyena",
+      "path": "minmatar/frigate/hyena.png",
+      "sha": "a00f54eb85cc8b94b691cbc7ca45af679d2e3024",
+      "size": 157861
+    },
+    {
+      "type_id": 11393,
+      "name": "Retribution",
+      "path": "amarr/frigate/retribution.png",
+      "sha": "5bb317b162208865a673ad8ad5813a9f27a04a5d",
+      "size": 179513
+    },
+    {
+      "type_id": 11400,
+      "name": "Jaguar",
+      "path": "minmatar/frigate/jaguar.png",
+      "sha": "4917e116f13c59e204636e12dd123a64abd3b3a5",
+      "size": 212719
+    },
+    {
+      "type_id": 11567,
+      "name": "Avatar",
+      "path": "amarr/capital/avatar.png",
+      "sha": "e91ca8f325e541cfe0d8bbe2dfa9df146b044556",
+      "size": 200187
+    },
+    {
+      "type_id": 11993,
+      "name": "Cerberus",
+      "path": "caldari/cruiser/cerberus.png",
+      "sha": "ea73dddd4fbe3d7d82cc015d0c8d75ced92699f0",
+      "size": 180292
+    },
+    {
+      "type_id": 12019,
+      "name": "Sacrilege",
+      "path": "amarr/cruiser/sacrilege.png",
+      "sha": "ce87304770b230b832cb7e2dbddd376ebc2e175f",
+      "size": 233192
+    },
+    {
+      "type_id": 16236,
+      "name": "Coercer",
+      "path": "amarr/destroyer/coercer.png",
+      "sha": "976fdebc09095c8bf058dda35f90480c8a244a32",
+      "size": 182336
+    },
+    {
+      "type_id": 16238,
+      "name": "Cormorant",
+      "path": "caldari/destroyer/cormorant.png",
+      "sha": "2ab15fd31f538a42221946f22f96c846ddf840a8",
+      "size": 185767
+    },
+    {
+      "type_id": 16240,
+      "name": "Catalyst",
+      "path": "gallente/destroyer/catalyst.png",
+      "sha": "e43a32ebf7ff1519c1510147d799d9374b279bb3",
+      "size": 151116
+    },
+    {
+      "type_id": 16242,
+      "name": "Thrasher",
+      "path": "minmatar/destroyer/thrasher.png",
+      "sha": "65b8f14dd47aa90376072bbffc0fa20304f25e3d",
+      "size": 146004
+    },
+    {
+      "type_id": 20185,
+      "name": "Charon",
+      "path": "caldari/freighter/charon.png",
+      "sha": "e533a7bffae16b11a1500df56446ef008662fe22",
+      "size": 184676
+    },
+    {
+      "type_id": 23757,
+      "name": "Archon",
+      "path": "amarr/capital/archon.png",
+      "sha": "2512d2b98bd3392b327e965355bb5fb3ba5744a5",
+      "size": 164285
+    },
+    {
+      "type_id": 23911,
+      "name": "Thanatos",
+      "path": "gallente/capital/thanatos.png",
+      "sha": "48b543a99ad0b5cb620a6626d91af555a49a61c5",
+      "size": 178343
+    },
+    {
+      "type_id": 23915,
+      "name": "Chimera",
+      "path": "caldari/capital/chimera.png",
+      "sha": "a367f9051f6b24110f4dd994096a14a5b0343ab3",
+      "size": 142177
+    },
+    {
+      "type_id": 24483,
+      "name": "Nidhoggur",
+      "path": "minmatar/capital/nidhoggur.png",
+      "sha": "17d1cd7c6fbfe64a5c36a836903b84e0eb47e4d3",
+      "size": 164767
+    },
+    {
+      "type_id": 24688,
+      "name": "Rokh",
+      "path": "caldari/battleship/rokh.png",
+      "sha": "1355a0f5fe0e449ccfb788bd2e67987c8bd4857a",
+      "size": 152562
+    },
+    {
+      "type_id": 24690,
+      "name": "Hyperion",
+      "path": "gallente/battleship/hyperion.png",
+      "sha": "2e90560a3ad8e5cb52254e5f6f5aec4311f5307c",
+      "size": 158878
+    },
+    {
+      "type_id": 24694,
+      "name": "Maelstrom",
+      "path": "minmatar/battleship/maelstorm.png",
+      "sha": "f816fe580f989e662e2d75bce5f456f2f6806fc0",
+      "size": 134960
+    },
+    {
+      "type_id": 24696,
+      "name": "Harbinger",
+      "path": "amarr/battlecruiser/harbringer.png",
+      "sha": "a2e36fef7fae7faf3e22303d0ad940e76404da2e",
+      "size": 197599
+    },
+    {
+      "type_id": 24700,
+      "name": "Myrmidon",
+      "path": "gallente/battlecruiser/myrmidon.png",
+      "sha": "08b19f177ae1a979f99c95b84ada6d3336f5c39a",
+      "size": 184087
+    },
+    {
+      "type_id": 33818,
+      "name": "Orthrus",
+      "path": "pirate/mordus legion/orthrus.png",
+      "sha": "a74af4aecc7e10b61499e9f06094d04cb939e750",
+      "size": 196396
+    },
+    {
+      "type_id": 34317,
+      "name": "Confessor",
+      "path": "amarr/destroyer/confessor.png",
+      "sha": "9d317ac50d37b9e3beceb0f2943315f41b740b18",
+      "size": 161576
+    },
+    {
+      "type_id": 35683,
+      "name": "Hecate",
+      "path": "gallente/destroyer/hecate.png",
+      "sha": "7d33e72653d186f4f6ec1f39d774e818f5cf9409",
+      "size": 145001
+    },
+    {
+      "type_id": 47269,
+      "name": "Damavik",
+      "path": "triglavian/damavik.png",
+      "sha": "d0d7e0265a4f1b4f177595522605cf17c5454ab1",
+      "size": 181579
+    },
+    {
+      "type_id": 47270,
+      "name": "Vedmak",
+      "path": "triglavian/vedmak.png",
+      "sha": "948f8dde466b8e603f7ea2db9a4029cc14ee5417",
+      "size": 166892
+    },
+    {
+      "type_id": 47271,
+      "name": "Leshak",
+      "path": "triglavian/leshak.png",
+      "sha": "07cf760c4e4ed117e86ea30716ed70931cf31b27",
+      "size": 207408
+    },
+    {
+      "type_id": 49710,
+      "name": "Kikimora",
+      "path": "triglavian/kikimora.png",
+      "sha": "cba3183ebc1e9993db14bd5df882749927ba5f41",
+      "size": 216073
+    },
+    {
+      "type_id": 49711,
+      "name": "Drekavac",
+      "path": "triglavian/drekavac.png",
+      "sha": "5e8f9910a373e5706e07cb491e550cf6ac4e9191",
+      "size": 187986
+    },
+    {
+      "type_id": 52250,
+      "name": "Nergal",
+      "path": "triglavian/nergal.png",
+      "sha": "79b58cde372f9f2b668cf61e6db06c5803b20faa",
+      "size": 211053
+    },
+    {
+      "type_id": 52252,
+      "name": "Ikitursa",
+      "path": "triglavian/ikitursa.png",
+      "sha": "aeaebaa71503c1bdd690a73ef8577b3d9d8e58ad",
+      "size": 205916
+    },
+    {
+      "type_id": 52254,
+      "name": "Draugur",
+      "path": "triglavian/draugur.png",
+      "sha": "0ba4fbfd630354ee53b6b02bb62353aa7405ab2a",
+      "size": 302849
+    },
+    {
+      "type_id": 54731,
+      "name": "Skybreaker",
+      "path": "upwell/skybreaker.png",
+      "sha": "0393b495b4ffb0ea1520f6d07fd680edc881397d",
+      "size": 177144
+    },
+    {
+      "type_id": 54732,
+      "name": "Stormbringer",
+      "path": "upwell/stormbringer.png",
+      "sha": "730a8791e8a8065cc7c5c92eb1c814d3ad3b4816",
+      "size": 176169
+    },
+    {
+      "type_id": 54733,
+      "name": "Thunderchild",
+      "path": "upwell/thunderchild.png",
+      "sha": "79d6d38d236f44781e544656506b6f375b637632",
+      "size": 211002
+    },
+    {
+      "type_id": 623,
+      "name": "Moa",
+      "path": "caldari/cruiser/moa.png",
+      "sha": "bef189f861ecefd0ca0b5456ef31599aaf4c8305",
+      "size": 188867
+    },
+    {
+      "type_id": 16227,
+      "name": "Ferox",
+      "path": "caldari/battlecruiser/ferox.png",
+      "sha": "87c7cfa85443914305598a04a078f5b87c8ba714",
+      "size": 194690
+    },
+    {
+      "type_id": 11379,
+      "name": "Hawk",
+      "path": "caldari/frigate/hawk.png",
+      "sha": "e5e0e8a5c3e3705cfb253696f0c9e22e23ac1a2e",
+      "size": 158595
+    },
+    {
+      "type_id": 12044,
+      "name": "Enyo",
+      "path": "gallente/frigate/enyo.png",
+      "sha": "50c8e8abec931838e446f4532c0b63050851563f",
+      "size": 166736
+    },
+    {
+      "type_id": 12042,
+      "name": "Ishkur",
+      "path": "gallente/frigate/ishkur.png",
+      "sha": "ab3d94056700f05cd10bd6a55c910f4a84e3433c",
+      "size": 167087
+    },
+    {
+      "type_id": 34828,
+      "name": "Jackdaw",
+      "path": "caldari/destroyer/jackdaw.png",
+      "sha": "2a02ba3cd7b69df2cb39933beee52c5daab0e07d",
+      "size": 123959
+    },
+    {
+      "type_id": 24698,
+      "name": "Drake",
+      "path": "caldari/battlecruiser/drake.png",
+      "sha": "6d1544b8a59cebc95c7719a708826728d057c3ae",
+      "size": 206319
+    },
+    {
+      "type_id": 622,
+      "name": "Stabber",
+      "path": "minmatar/cruiser/stabber.png",
+      "sha": "3fd9ee592ab2ee2bc805f3eabfc075334c1ec498",
+      "size": 133619
+    },
+    {
+      "type_id": 24702,
+      "name": "Hurricane",
+      "path": "minmatar/battlecruiser/hurricane.png",
+      "sha": "7c325a0fbf8f4c804dcbf9277feef1b1030066a8",
+      "size": 160738
+    },
+    {
+      "type_id": 24692,
+      "name": "Abaddon",
+      "path": "amarr/battleship/abaddon.png",
+      "sha": "6d7a66f3c58e2b81f07e1f32d443dac38d389743",
+      "size": 176670
+    },
+    {
+      "type_id": 642,
+      "name": "Apocalypse",
+      "path": "amarr/battleship/apocalypse.png",
+      "sha": "65fc3458cf4609c2d7f269f35c4648bf7a1a912c",
+      "size": 216952
+    }
+  ]
+}

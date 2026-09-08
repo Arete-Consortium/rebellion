@@ -380,7 +380,12 @@ impl Plugin for JoystickPlugin {
             .init_resource::<BackButtonConfig>()
             .add_event::<RumbleRequest>()
             .add_event::<BackButtonEvent>()
-            .add_systems(PreUpdate, (detect_gamepad, poll_gamepad).chain())
+            .add_systems(
+                PreUpdate,
+                (detect_gamepad, poll_gamepad)
+                    .chain()
+                    .after(bevy::input::InputSystem),
+            )
             .add_systems(Update, (process_rumble_requests, process_back_buttons));
     }
 }
@@ -412,13 +417,14 @@ fn detect_gamepad(
             *profile = ControllerProfile::from_name(&name);
         }
     } else if count == 0 && state.connected {
-        state.connected = false;
+        *state = JoystickState::default();
+        *profile = ControllerProfile::default();
         info!("Gamepad disconnected");
     }
 }
 
 /// Poll Bevy's gamepad state and write to JoystickState
-pub(super) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
+pub(crate) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
     // Save previous state for edge detection
     state.prev_buttons = state.buttons;
     state.prev_dpad_x = state.dpad_x;
@@ -429,7 +435,7 @@ pub(super) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Ga
     let Some(gamepad) = gamepads.iter().next() else {
         // No gamepad connected — keep previous state zeroed
         if state.connected {
-            state.connected = false;
+            *state = JoystickState::default();
             info!("Gamepad disconnected");
         }
         return;
@@ -444,8 +450,16 @@ pub(super) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Ga
     state.right_x = gamepad.get(GamepadAxis::RightStickX).unwrap_or(0.0);
     state.right_y = gamepad.get(GamepadAxis::RightStickY).unwrap_or(0.0);
 
-    state.left_trigger = gamepad.get(GamepadAxis::LeftZ).unwrap_or(0.0).max(0.0);
-    state.right_trigger = gamepad.get(GamepadAxis::RightZ).unwrap_or(0.0).max(0.0);
+    state.left_trigger = gamepad
+        .get(GamepadAxis::LeftZ)
+        .unwrap_or(0.0)
+        .max(gamepad.get(GamepadButton::LeftTrigger2).unwrap_or(0.0))
+        .clamp(0.0, 1.0);
+    state.right_trigger = gamepad
+        .get(GamepadAxis::RightZ)
+        .unwrap_or(0.0)
+        .max(gamepad.get(GamepadButton::RightTrigger2).unwrap_or(0.0))
+        .clamp(0.0, 1.0);
 
     // D-pad
     state.dpad_x = 0;
@@ -467,7 +481,7 @@ pub(super) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Ga
     // 0=South(A), 1=East(B), 2=West(X), 3=North(Y),
     // 4=LeftTrigger(LB), 5=RightTrigger(RB),
     // 6=LeftTrigger2(LT as button), 7=Select(Back/View),
-    // 8=unused, 9=Start(Menu),
+    // 8=RightTrigger2(RT), 9=Start(Menu),
     // 10=LeftThumb, 11=RightThumb
     state.buttons[0] = gamepad.pressed(GamepadButton::South); // A
     state.buttons[1] = gamepad.pressed(GamepadButton::East); // B
@@ -477,6 +491,7 @@ pub(super) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Ga
     state.buttons[5] = gamepad.pressed(GamepadButton::RightTrigger); // RB
     state.buttons[6] = gamepad.pressed(GamepadButton::LeftTrigger2); // LT as button
     state.buttons[7] = gamepad.pressed(GamepadButton::Select); // Back/View
+    state.buttons[8] = gamepad.pressed(GamepadButton::RightTrigger2); // RT
     state.buttons[9] = gamepad.pressed(GamepadButton::Start); // Start/Menu
     state.buttons[10] = gamepad.pressed(GamepadButton::LeftThumb); // L3
     state.buttons[11] = gamepad.pressed(GamepadButton::RightThumb); // R3
@@ -592,5 +607,41 @@ fn process_rumble_requests(
                 duration: Duration::from_millis(duration_ms),
             });
         }
+    }
+}
+
+#[cfg(test)]
+mod xbox_tests {
+    use super::*;
+    #[test]
+    fn analog_button_triggers_work_and_disconnect_clears_held_input() {
+        let mut app = App::new();
+        app.init_resource::<JoystickState>()
+            .init_resource::<ControllerProfile>();
+        let mut gamepad = Gamepad::default();
+        gamepad.analog_mut().set(GamepadButton::RightTrigger2, 0.8);
+        gamepad.digital_mut().press(GamepadButton::South);
+        let entity = app
+            .world_mut()
+            .spawn((gamepad, Name::new("Xbox Wireless Controller")))
+            .id();
+        let mut schedule = Schedule::default();
+        schedule.add_systems((detect_gamepad, poll_gamepad).chain());
+        schedule.run(app.world_mut());
+        assert_eq!(
+            app.world().resource::<ControllerProfile>().controller_type,
+            ControllerType::Xbox
+        );
+        assert!(app
+            .world()
+            .resource::<JoystickState>()
+            .right_trigger_pressed());
+        assert!(app.world().resource::<JoystickState>().confirm());
+        app.world_mut().despawn(entity);
+        schedule.run(app.world_mut());
+        let state = app.world().resource::<JoystickState>();
+        assert!(!state.connected);
+        assert!(!state.right_trigger_pressed());
+        assert!(state.buttons.iter().all(|held| !held));
     }
 }

@@ -4,22 +4,35 @@
 
 use super::common::*;
 use crate::core::*;
+use crate::games::ActiveModule;
 use crate::systems::JoystickState;
 use bevy::prelude::*;
 
 #[derive(Component)]
 pub(crate) struct FactionSelectRoot;
 
+fn chapter_factions(module: &ActiveModule) -> [Faction; 2] {
+    if module.is_caldari_gallente() {
+        [Faction::Caldari, Faction::Gallente]
+    } else {
+        [Faction::Minmatar, Faction::Amarr]
+    }
+}
+
 pub(crate) fn spawn_faction_select(
     mut commands: Commands,
     mut selection: ResMut<MenuSelection>,
     mut session: ResMut<GameSession>,
+    active_module: Res<ActiveModule>,
+    bindings: Res<KeyBindings>,
+    icons: Res<crate::assets::FactionIconCache>,
 ) {
     selection.index = 0;
-    selection.total = 2; // Elder Fleet: Minmatar vs Amarr only
+    selection.total = 2;
+    let factions = chapter_factions(&active_module);
 
     // Default to Minmatar vs Amarr
-    *session = GameSession::new(Faction::Minmatar, Faction::Amarr);
+    *session = GameSession::new(factions[0], factions[1]);
 
     commands
         .spawn((
@@ -38,7 +51,11 @@ pub(crate) fn spawn_faction_select(
         .with_children(|parent| {
             // Subtitle
             parent.spawn((
-                Text::new("THE ELDER FLEET"),
+                Text::new(if active_module.is_caldari_gallente() {
+                    "CALDARI PRIME"
+                } else {
+                    "THE ELDER FLEET"
+                }),
                 TextFont {
                     font_size: 24.0,
                     ..default()
@@ -70,7 +87,7 @@ pub(crate) fn spawn_faction_select(
                     ..default()
                 },))
                 .with_children(|row| {
-                    spawn_faction_card(row, Faction::Minmatar, 0);
+                    spawn_faction_card(row, factions[0], 0, &icons);
 
                     // VS divider
                     row.spawn((
@@ -82,7 +99,7 @@ pub(crate) fn spawn_faction_select(
                         TextColor(Color::srgb(0.5, 0.5, 0.5)),
                     ));
 
-                    spawn_faction_card(row, Faction::Amarr, 1);
+                    spawn_faction_card(row, factions[1], 1, &icons);
                 });
 
             parent.spawn(Node {
@@ -92,7 +109,7 @@ pub(crate) fn spawn_faction_select(
 
             // Instructions
             parent.spawn((
-                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
+                Text::new(menu_hint(&bindings, "Select", "Back")),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -102,9 +119,13 @@ pub(crate) fn spawn_faction_select(
         });
 }
 
-fn spawn_faction_card(parent: &mut ChildBuilder, faction: Faction, index: usize) {
+fn spawn_faction_card(
+    parent: &mut ChildBuilder,
+    faction: Faction,
+    index: usize,
+    icons: &crate::assets::FactionIconCache,
+) {
     let primary = faction.primary_color();
-    let secondary = faction.secondary_color();
     let rival = faction.rival();
     let ship_count = faction.player_ships().len();
 
@@ -150,17 +171,16 @@ fn spawn_faction_card(parent: &mut ChildBuilder, faction: Faction, index: usize)
                     TextColor(primary),
                 ));
 
-                // Faction emblem placeholder (colored square)
-                header.spawn((
-                    Node {
-                        width: Val::Px(40.0),
-                        height: Val::Px(40.0),
-                        border: UiRect::all(Val::Px(2.0)),
-                        ..default()
-                    },
-                    BackgroundColor(secondary.with_alpha(0.6)),
-                    BorderColor(primary.with_alpha(0.8)),
-                ));
+                if let Some(image) = icons.get(faction) {
+                    header.spawn((
+                        Node {
+                            width: Val::Px(48.0),
+                            height: Val::Px(48.0),
+                            ..default()
+                        },
+                        ImageNode { image, ..default() },
+                    ));
+                }
             });
 
             // Full name
@@ -306,10 +326,11 @@ fn spawn_faction_card(parent: &mut ChildBuilder, faction: Faction, index: usize)
 
 pub(crate) fn faction_select_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<MenuSelection>,
     mut session: ResMut<GameSession>,
-    endless: Res<crate::core::EndlessMode>,
+    mut active_module: ResMut<ActiveModule>,
     time: Res<Time>,
     mut next_state: ResMut<NextState<GameState>>,
     mut cards: Query<(&MenuItem, &mut BackgroundColor, &mut BorderColor), With<FactionSelectRoot>>,
@@ -319,12 +340,9 @@ pub(crate) fn faction_select_input(
     // Elder Fleet: Simple left/right navigation for Minmatar vs Amarr
     // Layout: 0=Minmatar(left), 1=Amarr(right)
     if selection.cooldown <= 0.0 {
-        let left = keyboard.pressed(KeyCode::ArrowLeft)
-            || keyboard.pressed(KeyCode::KeyA)
-            || joystick.dpad_x < 0;
-        let right = keyboard.pressed(KeyCode::ArrowRight)
-            || keyboard.pressed(KeyCode::KeyD)
-            || joystick.dpad_x > 0;
+        let direction = get_horizontal_input(&keyboard, &joystick, &bindings);
+        let left = direction < 0;
+        let right = direction > 0;
 
         let mut new_index = selection.index;
 
@@ -341,7 +359,7 @@ pub(crate) fn faction_select_input(
     }
 
     // Update card highlights - Elder Fleet: Minmatar vs Amarr
-    let factions = [Faction::Minmatar, Faction::Amarr];
+    let factions = chapter_factions(&active_module);
 
     for (item, mut bg, mut border) in cards.iter_mut() {
         if item.index >= factions.len() {
@@ -351,16 +369,16 @@ pub(crate) fn faction_select_input(
         let is_selected = item.index == selection.index;
 
         if is_selected {
-            *bg = BackgroundColor(faction.primary_color().with_alpha(0.4));
+            *bg = BackgroundColor(Color::srgba(0.08, 0.09, 0.12, 0.97));
             *border = BorderColor(faction.primary_color());
         } else {
-            *bg = BackgroundColor(faction.secondary_color().with_alpha(0.6));
+            *bg = BackgroundColor(Color::srgba(0.035, 0.04, 0.065, 0.97));
             *border = BorderColor(faction.primary_color().with_alpha(0.3));
         }
     }
 
     // Confirm selection
-    if is_confirm(&keyboard, &joystick) {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         let player_faction = factions[selection.index];
         let enemy_faction = player_faction.rival();
 
@@ -371,17 +389,12 @@ pub(crate) fn faction_select_input(
             enemy_faction.name()
         );
 
-        // Endless mode skips stage select, goes to difficulty
-        // Campaign mode goes to stage select
-        if endless.active {
-            next_state.set(GameState::DifficultySelect);
-        } else {
-            next_state.set(GameState::StageSelect);
-        }
+        active_module.set_faction(player_faction.short_name(), enemy_faction.short_name());
+        next_state.set(GameState::DifficultySelect);
     }
 
     // Back to module select
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         next_state.set(GameState::ModuleSelect);
     }
 }

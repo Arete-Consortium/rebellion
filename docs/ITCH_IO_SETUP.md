@@ -262,3 +262,14 @@ After publishing, monitor:
 - 2026-07-25 — Initial draft based on PRODUCT_POSITIONING.md and vertical slice scope
 
 **This document is append-only.** Changes require a note in `CHANGELOG.md`.
+
+## 2026-09-07 — Portfolio and community release update
+
+The owner confirmed free access for the project and future campaigns.
+Position the page as a playable portfolio and community project, with clear
+controls, source, credits, known limitations and feedback instructions.
+The earlier "demo / awareness tool" rationale does not define the project's
+purpose. Use the candidate acceptance gates in
+[PRODUCTION_PLAN.md](PRODUCTION_PLAN.md) before changing visibility; the
+historical short checklist above does not establish full release readiness.
+This note changes documentation only, not live itch.io settings.

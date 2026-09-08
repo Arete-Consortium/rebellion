@@ -35,6 +35,7 @@ impl Plugin for GameplayPlugin {
             .init_resource::<GameSession>()
             .init_resource::<EndlessMode>()
             .init_resource::<ItchMode>()
+            .add_plugins(crate::core::PauseLifecyclePlugin)
             .add_plugins((
                 PlayerPlugin,
                 EnemyPlugin,

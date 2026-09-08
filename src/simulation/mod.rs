@@ -15,7 +15,6 @@ use crate::entities::environment::{
 };
 use crate::entities::{CollectiblePlugin, ProjectilePlugin};
 use crate::systems::collision::SpatialGrid;
-use crate::systems::CollisionPlugin;
 
 use detect_collisions::{
     detect_enemy_projectile_environment_hits, detect_enemy_projectile_hits,
@@ -23,8 +22,9 @@ use detect_collisions::{
     detect_player_projectile_hits, update_spatial_grid,
 };
 use resolve_damage::{
-    enrich_contacts, resolve_enemy_projectile_damage, resolve_player_environment_contacts,
-    resolve_player_projectile_damage, resolve_projectile_environment_contacts,
+    enrich_contacts, resolve_enemy_projectile_damage, resolve_escort_damage,
+    resolve_player_environment_contacts, resolve_player_projectile_damage,
+    resolve_projectile_environment_contacts,
 };
 use resolve_deaths::resolve_enemy_deaths;
 use sim_id::assign_sim_ids;
@@ -41,6 +41,18 @@ pub mod state_hash;
 pub use fixed_step::{SimSet, FIXED_TIMESTEP_SECS};
 pub use rng::{MissionSeed, SimulationRng, DEFAULT_MISSION_SEED};
 pub use sim_id::SimIdGenerator;
+
+/// Optional state-hash instrumentation for tests and developer diagnostics.
+/// Normal play leaves this disabled; the headless app enables it by default.
+/// Enable before entering gameplay to capture identifiers from the first tick.
+#[derive(Resource, Debug, Clone, Copy, Default)]
+pub struct SimulationDiagnostics {
+    pub enabled: bool,
+}
+
+fn simulation_diagnostics_enabled(diagnostics: Res<SimulationDiagnostics>) -> bool {
+    diagnostics.enabled
+}
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum CollisionPhase {
@@ -63,6 +75,7 @@ impl Plugin for SimulationPlugin {
             .insert_resource(SimulationRng::from_seed(DEFAULT_MISSION_SEED))
             .init_resource::<SimIdGenerator>()
             .init_resource::<SimStateHash>()
+            .init_resource::<SimulationDiagnostics>()
             .add_event::<PlayerEnvironmentContact>()
             .add_event::<ProjectileEnvironmentContact>()
             .add_event::<EnvironmentDamageAppliedEvent>()
@@ -91,6 +104,7 @@ impl Plugin for SimulationPlugin {
                     enrich_contacts,
                     resolve_player_projectile_damage,
                     resolve_enemy_projectile_damage,
+                    resolve_escort_damage,
                     resolve_player_environment_contacts,
                     resolve_projectile_environment_contacts,
                     resolve_enemy_deaths,
@@ -103,12 +117,14 @@ impl Plugin for SimulationPlugin {
                 FixedUpdate,
                 assign_sim_ids
                     .after(CollisionPhase::Resolution)
+                    .run_if(simulation_diagnostics_enabled)
                     .run_if(simulation_active),
             )
             .add_systems(
                 FixedUpdate,
                 compute_state_hash_system
                     .after(assign_sim_ids)
+                    .run_if(simulation_diagnostics_enabled)
                     .run_if(simulation_active),
             )
             .add_systems(
@@ -117,6 +133,6 @@ impl Plugin for SimulationPlugin {
                     .after(compute_state_hash_system)
                     .run_if(simulation_active),
             )
-            .add_plugins((CollisionPlugin, ProjectilePlugin, CollectiblePlugin));
+            .add_plugins((ProjectilePlugin, CollectiblePlugin));
     }
 }

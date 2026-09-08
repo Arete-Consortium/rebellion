@@ -8,13 +8,11 @@ use super::explosions::ExplosionParticle;
 use super::overlays::{DisintegratorBeamVisual, LowHealthVignette};
 use super::pickups::{PickupFlash, PickupParticle, PickupShockwave};
 use super::screen_effects::ScreenFlashOverlay;
-use super::starfield::Star;
 use super::trails::{BulletTrailParticle, EngineParticle};
 use bevy::prelude::*;
 
 pub fn cleanup_effects(
     mut commands: Commands,
-    stars: Query<Entity, With<Star>>,
     explosion_particles: Query<Entity, With<ExplosionParticle>>,
     engine_particles: Query<Entity, With<EngineParticle>>,
     flash_overlays: Query<Entity, With<ScreenFlashOverlay>>,
@@ -22,9 +20,6 @@ pub fn cleanup_effects(
     bullet_trail_particles: Query<Entity, With<BulletTrailParticle>>,
     ability_effect_particles: Query<Entity, With<AbilityEffectParticle>>,
 ) {
-    for entity in stars.iter() {
-        commands.entity(entity).despawn();
-    }
     for entity in explosion_particles.iter() {
         commands.entity(entity).despawn();
     }
@@ -89,7 +84,7 @@ pub fn cleanup_buff_visuals(
         commands.entity(entity).despawn();
     }
     for entity in invuln_shields.iter() {
-        commands.entity(entity).despawn();
+        commands.entity(entity).despawn_recursive();
     }
     for entity in speed_lines.iter() {
         commands.entity(entity).despawn();

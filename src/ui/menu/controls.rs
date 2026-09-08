@@ -68,6 +68,9 @@ pub struct ControlsMessageText;
 pub struct ControlsCaptureState {
     pub capturing: Option<Action>,
     pub conflict: Option<(String, Timer)>,
+    /// Ignore buttons already down when capture begins until they are
+    /// released. A distinct new button can still be captured immediately.
+    held_at_capture_start: [bool; 16],
 }
 
 const CONFLICT_BANNER_SECONDS: f32 = 2.0;
@@ -288,7 +291,7 @@ pub(crate) fn controls_menu_input(
 
     // Navigation
     if selection.cooldown <= 0.0 {
-        let nav = get_nav_input(&keyboard, &joystick);
+        let nav = get_nav_input(&keyboard, &joystick, &keybindings);
         if nav != 0 {
             let total = selection.total as i32;
             selection.index = (selection.index as i32 + nav).rem_euclid(total) as usize;
@@ -297,10 +300,11 @@ pub(crate) fn controls_menu_input(
     }
 
     // Confirm
-    if selection.cooldown <= 0.0 && is_confirm(&keyboard, &joystick) {
+    if selection.cooldown <= 0.0 && is_confirm(&keyboard, &joystick, &keybindings) {
         let actions = KeyBindings::all_actions();
         if selection.index < actions.len() {
             capture.capturing = Some(actions[selection.index]);
+            capture.held_at_capture_start = joystick.buttons;
             selection.cooldown = CAPTURE_DEBOUNCE_SECONDS;
         } else {
             // RESET row
@@ -310,7 +314,7 @@ pub(crate) fn controls_menu_input(
     }
 
     // Back → Options
-    if joystick.back() || keyboard.just_pressed(KeyCode::Escape) {
+    if is_cancel(&keyboard, &joystick, &keybindings) {
         next_state.set(GameState::Options);
     }
 }
@@ -331,11 +335,18 @@ pub(crate) fn controls_capture_input(
     // Back cancels writing.
     if joystick.back() || keyboard.just_pressed(KeyCode::Escape) {
         capture.capturing = None;
+        capture.held_at_capture_start = [false; 16];
         return;
     }
 
     // Scan for the first rising-edge gamepad button.
     for i in 0..joystick.buttons.len() {
+        if !joystick.buttons[i] {
+            capture.held_at_capture_start[i] = false;
+        }
+        if capture.held_at_capture_start[i] {
+            continue;
+        }
         if joystick.just_pressed(i) {
             let binding = Binding::GamepadButton(i as u8);
             let prev = keybindings.set(action, binding);
@@ -351,6 +362,7 @@ pub(crate) fn controls_capture_input(
                 ));
             }
             capture.capturing = None;
+            capture.held_at_capture_start = [false; 16];
             return;
         }
     }
@@ -406,5 +418,108 @@ pub(crate) fn decay_conflict_message(
         for mut text in messages.iter_mut() {
             **text = msg.clone();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn capture_world() -> (World, Schedule) {
+        let mut world = World::new();
+        world.init_resource::<ButtonInput<KeyCode>>();
+        world.init_resource::<JoystickState>();
+        world.init_resource::<Time>();
+        world.init_resource::<KeyBindings>();
+        world.init_resource::<ControlsCaptureState>();
+        world.insert_resource(MenuSelection {
+            index: 0,
+            total: KeyBindings::all_actions().len() + 1,
+            cooldown: 0.0,
+        });
+        world.insert_resource(NextState::<GameState>::Unchanged);
+        let mut schedule = Schedule::default();
+        // Match the native menu ordering: activation precedes capture in
+        // the same update, so a test of capture alone misses this bug.
+        schedule.add_systems((controls_menu_input, controls_capture_input).chain());
+        (world, schedule)
+    }
+
+    fn set_buttons(world: &mut World, pressed: &[usize]) {
+        let mut joystick = world.resource_mut::<JoystickState>();
+        joystick.prev_buttons = joystick.buttons;
+        joystick.buttons = [false; 16];
+        for &button in pressed {
+            joystick.buttons[button] = true;
+        }
+    }
+
+    #[test]
+    fn activation_press_is_ignored_but_a_distinct_button_is_captured() {
+        let (mut world, mut schedule) = capture_world();
+        let original = world.resource::<KeyBindings>().get(Action::MoveUp);
+        set_buttons(&mut world, &[0]);
+        schedule.run(&mut world);
+        assert_eq!(
+            world.resource::<KeyBindings>().get(Action::MoveUp),
+            original
+        );
+        assert_eq!(
+            world.resource::<ControlsCaptureState>().capturing,
+            Some(Action::MoveUp)
+        );
+
+        // Continuing to hold the activation button cannot bind it.
+        set_buttons(&mut world, &[0]);
+        schedule.run(&mut world);
+        assert_eq!(
+            world.resource::<KeyBindings>().get(Action::MoveUp),
+            original
+        );
+
+        // A new button is a deliberate choice, even while A remains held.
+        set_buttons(&mut world, &[0, 2]);
+        schedule.run(&mut world);
+        assert_eq!(
+            world.resource::<KeyBindings>().get(Action::MoveUp),
+            Some(Binding::GamepadButton(2))
+        );
+        assert_eq!(world.resource::<ControlsCaptureState>().capturing, None);
+    }
+
+    #[test]
+    fn activation_button_can_be_bound_after_release_and_repress() {
+        let (mut world, mut schedule) = capture_world();
+        set_buttons(&mut world, &[0]);
+        schedule.run(&mut world);
+        set_buttons(&mut world, &[]);
+        schedule.run(&mut world);
+        assert_eq!(
+            world.resource::<ControlsCaptureState>().capturing,
+            Some(Action::MoveUp)
+        );
+        set_buttons(&mut world, &[0]);
+        schedule.run(&mut world);
+        assert_eq!(
+            world.resource::<KeyBindings>().get(Action::MoveUp),
+            Some(Binding::GamepadButton(0))
+        );
+        assert_eq!(world.resource::<ControlsCaptureState>().capturing, None);
+    }
+
+    #[test]
+    fn back_cancels_capture_after_controller_activation_without_rebinding() {
+        let (mut world, mut schedule) = capture_world();
+        let original = world.resource::<KeyBindings>().clone();
+        set_buttons(&mut world, &[0]);
+        schedule.run(&mut world);
+        set_buttons(&mut world, &[1]);
+        schedule.run(&mut world);
+        assert_eq!(*world.resource::<KeyBindings>(), original);
+        assert_eq!(world.resource::<ControlsCaptureState>().capturing, None);
+        assert!(matches!(
+            world.resource::<NextState<GameState>>(),
+            NextState::Unchanged
+        ));
     }
 }

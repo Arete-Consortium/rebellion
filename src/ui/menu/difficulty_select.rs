@@ -10,7 +10,11 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub(crate) struct DifficultyMenuRoot;
 
-pub(crate) fn spawn_difficulty_menu(mut commands: Commands, mut selection: ResMut<MenuSelection>) {
+pub(crate) fn spawn_difficulty_menu(
+    mut commands: Commands,
+    mut selection: ResMut<MenuSelection>,
+    bindings: Res<KeyBindings>,
+) {
     selection.index = 1; // Default to Normal
     selection.total = 4;
 
@@ -54,7 +58,7 @@ pub(crate) fn spawn_difficulty_menu(mut commands: Commands, mut selection: ResMu
             });
 
             parent.spawn((
-                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
+                Text::new(menu_hint(&bindings, "Select", "Back")),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -115,6 +119,7 @@ fn spawn_difficulty_item(parent: &mut ChildBuilder, diff: Difficulty, index: usi
 
 pub(crate) fn difficulty_menu_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<MenuSelection>,
     mut difficulty: ResMut<Difficulty>,
@@ -123,14 +128,14 @@ pub(crate) fn difficulty_menu_input(
 ) {
     selection.cooldown -= time.delta_secs();
 
-    let nav = get_nav_input(&keyboard, &joystick);
+    let nav = get_nav_input(&keyboard, &joystick, &bindings);
     if nav != 0 && selection.cooldown <= 0.0 {
         selection.index =
             (selection.index as i32 + nav).rem_euclid(selection.total as i32) as usize;
         selection.cooldown = MENU_NAV_COOLDOWN;
     }
 
-    if is_confirm(&keyboard, &joystick) {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         *difficulty = Difficulty::all()[selection.index.min(3)];
         info!(
             "Selected difficulty: {} - {}",
@@ -140,7 +145,7 @@ pub(crate) fn difficulty_menu_input(
         next_state.set(GameState::ShipSelect);
     }
 
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
-        next_state.set(GameState::MainMenu);
+    if is_cancel(&keyboard, &joystick, &bindings) {
+        next_state.set(GameState::FactionSelect);
     }
 }

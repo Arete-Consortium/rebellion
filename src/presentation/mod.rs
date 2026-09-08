@@ -25,6 +25,7 @@ use debug_overlay::{draw_environment_colliders, DevConfig};
 pub mod combat_reactions;
 pub mod debug_overlay;
 pub mod rng;
+pub mod transport;
 
 pub use rng::PresentationRng;
 
@@ -66,6 +67,11 @@ impl Plugin for PresentationPlugin {
             .add_systems(
                 Update,
                 draw_environment_colliders.run_if(in_state(crate::core::GameState::Playing)),
+            )
+            .add_systems(
+                Update,
+                transport::draw_transport_objective
+                    .run_if(in_state(crate::core::GameState::Playing)),
             );
     }
 }

@@ -2,7 +2,7 @@
 //!
 //! Boss encounters, mission flow, and boss intro UI for the campaign.
 
-use super::campaign::{CGBossType, CGCampaignState, ShiigeruNightmare, CG_INTER_WAVE_DELAY};
+use super::campaign::{CGBossType, CGCampaignState, CG_INTER_WAVE_DELAY};
 use crate::core::{DamageType, Difficulty, Faction, GameSession, GameState};
 use crate::entities::enemy::EnemyBehavior;
 use crate::entities::projectile::ProjectilePhysics;
@@ -91,22 +91,6 @@ pub fn start_cg_mission(
     }
 }
 
-/// Update CG mission timer
-pub fn update_cg_mission(
-    _time: Res<Time>,
-    cg_campaign: Res<CGCampaignState>,
-    nightmare: Res<ShiigeruNightmare>,
-) {
-    // Don't update if nightmare mode is active
-    if nightmare.active {
-        return;
-    }
-
-    if cg_campaign.in_mission {
-        // Timer tracking could be added here if needed
-    }
-}
-
 /// Check if current wave is complete in CG campaign.
 /// When a wave is cleared, starts the inter-wave delay timer so the next
 /// wave doesn't spawn instantly (pacing breather for the player).
@@ -154,21 +138,36 @@ pub fn spawn_cg_wave(
     enemy_query: Query<Entity, With<crate::entities::Enemy>>,
     boss_query: Query<Entity, With<CGBoss>>,
     telegraph_query: Query<Entity, With<CGSpawnTelegraph>>,
+    mut carriers: Query<&mut crate::systems::spawning::EnemyCarrier>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     use crate::entities::enemy::spawn_enemy;
 
+    // The scheduled wave waits for its carrier's two-second arrival. During
+    // subsequent waves this overlaps the existing tactical breather.
+    let carrier_ready = if enemy_query.is_empty() && boss_query.is_empty() {
+        crate::systems::spawning::prepare_carrier_wave(&mut carriers, cg_campaign.current_wave)
+    } else {
+        true
+    };
+
     // Tick inter-wave delay
     if cg_campaign.wave_delay_timer > 0.0 {
-        // On first frame of delay, spawn telegraphs at the upcoming wave positions
-        if cg_campaign.wave_delay_timer >= CG_INTER_WAVE_DELAY - 0.05 {
-            let wave = cg_campaign.current_wave;
-            let base_count = 4 + wave as usize;
-            let spawn_mult = difficulty.spawn_rate_mult();
-            let count = (base_count as f32 * spawn_mult) as usize;
-            spawn_cg_telegraphs(&mut commands, count, wave, session.enemy_faction);
+        cg_campaign.wave_delay_timer = (cg_campaign.wave_delay_timer - time.delta_secs()).max(0.0);
+        if cg_campaign.wave_delay_timer > 0.0 {
+            // A single warning per upcoming enemy, even at high frame rates.
+            if telegraph_query.is_empty() {
+                let wave = cg_campaign.current_wave;
+                let count = cg_wave_enemy_count(wave, &difficulty);
+                spawn_cg_telegraphs(&mut commands, count, wave, session.enemy_faction);
+            }
+            return;
         }
-        cg_campaign.wave_delay_timer -= time.delta_secs();
+        // Spawn on the expiry frame. Returning here lets the preceding
+        // wave-complete system re-arm the delay forever on the next update.
+    }
+
+    if !carrier_ready {
         return;
     }
 
@@ -198,9 +197,7 @@ pub fn spawn_cg_wave(
 
     // Spawn wave enemies
     let wave = cg_campaign.current_wave;
-    let base_count = 3 + wave as usize;
-    let spawn_mult = difficulty.spawn_rate_mult();
-    let count = (base_count as f32 * spawn_mult) as usize;
+    let count = cg_wave_enemy_count(wave, &difficulty);
 
     info!("CG: Spawning wave {} with {} enemies", wave, count);
 
@@ -219,6 +216,11 @@ pub fn spawn_cg_wave(
         // Vary spawn positions by wave for visual interest and readability
         let (x, y) = cg_spawn_position(i, count, wave);
 
+        crate::systems::spawning::carrier_launch_flash(
+            &mut commands,
+            Vec2::new(x, y),
+            session.enemy_faction.primary_color(),
+        );
         let behavior = cg_behavior_for_mission(cg_campaign.mission_index);
 
         let entity = spawn_enemy(
@@ -256,6 +258,10 @@ pub fn spawn_cg_wave(
     }
 
     cg_campaign.current_wave += 1;
+}
+
+fn cg_wave_enemy_count(wave: u32, difficulty: &Difficulty) -> usize {
+    ((3 + wave) as f32 * difficulty.spawn_rate_mult()) as usize
 }
 
 /// Compute a varied spawn position for CG wave enemies.
@@ -533,9 +539,10 @@ pub fn spawn_cg_boss(
             fire_rate, // Scaled by difficulty
         },
         sprite,
-        // Rotate 180° to face down (ships face up by default)
-        Transform::from_xyz(0.0, 400.0, 10.0)
-            .with_rotation(Quat::from_rotation_z(std::f32::consts::PI)),
+        // Apply the same hull correction as regular enemies.
+        Transform::from_xyz(0.0, 400.0, 10.0).with_rotation(Quat::from_rotation_z(
+            std::f32::consts::PI + crate::entities::enemy::get_ship_rotation_correction(type_id),
+        )),
     ));
 
     cg_campaign.boss_spawned = true;
@@ -800,57 +807,58 @@ pub fn update_cg_boss(
 
 /// Check if CG boss is defeated
 pub fn check_cg_boss_defeated(
-    mut commands: Commands,
     mut cg_campaign: ResMut<CGCampaignState>,
-    boss_query: Query<(Entity, &CGBoss, &crate::entities::EnemyStats)>,
+    mut destroyed_events: EventReader<crate::core::EnemyDestroyedEvent>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    for (entity, boss, enemy_stats) in boss_query.iter() {
-        // Check EnemyStats health (collision system updates this)
-        if enemy_stats.health <= 0.0 {
-            info!("CG Boss defeated: {}", boss.boss_type.name());
-
-            // Mark boss defeated
-            cg_campaign.boss_defeated = true;
-
-            // Despawn boss
-            commands.entity(entity).despawn_recursive();
-
-            // Go to stage complete (mission advancement happens when player confirms)
-            next_state.set(GameState::StageComplete);
+    // FixedUpdate resolves damage and despawns dead enemies before this
+    // Update system runs, so the destruction event is the durable evidence.
+    for event in destroyed_events.read() {
+        if !event.was_boss
+            || !cg_campaign.in_mission
+            || !cg_campaign.boss_spawned
+            || cg_campaign.boss_defeated
+        {
+            continue;
         }
+        let Some(boss_type) = cg_campaign
+            .current_mission()
+            .and_then(|mission| mission.boss)
+        else {
+            continue;
+        };
+        if event.enemy_type != boss_type.name() {
+            continue;
+        }
+
+        info!("CG Boss defeated: {}", boss_type.name());
+        cg_campaign.boss_defeated = true;
+
+        // Mission advancement happens when the player confirms.
+        next_state.set(GameState::StageComplete);
     }
 }
 
-/// Despawn all gameplay entities before starting a new CG mission or retry.
-/// Prevents stale enemies, bosses, projectiles, and telegraphs from leaking
-/// across runs when the death-screen retry path skips the main menu.
-/// Player entities are handled idempotently by `spawn_player`.
+/// Despawn CG combat entities before a new mission/retry or on return to menu.
+/// Covers both projectile factions so old player shots cannot affect a new run.
+/// Player entities remain owned by `PlayerPlugin`'s lifecycle hooks.
 pub fn cleanup_cg_entities(
     mut commands: Commands,
-    enemy_query: Query<Entity, With<crate::entities::Enemy>>,
-    boss_query: Query<Entity, With<CGBoss>>,
-    projectile_query: Query<Entity, With<crate::entities::EnemyProjectile>>,
-    telegraph_query: Query<Entity, With<CGSpawnTelegraph>>,
-    collectible_query: Query<Entity, With<crate::entities::collectible::Collectible>>,
-    env_query: Query<Entity, With<crate::entities::environment::EnvironmentObject>>,
+    entities: Query<
+        Entity,
+        Or<(
+            With<crate::entities::Enemy>,
+            With<CGBoss>,
+            With<crate::entities::EnemyProjectile>,
+            With<crate::entities::PlayerProjectile>,
+            With<CGSpawnTelegraph>,
+            With<crate::entities::collectible::Collectible>,
+            With<crate::entities::environment::EnvironmentObject>,
+        )>,
+    >,
 ) {
-    for e in enemy_query.iter() {
-        commands.entity(e).despawn_recursive();
-    }
-    for e in boss_query.iter() {
-        commands.entity(e).despawn_recursive();
-    }
-    for e in projectile_query.iter() {
-        commands.entity(e).despawn_recursive();
-    }
-    for e in telegraph_query.iter() {
-        commands.entity(e).despawn_recursive();
-    }
-    for e in collectible_query.iter() {
-        commands.entity(e).despawn_recursive();
-    }
-    for e in env_query.iter() {
+    // Bosses also carry Enemy: one query queues each entity only once.
+    for e in entities.iter() {
         commands.entity(e).despawn_recursive();
     }
 }

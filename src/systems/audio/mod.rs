@@ -24,10 +24,12 @@ impl Plugin for AudioPlugin {
             .init_resource::<SoundAssets>()
             .init_resource::<WarningState>()
             .add_systems(Startup, generate_sounds)
+            .add_systems(OnEnter(GameState::BossIntro), play_chapter_boss_alert)
             .add_systems(
                 Update,
                 (
                     play_weapon_sounds,
+                    play_carrier_warps,
                     play_explosion_sounds,
                     play_pickup_sounds,
                     play_damage_sounds,
@@ -66,6 +68,9 @@ impl Default for SoundSettings {
 pub struct SoundAssets {
     pub autocannon: Option<Handle<AudioSource>>,
     pub laser: Option<Handle<AudioSource>>,
+    pub railgun: Option<Handle<AudioSource>>,
+    pub drone: Option<Handle<AudioSource>>,
+    pub carrier_warp: Option<Handle<AudioSource>>,
     pub missile: Option<Handle<AudioSource>>,
     pub explosion_small: Option<Handle<AudioSource>>,
     pub explosion_medium: Option<Handle<AudioSource>>,
@@ -106,6 +111,7 @@ pub struct WarningState {
     pub armor_warned: bool,
     pub hull_warned: bool,
     pub warning_cooldown: f32,
+    pub last_priority: u8,
 }
 
 impl Default for WarningState {
@@ -115,6 +121,7 @@ impl Default for WarningState {
             armor_warned: false,
             hull_warned: false,
             warning_cooldown: 0.0,
+            last_priority: 0,
         }
     }
 }
@@ -136,19 +143,23 @@ fn generate_sounds(
         sounds.laser = Some(audio_sources.add(source));
     }
 
+    sounds.railgun = generate_railgun().map(|s| audio_sources.add(s));
+    sounds.drone = generate_drone().map(|s| audio_sources.add(s));
+    sounds.carrier_warp = generate_carrier_warp().map(|s| audio_sources.add(s));
+
     // Missile launch - whoosh
     if let Some(source) = generate_missile() {
         sounds.missile = Some(audio_sources.add(source));
     }
 
     // Explosions - various sizes
-    if let Some(source) = generate_explosion(0.15, 300.0) {
+    if let Some(source) = generate_explosion(0.30, 150.0) {
         sounds.explosion_small = Some(audio_sources.add(source));
     }
-    if let Some(source) = generate_explosion(0.25, 200.0) {
+    if let Some(source) = generate_explosion(0.65, 90.0) {
         sounds.explosion_medium = Some(audio_sources.add(source));
     }
-    if let Some(source) = generate_explosion(0.4, 120.0) {
+    if let Some(source) = generate_explosion(1.4, 50.0) {
         sounds.explosion_large = Some(audio_sources.add(source));
     }
 

@@ -1,46 +1,31 @@
-# Audio Assets
+# Audio direction and assets
 
-This directory holds optional audio overrides. The game ships with procedural
-fallbacks (synthesized via `wav_encoder`); any file dropped here replaces the
-fallback at runtime via `AssetServer::load`.
+The September 8 combat pass uses original procedural synthesis for a weighty industrial space-combat sound. It layers mechanical attacks, capacitor tones, filtered noise and bass resonance. No EVE recordings are included in these effects.
 
-## Music slots
+| Cue | Current treatment |
+| --- | --- |
+| Autocannon / artillery | Short mechanical crack with a falling low-frequency body |
+| Laser | Capacitor chirp with a resonant energy tail |
+| Railgun | Sharp electromagnetic discharge and metallic ringing |
+| Missile | Ignition transient followed by filtered thrust noise |
+| Drone | Compact modulated electronic burst |
+| Carrier arrival | 2.2-second charge, warp collapse and low arrival pulse |
+| Explosions | Three sizes of bass rumble, transient noise and metallic debris |
+| Shield / armor / hull impacts | Electrical resonance, metallic ring and structural crunch |
+| Health warnings | Distinct pulse patterns; critical hull warning interrupts lower-priority alarms |
 
-Drop tracks at these paths. `.ogg` is preferred for download size; `.wav` and
-`.mp3` work via Bevy's default audio loaders.
+Combat effects are generated once at startup in `src/systems/audio/generators.rs` and reused. Weapon playback has a maximum of eight active voices and two new voices per frame. Ordinary explosions have eight active voices and three new voices per frame, with one separate reserved boss-explosion voice. New cues have short edge fades and headroom; this is not a master-bus limiter. Dense combat still needs listening and mix adjustment on speakers and headphones. Ability, pickup and UI cues retain the previous synthesis for a subsequent pass. Music follows the combat state for both chapters and plays a single result sting when a mission ends.
 
-| Path | Played during |
-|---|---|
-| `music/menu.ogg` | Main menu, module select, all menu screens |
-| `music/gameplay.ogg` | In-stage gameplay (non-boss) |
-| `music/boss.ogg` | Boss fights |
-| `music/victory.ogg` | Stage complete sting (one-shot) |
-| `music/defeat.ogg` | Game over sting (one-shot) |
+To export the actual generated combat cues for listening:
 
-## SFX slots
+```sh
+REBELLION_AUDIO_PREVIEW_DIR=build/audio-review cargo test --locked --lib combat_cues_have_headroom_distinct_timbres_and_clean_edges
+```
 
-(Coming in next sprint — current SFX are procedural via `wav_encoder`.)
+This writes individual WAV files plus `preview.wav` in this order: autocannon, laser, railgun, missile, drone, carrier warp, heavy explosion, three impacts, then three health warnings. These review files are not shipped in the game assets.
 
-## Asset attribution / IP
+## Music and imported audio
 
-This game is a fan project. If you populate the music slots with EVE Online
-tracks (e.g. Real X / Permaband, ambient soundtrack tracks), the game becomes
-a fan demo using CCP-owned audio. Per CCP's published Fan Content Policy
-non-commercial fan projects are generally permitted, but **the policy text
-governs**, not this README. Read it before committing to specific tracks:
+All shipped music is generated locally: menu ambience, gameplay, boss combat, victory and defeat. The unused automatic requests for five absent Ogg files were removed, along with their file-override handles and selection code. This prevents the previous missing-file errors and avoids advertising an Ogg decoder that this build does not enable.
 
-- CCP Fan Content Policy: https://www.ccpgames.com/legal/fan-content
-- EVE Online Fan Kit: https://community.eveonline.com/community/fanart/
-
-When the deployed build includes CCP-owned audio, surface a clear notice in
-the UI (e.g. main-menu footer): "Fan project — EVE Online™ assets © CCP Games".
-
-## Loading semantics
-
-- Files are queued for load at startup via `AssetServer::load(path)`
-- If the file exists and decodes successfully → file plays
-- If the file is missing (404) or fails to decode → procedural fallback plays
-- Switching tracks live: replace the file, refresh the page
-
-There is no "music settings" UI to pick which track plays in which slot — the
-slot is fixed by filename. To swap tracks, swap the file.
+Dropping WAV/Ogg/MP3 files in this directory does not replace music or effects. A future imported-music pass should add only the chosen supported format, loading/error handling and source/license records when actual tracks are selected. No external recordings are required for the current free community candidate.

@@ -16,6 +16,11 @@ pub(crate) struct VolumeSlider {
     pub(crate) setting: SliderSetting,
 }
 
+/// Distinguishes the filled bar from the slider row. Both have a `Node`,
+/// which automatically includes `BorderColor` in Bevy 0.15.
+#[derive(Component)]
+pub(crate) struct VolumeSliderFill;
+
 #[derive(Component)]
 pub(crate) struct VolumeLabel {
     pub(crate) setting: SliderSetting,
@@ -310,6 +315,7 @@ fn spawn_volume_row(
                             // Filled portion
                             bar_bg.spawn((
                                 VolumeSlider { setting },
+                                VolumeSliderFill,
                                 Node {
                                     width: Val::Percent(value * 100.0),
                                     height: Val::Percent(100.0),
@@ -335,7 +341,7 @@ fn spawn_volume_row(
 
 pub(crate) fn options_menu_input(
     mut commands: Commands,
-    keyboard: Res<ButtonInput<KeyCode>>,
+    (keyboard, bindings): (Res<ButtonInput<KeyCode>>, Res<KeyBindings>),
     joystick: Res<JoystickState>,
     time: Res<Time>,
     mut state: ResMut<OptionsMenuState>,
@@ -345,8 +351,16 @@ pub(crate) fn options_menu_input(
     sounds: Res<crate::systems::audio::SoundAssets>,
     mut rumble_writer: EventWriter<crate::systems::joystick::RumbleRequest>,
     mut next_state: ResMut<NextState<GameState>>,
-    mut sliders: Query<(&VolumeSlider, &mut BorderColor), Without<VolumeLabel>>,
-    mut bars: Query<(&VolumeSlider, &mut Node), (Without<VolumeLabel>, Without<BorderColor>)>,
+    mut sliders: Query<
+        (&VolumeSlider, &mut BorderColor),
+        (
+            Without<VolumeLabel>,
+            Without<VolumeSliderFill>,
+            Without<ResetNavItem>,
+            Without<ControlsNavItem>,
+        ),
+    >,
+    mut bars: Query<(&VolumeSlider, &mut Node), (With<VolumeSliderFill>, Without<VolumeLabel>)>,
     mut labels: Query<(&VolumeLabel, &mut Text)>,
     mut reset_nav: Query<&mut BorderColor, (With<ResetNavItem>, Without<ControlsNavItem>)>,
     mut controls_nav: Query<&mut BorderColor, (With<ControlsNavItem>, Without<ResetNavItem>)>,
@@ -356,21 +370,16 @@ pub(crate) fn options_menu_input(
 
     // Navigation (up/down)
     if state.cooldown <= 0.0 {
-        let nav = get_nav_input(&keyboard, &joystick);
+        // This menu reserves horizontal input for sliders. The shared menu
+        // helper also treats left/right as row navigation, so keep this
+        // screen's navigation vertical and give it priority over adjustment.
+        let nav = get_vertical_input(&keyboard, &joystick, &bindings);
         if nav != 0 {
             state.selected = (state.selected as i32 + nav).rem_euclid(state.total as i32) as usize;
             state.cooldown = 0.15;
-        }
-
-        // Adjust slider value (left/right) — only on the 5 slider rows.
-        if state.selected < 5 {
-            let adjust = if keyboard.pressed(KeyCode::ArrowLeft) || joystick.dpad_x < 0 {
-                -0.05
-            } else if keyboard.pressed(KeyCode::ArrowRight) || joystick.dpad_x > 0 {
-                0.05
-            } else {
-                0.0
-            };
+        } else if state.selected < 5 {
+            // Adjust the selected slider with keys, D-pad or left-stick X.
+            let adjust = get_horizontal_input(&keyboard, &joystick, &bindings) as f32 * 0.05;
 
             if adjust != 0.0 {
                 let current_setting = match state.selected {
@@ -435,8 +444,8 @@ pub(crate) fn options_menu_input(
                 //   sfx_volume * master_volume. Master slider
                 //   intentionally skipped — previewing the master
                 //   would mid-playback alter its own volume (a
-                //   feedback loop). Music has no playing track in
-                //   the Options menu so no preview.
+                //   feedback loop). The music system updates the
+                //   existing menu track live as its sliders change.
                 // - Rumble: send a Custom RumbleRequest so the
                 //   gamepad pulses at the new intensity.
                 if current_setting == SliderSetting::Sfx {
@@ -470,7 +479,7 @@ pub(crate) fn options_menu_input(
 
     // Confirm on the RESET row restores every slider to its resource's
     // canonical default and refreshes all bar/label visuals in one pass.
-    if state.cooldown <= 0.0 && state.selected == 5 && is_confirm(&keyboard, &joystick) {
+    if state.cooldown <= 0.0 && state.selected == 5 && is_confirm(&keyboard, &joystick, &bindings) {
         let sound_default = crate::systems::audio::SoundSettings::default();
         sound_settings.master_volume = sound_default.master_volume;
         sound_settings.sfx_volume = sound_default.sfx_volume;
@@ -510,7 +519,7 @@ pub(crate) fn options_menu_input(
     }
 
     // Confirm on the CONTROLS row opens the controller remapping screen.
-    if state.cooldown <= 0.0 && state.selected == 6 && is_confirm(&keyboard, &joystick) {
+    if state.cooldown <= 0.0 && state.selected == 6 && is_confirm(&keyboard, &joystick, &bindings) {
         next_state.set(GameState::Controls);
         state.cooldown = 0.25;
     }
@@ -550,7 +559,169 @@ pub(crate) fn options_menu_input(
     }
 
     // Back to main menu
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         next_state.set(GameState::MainMenu);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app_builder::build_headless_app;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn native_menu_update_systems_initialize_before_options_is_active() {
+        let mut app = build_headless_app();
+        app.add_plugins(crate::ui::menu::MenuPlugin);
+        assert_eq!(
+            *app.world().resource::<State<GameState>>().get(),
+            GameState::Loading
+        );
+
+        // Bevy initializes every system's queries even when its state run
+        // condition is false. Initialize the actual native menu schedule to
+        // catch startup query conflicts without requiring a renderer/window.
+        app.world_mut().schedule_scope(Update, |world, schedule| {
+            schedule
+                .initialize(world)
+                .expect("native menu systems initialize");
+        });
+    }
+
+    #[test]
+    fn reset_refreshes_native_options_bars_labels_and_row_highlights() {
+        let mut app = build_headless_app();
+        app.init_resource::<crate::systems::audio::SoundAssets>();
+        let world = app.world_mut();
+        {
+            let mut sound = world.resource_mut::<crate::systems::audio::SoundSettings>();
+            sound.master_volume = 0.1;
+            sound.music_volume = 0.1;
+            sound.sfx_volume = 0.1;
+        }
+        world
+            .resource_mut::<crate::systems::ScreenShake>()
+            .multiplier = 0.1;
+        world
+            .resource_mut::<crate::systems::RumbleSettings>()
+            .intensity = 0.1;
+        world
+            .run_system_once(spawn_options_menu)
+            .expect("spawn native options widgets");
+        world.resource_mut::<OptionsMenuState>().selected = 5;
+        world
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Enter);
+        world
+            .run_system_once(options_menu_input)
+            .expect("reset through native options input");
+
+        let sound = crate::systems::audio::SoundSettings::default();
+        let defaults = [
+            (SliderSetting::Master, sound.master_volume),
+            (SliderSetting::Music, sound.music_volume),
+            (SliderSetting::Sfx, sound.sfx_volume),
+            (
+                SliderSetting::Shake,
+                crate::systems::ScreenShake::default().multiplier,
+            ),
+            (
+                SliderSetting::Rumble,
+                crate::systems::RumbleSettings::default().intensity,
+            ),
+        ];
+        let mut bars = world.query_filtered::<(&VolumeSlider, &Node), With<VolumeSliderFill>>();
+        assert_eq!(bars.iter(world).count(), 5);
+        for (setting, value) in defaults {
+            let (_, node) = bars
+                .iter(world)
+                .find(|(slider, _)| slider.setting == setting)
+                .expect("filled bar exists for each setting");
+            assert_eq!(node.width, Val::Percent(value * 100.0));
+            let mut labels = world.query::<(&VolumeLabel, &Text)>();
+            let (_, text) = labels
+                .iter(world)
+                .find(|(label, _)| label.setting == setting)
+                .expect("percentage label exists for each setting");
+            assert_eq!(text.0, format!("{}%", (value * 100.0) as i32));
+        }
+
+        let highlight = Color::srgb(0.4, 0.6, 0.8);
+        let mut reset_rows = world.query_filtered::<&BorderColor, With<ResetNavItem>>();
+        assert_eq!(reset_rows.single(world).0, highlight);
+        let mut controls_rows = world.query_filtered::<&BorderColor, With<ControlsNavItem>>();
+        assert_ne!(controls_rows.single(world).0, highlight);
+        let mut slider_rows =
+            world.query_filtered::<&BorderColor, (With<VolumeSlider>, Without<VolumeSliderFill>)>();
+        assert_eq!(slider_rows.iter(world).count(), 5);
+        assert!(slider_rows.iter(world).all(|border| border.0 != highlight));
+    }
+
+    #[test]
+    fn horizontal_input_adjusts_only_the_selected_slider() {
+        for (key, dpad_x, stick_x, change) in [
+            (Some(KeyCode::ArrowRight), 0, 0.0, 0.05),
+            (Some(KeyCode::ArrowLeft), 0, 0.0, -0.05),
+            (None, 1, 0.0, 0.05),
+            (None, -1, 0.0, -0.05),
+            (None, 0, 0.8, 0.05),
+            (None, 0, -0.8, -0.05),
+        ] {
+            let mut app = build_headless_app();
+            app.init_resource::<crate::systems::audio::SoundAssets>();
+            let world = app.world_mut();
+            world
+                .run_system_once(spawn_options_menu)
+                .expect("spawn options");
+            if let Some(key) = key {
+                world.resource_mut::<ButtonInput<KeyCode>>().press(key);
+            }
+            {
+                let mut joystick = world.resource_mut::<JoystickState>();
+                joystick.dpad_x = dpad_x;
+                joystick.left_x = stick_x;
+            }
+
+            world
+                .run_system_once(options_menu_input)
+                .expect("adjust slider");
+            assert_eq!(world.resource::<OptionsMenuState>().selected, 0);
+            let defaults = crate::systems::audio::SoundSettings::default();
+            let sound = world.resource::<crate::systems::audio::SoundSettings>();
+            let expected = defaults.master_volume + change;
+            assert!((sound.master_volume - expected).abs() < 0.0001);
+            assert_eq!(sound.music_volume, defaults.music_volume);
+            assert_eq!(sound.sfx_volume, defaults.sfx_volume);
+            let mut bars = world.query_filtered::<(&VolumeSlider, &Node), With<VolumeSliderFill>>();
+            let (_, master_bar) = bars
+                .iter(world)
+                .find(|(slider, _)| slider.setting == SliderSetting::Master)
+                .expect("master slider fill");
+            assert_eq!(master_bar.width, Val::Percent(expected * 100.0));
+        }
+    }
+
+    #[test]
+    fn vertical_navigation_does_not_adjust_the_destination_slider() {
+        let mut app = build_headless_app();
+        app.init_resource::<crate::systems::audio::SoundAssets>();
+        let world = app.world_mut();
+        world
+            .run_system_once(spawn_options_menu)
+            .expect("spawn options");
+        {
+            let mut keyboard = world.resource_mut::<ButtonInput<KeyCode>>();
+            keyboard.press(KeyCode::ArrowDown);
+            keyboard.press(KeyCode::ArrowRight);
+        }
+        world
+            .run_system_once(options_menu_input)
+            .expect("navigate options");
+        assert_eq!(world.resource::<OptionsMenuState>().selected, 1);
+        let defaults = crate::systems::audio::SoundSettings::default();
+        let sound = world.resource::<crate::systems::audio::SoundSettings>();
+        assert_eq!(sound.master_volume, defaults.master_volume);
+        assert_eq!(sound.music_volume, defaults.music_volume);
     }
 }

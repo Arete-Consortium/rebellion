@@ -312,23 +312,29 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Playing), spawn_player)
-            .add_systems(
-                FixedUpdate,
-                (
-                    player_movement,
-                    player_shooting,
-                    update_player_stats,
-                    iframes_flash,
-                )
-                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
-                    .run_if(not_last_stand),
+        for destination in crate::core::NON_COMBAT_STATES {
+            app.add_systems(OnEnter(destination), despawn_player);
+        }
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            spawn_player.run_if(crate::core::not_resuming_gameplay),
+        )
+        .add_systems(
+            FixedUpdate,
+            (
+                player_movement,
+                player_shooting,
+                update_player_stats,
+                iframes_flash,
             )
-            .add_systems(
-                OnExit(GameState::Playing),
-                despawn_player
-                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
-            );
+                .after(crate::systems::ability::AbilityUpdate)
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
+                .run_if(not_last_stand),
+        )
+        .add_systems(
+            OnExit(GameState::Paused),
+            despawn_player.run_if(crate::core::not_resuming_gameplay),
+        );
     }
 }
 
@@ -410,7 +416,7 @@ fn spawn_player(
     // overrides the faction default so invasion-era crossovers fire correctly.
     let hull_weapon = super::enemy::get_player_weapon_type(type_id, faction);
     // Gila fires missiles at 2× since it has no drone swarm in this build.
-    let rate_mult = if type_id == 17713 { 2.0 } else { 1.0 };
+    let rate_mult = if type_id == 17715 { 2.0 } else { 1.0 };
     let weapon = Weapon {
         fire_rate: ship_def.fire_rate * bonuses.fire_rate_mult * rate_mult,
         damage: ship_def.damage * bonuses.damage_mult,
@@ -428,15 +434,8 @@ fn spawn_player(
     // Get rotation correction for this ship type (player faces UP, so no base rotation)
     let rotation = super::enemy::get_ship_rotation_correction(type_id);
 
-    // Adjust engine trail offset based on rotation correction
-    // For 180° rotated ships, the engine offset needs to be flipped
-    // Engine trail matches hull faction (EDENCOM/Triglavian/Pirate override
-    // the player faction for invasion-era cross-empire hulls).
-    let mut engine_trail = EngineTrail::for_hull(type_id, faction);
-    if (rotation - std::f32::consts::PI).abs() < 0.1 {
-        // Ship is flipped 180°, flip the engine offset
-        engine_trail.offset.y = -engine_trail.offset.y;
-    }
+    // The trail system removes the sprite correction before placing exhaust.
+    let engine_trail = EngineTrail::for_hull(type_id, faction);
 
     // Create ability from ship definition
     let ability_type = AbilityType::from_special(ship_def.special);
@@ -575,12 +574,15 @@ fn player_movement(
             &BaseRotation,
             &ManeuverState,
             &mut CurrentTilt,
+            &super::collectible::PowerupEffects,
+            &AbilityEffects,
         ),
         With<Player>,
     >,
     salt_miner: Res<SaltMinerSystem>,
 ) {
-    let Ok((mut transform, mut movement, base_rot, maneuver, mut tilt)) = query.get_single_mut()
+    let Ok((mut transform, mut movement, base_rot, maneuver, mut tilt, powerups, ability)) =
+        query.get_single_mut()
     else {
         return;
     };
@@ -609,12 +611,14 @@ fn player_movement(
     }
 
     let dt = time.delta_secs();
-    let speed_mult = salt_miner.speed_mult();
+    let speed_mult = salt_miner.speed_mult() * powerups.speed_mult() * ability.speed_multiplier;
 
     // Apply acceleration
     if input != Vec2::ZERO {
         let input_normalized = input.normalize();
-        let accel = movement.acceleration;
+        // Scale thrust as well as the cap: friction otherwise keeps the ship
+        // below its base cap, making a cap-only booster imperceptible.
+        let accel = movement.acceleration * speed_mult;
         movement.velocity += input_normalized * accel * dt;
     }
 
@@ -660,6 +664,7 @@ fn player_shooting(
             &Transform,
             &mut Weapon,
             &AbilityEffects,
+            &super::collectible::PowerupEffects,
             Option<&super::items::EffectiveStats>,
         ),
         With<Player>,
@@ -669,7 +674,7 @@ fn player_shooting(
     mut heat_system: ResMut<crate::systems::ComboHeatSystem>,
     mut screen_shake: ResMut<crate::systems::effects::ScreenShake>,
 ) {
-    let Ok((transform, mut weapon, ability_effects, eff)) = query.get_single_mut() else {
+    let Ok((transform, mut weapon, ability_effects, powerups, eff)) = query.get_single_mut() else {
         return;
     };
     let eff = eff
@@ -751,7 +756,8 @@ fn player_shooting(
     }
     let fire_pressed = keybindings.pressed(crate::core::Action::Fire, &keyboard, &joystick)
         || joystick_firing
-        || face_button_fire;
+        || face_button_fire
+        || joystick.right_trigger_pressed();
 
     if fire_pressed && weapon.cooldown <= 0.0 {
         // Track heat (doesn't block firing, just affects fire rate)
@@ -818,7 +824,7 @@ fn player_shooting(
             direction: weapon.aim_direction,
             weapon_type: weapon.weapon_type,
             bullet_color,
-            damage: weapon.damage * eff.damage_mult,
+            damage: weapon.damage * eff.damage_mult * powerups.damage_mult(),
             burst_count,
             spread_angle,
             ammo_type: weapon.ammo_type,

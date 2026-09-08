@@ -3,6 +3,21 @@
 use crate::core::*;
 use bevy::prelude::*;
 
+/// Consume this frame's emission intervals while dropping effects over budget.
+/// Keeping only the fractional interval prevents a later catch-up burst and
+/// bounds work even after a long frame or with many simultaneous emitters.
+fn emission_count(timer: &mut f32, rate: f32, dt: f32, budget: usize) -> usize {
+    if !rate.is_finite() || rate <= 0.0 {
+        *timer = 0.0;
+        return 0;
+    }
+    let interval = 1.0 / rate;
+    *timer += dt;
+    let count = (*timer / interval).floor().min(budget as f32) as usize;
+    *timer %= interval;
+    count
+}
+
 // =============================================================================
 // BULLET TRAILS
 // =============================================================================
@@ -61,20 +76,20 @@ pub fn spawn_bullet_trails(
     particle_count: Query<&BulletTrailParticle>,
     profile: Res<crate::systems::perf_profile::PerfProfile>,
 ) {
-    // Cap trail particles to avoid performance issues
-    if particle_count.iter().count() >= profile.trail_particles {
-        return;
-    }
+    // Deferred Commands are not visible to the query until the system ends,
+    // so reserve capacity for every particle queued during this frame.
+    let mut remaining = profile
+        .trail_particles
+        .saturating_sub(particle_count.iter().count());
 
     let dt = time.delta_secs();
 
     for (transform, mut trail) in query.iter_mut() {
-        trail.spawn_timer += dt;
-        let spawn_interval = 1.0 / trail.spawn_rate;
+        let rate = trail.spawn_rate;
+        let count = emission_count(&mut trail.spawn_timer, rate, dt, remaining);
+        remaining -= count;
 
-        while trail.spawn_timer >= spawn_interval {
-            trail.spawn_timer -= spawn_interval;
-
+        for _ in 0..count {
             let pos = transform.translation.truncate();
             let lifetime = trail.lifetime;
             let size = trail.size;
@@ -226,7 +241,7 @@ impl EngineTrail {
             // Triglavian (incl. Nergal, Ikitursa, Draugur)
             47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => Self::triglavian(),
             // Guristas pirate (Gila)
-            17713 => Self::pirate(),
+            17715 => Self::pirate(),
             _ => Self::from_faction(faction),
         }
     }
@@ -246,23 +261,37 @@ pub struct EngineParticle {
 pub fn spawn_engine_trails(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(&Transform, &mut EngineTrail)>,
+    mut query: Query<(
+        &Transform,
+        &mut EngineTrail,
+        Option<&crate::entities::player::BaseRotation>,
+        Option<&crate::entities::enemy::EnemySpriteRotation>,
+    )>,
+    particle_count: Query<&EngineParticle>,
+    profile: Res<crate::systems::perf_profile::PerfProfile>,
 ) {
     let dt = time.delta_secs();
+    let mut remaining = profile
+        .engine_particles
+        .saturating_sub(particle_count.iter().count());
 
-    for (transform, mut trail) in query.iter_mut() {
+    for (transform, mut trail, player_rotation, enemy_rotation) in query.iter_mut() {
         if !trail.active {
             continue;
         }
 
-        trail.spawn_timer += dt;
-        let spawn_interval = 1.0 / trail.spawn_rate;
+        let rate = trail.spawn_rate;
+        // Each emission produces a core and (capacity permitting) a glow.
+        let count = emission_count(&mut trail.spawn_timer, rate, dt, remaining.div_ceil(2));
 
-        while trail.spawn_timer >= spawn_interval {
-            trail.spawn_timer -= spawn_interval;
-
+        for _ in 0..count {
             // Calculate spawn position with offset
-            let rotation = transform.rotation.to_euler(EulerRot::ZYX).0;
+            let correction = player_rotation
+                .map(|base| base.0)
+                .or_else(|| enemy_rotation.map(|base| base.0 - std::f32::consts::PI))
+                .unwrap_or(0.0);
+            // Art correction must not rotate the semantic exhaust direction.
+            let rotation = transform.rotation.to_euler(EulerRot::ZYX).0 - correction;
             let rotated_offset = Vec2::new(
                 trail.offset.x * rotation.cos() - trail.offset.y * rotation.sin(),
                 trail.offset.x * rotation.sin() + trail.offset.y * rotation.cos(),
@@ -270,7 +299,7 @@ pub fn spawn_engine_trails(
             let spawn_pos = transform.translation.truncate() + rotated_offset;
 
             // Exhaust direction (opposite of ship facing)
-            let exhaust_dir = Vec2::new(-rotation.sin(), -rotation.cos());
+            let exhaust_dir = Vec2::new(rotation.sin(), -rotation.cos());
 
             // Spawn core particle (bright, small, short-lived)
             let core_spread = 2.0;
@@ -301,6 +330,10 @@ pub fn spawn_engine_trails(
                 )
                 .with_rotation(Quat::from_rotation_z(rotation)),
             ));
+            remaining -= 1;
+            if remaining == 0 {
+                break;
+            }
 
             // Spawn outer glow particle (faction color, larger, longer-lived)
             let glow_spread = 6.0;
@@ -335,6 +368,7 @@ pub fn spawn_engine_trails(
                     LAYER_EFFECTS - 1.0,
                 ),
             ));
+            remaining -= 1;
         }
     }
 }
@@ -381,5 +415,88 @@ pub fn update_engine_particles(
         if particle.lifetime <= 0.0 {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::systems::perf_profile::PerfProfile;
+    use std::time::Duration;
+
+    fn trail_app(profile: PerfProfile) -> App {
+        let mut app = App::new();
+        app.insert_resource(Time::<()>::default())
+            .insert_resource(profile)
+            .add_systems(Update, (spawn_bullet_trails, spawn_engine_trails));
+        // A crowded frame following a hitch must still respect both caps.
+        for _ in 0..100 {
+            app.world_mut().spawn((
+                Transform::default(),
+                BulletTrail::beam(Color::WHITE),
+                EngineTrail::default(),
+            ));
+        }
+        app.world_mut()
+            .resource_mut::<Time>()
+            .advance_by(Duration::from_millis(250));
+        app
+    }
+
+    fn counts(app: &mut App) -> (usize, usize) {
+        let world = app.world_mut();
+        let bullets = world.query::<&BulletTrailParticle>().iter(world).count();
+        let engines = world.query::<&EngineParticle>().iter(world).count();
+        (bullets, engines)
+    }
+
+    #[test]
+    fn crowded_hitch_respects_desktop_and_mobile_particle_caps() {
+        for profile in [PerfProfile::desktop(), PerfProfile::mobile()] {
+            let mut app = trail_app(profile);
+            app.update();
+            assert_eq!(
+                counts(&mut app),
+                (profile.trail_particles, profile.engine_particles)
+            );
+            // Existing particles consume capacity on the next frame too.
+            app.update();
+            assert_eq!(
+                counts(&mut app),
+                (profile.trail_particles, profile.engine_particles)
+            );
+        }
+    }
+
+    #[test]
+    fn zero_particle_budget_disables_both_trails() {
+        let mut app = trail_app(PerfProfile {
+            trail_particles: 0,
+            engine_particles: 0,
+            ..PerfProfile::mobile()
+        });
+        app.update();
+        assert_eq!(counts(&mut app), (0, 0));
+    }
+
+    #[test]
+    fn budget_exhaustion_drops_emission_backlog() {
+        let mut app = trail_app(PerfProfile::mobile());
+        app.update();
+        let world = app.world_mut();
+        let particles: Vec<_> = world
+            .query_filtered::<Entity, Or<(With<BulletTrailParticle>, With<EngineParticle>)>>()
+            .iter(world)
+            .collect();
+        for entity in particles {
+            world.despawn(entity);
+        }
+        world.resource_mut::<Time>().advance_by(Duration::ZERO);
+        app.update();
+        assert_eq!(
+            counts(&mut app),
+            (0, 0),
+            "dropped effects must not burst later"
+        );
     }
 }

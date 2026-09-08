@@ -57,69 +57,29 @@ impl ShipSpriteCache {
     }
 }
 
-/// Ships to preload - all player and enemy ships used in game
-const SHIPS_TO_LOAD: &[u32] = &[
-    // === MINMATAR (player + enemy ships) ===
-    587,   // Rifter
-    585,   // Slasher
-    598,   // Breacher
-    11371, // Wolf
-    11400, // Jaguar
-    // === AMARR (player + enemy ships) ===
-    589,   // Executioner
-    597,   // Punisher
-    591,   // Tormentor
-    11186, // Crusader (interceptor)
-    11184, // Malediction (interceptor)
-    16236, // Coercer (destroyer)
-    24690, // Harbinger (battlecruiser)
-    // === CALDARI (player + enemy ships) ===
-    602,   // Kestrel
-    603,   // Merlin
-    583,   // Condor
-    11381, // Hawk
-    11387, // Harpy
-    35683, // Jackdaw
-    16238, // Cormorant (destroyer)
-    24688, // Drake (battlecruiser)
-    // === GALLENTE (player + enemy ships) ===
-    593,   // Tristan
-    594,   // Incursus
-    608,   // Atron
-    11373, // Enyo
-    11377, // Ishkur
-    35685, // Hecate
-    16242, // Catalyst (destroyer)
-    24700, // Myrmidon (battlecruiser)
-    // === CARRIERS (wave spawners) ===
-    23757, // Archon (Amarr carrier)
-    23911, // Thanatos (Gallente carrier)
-    23915, // Chimera (Caldari carrier)
-    24483, // Nidhoggur (Minmatar carrier)
-    // === TITANS ===
-    3764, // Caldari capital (Last Stand titan)
-    // === TRIGLAVIAN INVASION CHAPTER (Abyssal) ===
-    // EDENCOM (verified 2026-04: Skybreaker=54731, Thunderchild=54733, Stormbringer=54732)
-    54731, // Skybreaker
-    54732, // Stormbringer
-    54733, // Thunderchild
-    // Triglavian
-    47269, // Damavik
-    47270, // Vedmak
-    47271, // Leshak
-    49710, // Kikimora
-    49711, // Drekavac
-    // Invasion-era assault frigates
-    11393, // Retribution (Amarr AF)
-    52250, // Nergal (Triglavian AF)
-    // T3 tactical destroyers
-    34317, // Confessor (Amarr T3)
-    // Cruisers
-    621,   // Caracal (Caldari missile cruiser)
-    11993, // Muninn (Minmatar HAC)
-    12019, // Sacrilege (Amarr HAC)
-    17713, // Gila (Guristas pirate cruiser)
-];
+/// The bundled registry owns the preload list, so new hulls cannot silently
+/// fall back to a colored box because a second list was not updated.
+fn ships_to_load() -> &'static [u32] {
+    static IDS: std::sync::OnceLock<Vec<u32>> = std::sync::OnceLock::new();
+    IDS.get_or_init(|| {
+        #[derive(serde::Deserialize)]
+        struct Manifest {
+            ships: Vec<Hull>,
+        }
+        #[derive(serde::Deserialize)]
+        struct Hull {
+            type_id: u32,
+        }
+        let manifest: Manifest =
+            serde_json::from_str(include_str!("../../assets/ships/ship_manifest.json"))
+                .expect("bundled ship manifest must be valid");
+        manifest
+            .ships
+            .into_iter()
+            .map(|hull| hull.type_id)
+            .collect()
+    })
+}
 
 /// Setup the sprite cache directory (native only)
 #[cfg(not(target_arch = "wasm32"))]
@@ -159,13 +119,13 @@ fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, mut images: ResMut<
         }
     }
 
-    info!("Loading {} ship sprites...", SHIPS_TO_LOAD.len());
+    info!("Loading {} ship sprites...", ships_to_load().len());
 
     let bundled_dir = PathBuf::from(BUNDLED_SHIPS_DIR);
     let mut loaded_bundled = 0;
     let mut loaded_cached = 0;
 
-    for &type_id in SHIPS_TO_LOAD {
+    for &type_id in ships_to_load() {
         // Priority 1: Check bundled assets (fastest, works offline)
         let bundled_path = bundled_dir.join(format!("{}.png", type_id));
         if bundled_path.exists() {
@@ -223,10 +183,10 @@ fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, mut images: ResMut<
 fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, asset_server: Res<AssetServer>) {
     info!(
         "Loading {} ship sprites (WASM mode via AssetServer)...",
-        SHIPS_TO_LOAD.len()
+        ships_to_load().len()
     );
 
-    for &type_id in SHIPS_TO_LOAD {
+    for &type_id in ships_to_load() {
         let path = format!("ships/{}.png", type_id);
         let handle: Handle<Image> = asset_server.load(&path);
         cache.sprites.insert(type_id, handle);
@@ -235,7 +195,7 @@ fn start_loading_sprites(mut cache: ResMut<ShipSpriteCache>, asset_server: Res<A
 
     info!(
         "Queued {} sprites for loading via AssetServer",
-        SHIPS_TO_LOAD.len()
+        ships_to_load().len()
     );
 }
 
@@ -483,4 +443,76 @@ pub fn get_sprite_cache_dir() -> PathBuf {
 #[cfg(target_arch = "wasm32")]
 pub fn get_sprite_cache_dir() -> PathBuf {
     PathBuf::new()
+}
+
+#[cfg(test)]
+mod registry_tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn every_selectable_faction_hull_has_matching_identity_and_transparency() {
+        let manifest: serde_json::Value =
+            serde_json::from_str(include_str!("../../assets/ships/ship_manifest.json")).unwrap();
+        let entries = manifest["ships"].as_array().unwrap();
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(BUNDLED_SHIPS_DIR);
+        for faction in [
+            Faction::Minmatar,
+            Faction::Amarr,
+            Faction::Caldari,
+            Faction::Gallente,
+        ] {
+            for hull in faction.player_ships() {
+                let entry = entries
+                    .iter()
+                    .find(|e| e["type_id"].as_u64() == Some(hull.type_id as u64))
+                    .expect("preloaded faction hull");
+                assert_eq!(entry["name"].as_str(), Some(hull.name));
+                assert_eq!(
+                    entry["faction"].as_str(),
+                    Some(faction.short_name().to_ascii_lowercase().as_str())
+                );
+                let bytes = fs::read(dir.join(format!("{}.png", hull.type_id))).unwrap();
+                let image = image::load_from_memory(&bytes).unwrap().into_rgba8();
+                for (x, y) in [
+                    (0, 0),
+                    (image.width() - 1, 0),
+                    (0, image.height() - 1),
+                    (image.width() - 1, image.height() - 1),
+                ] {
+                    assert_eq!(
+                        image.get_pixel(x, y)[3],
+                        0,
+                        "{} has a visible square corner",
+                        hull.name
+                    );
+                }
+                assert!(
+                    image.pixels().filter(|p| p[3] > 0).count() > 100,
+                    "empty ship art"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn every_bundled_hull_is_preloaded_and_decodes() {
+        let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(BUNDLED_SHIPS_DIR);
+        let files: BTreeSet<u32> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.extension().is_some_and(|ext| ext == "png"))
+            .filter_map(|path| path.file_stem().unwrap().to_str().unwrap().parse().ok())
+            .collect();
+        let ids: BTreeSet<u32> = ships_to_load().iter().copied().collect();
+        assert_eq!(ids.len(), ships_to_load().len(), "duplicate registry IDs");
+        assert_eq!(
+            files, ids,
+            "the loader must cover the complete bundled roster"
+        );
+        for id in ids {
+            load_image_file(&dir.join(format!("{id}.png")))
+                .unwrap_or_else(|e| panic!("hull {id}: {e}"));
+        }
+    }
 }

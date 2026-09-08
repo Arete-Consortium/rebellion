@@ -13,16 +13,31 @@ pub fn update_wave_display(
     active_module: Res<ActiveModule>,
     campaign: Res<CampaignState>,
     cg_campaign: Option<Res<CGCampaignState>>,
+    ef_campaign: Option<Res<crate::games::elder_fleet::ElderFleetCampaignState>>,
     mut query: Query<&mut Text, With<WaveText>>,
 ) {
     for mut text in query.iter_mut() {
+        if active_module.is_elder_fleet() {
+            if let Some(ef) = ef_campaign.as_deref() {
+                **text = if ef.boss_spawned {
+                    "BOSS ENGAGEMENT".into()
+                } else {
+                    format!("WAVE {}/{}", ef.current_wave.max(1), ef.waves_in_mission)
+                };
+            }
+            continue;
+        }
         if active_module.is_caldari_gallente() {
             if let Some(cg) = cg_campaign.as_deref() {
                 if let Some(mission) = cg.current_mission() {
                     if cg.boss_spawned && !cg.boss_defeated {
-                        **text = format!("WAVE {}/{} — BOSS", cg.current_wave, mission.waves + 1);
+                        **text = "BOSS ENGAGEMENT".to_string();
                     } else {
-                        **text = format!("WAVE {}/{}", cg.current_wave, mission.waves + 1);
+                        **text = format!(
+                            "WAVE {}/{}",
+                            cg.current_wave.saturating_sub(1).clamp(1, mission.waves),
+                            mission.waves
+                        );
                     }
                 } else {
                     **text = format!("WAVE {}", cg.current_wave);
@@ -57,7 +72,9 @@ pub fn update_mission_display(
     active_module: Res<ActiveModule>,
     campaign: Res<CampaignState>,
     cg_campaign: Option<Res<CGCampaignState>>,
+    ef_campaign: Option<Res<crate::games::elder_fleet::ElderFleetCampaignState>>,
     score: Res<ScoreSystem>,
+    transport: Option<Res<crate::games::elder_fleet::transport::TransportObjective>>,
     escort_query: Query<&EscortData, With<Friendly>>,
     mut mission_query: Query<
         &mut Text,
@@ -108,6 +125,46 @@ pub fn update_mission_display(
         ),
     >,
 ) {
+    if active_module.is_elder_fleet() {
+        let index = ef_campaign
+            .as_deref()
+            .map(|ef| ef.current_mission)
+            .unwrap_or(0);
+        for mut text in &mut mission_query {
+            **text = crate::games::elder_fleet::mission_info(&active_module, index)
+                .map(|m| format!("M{}: {}", index + 1, m.name))
+                .unwrap_or_default();
+        }
+        for (mut text, mut color) in &mut objective_query {
+            **text = transport
+                .as_deref()
+                .map(|t| t.hud_instruction())
+                .unwrap_or("Clear the waves. Defeat the enemy commander.")
+                .into();
+            color.0 = Color::srgb(0.65, 0.85, 0.95);
+        }
+        for mut text in &mut souls_query {
+            **text = String::new();
+        }
+        for mut text in &mut kill_query {
+            **text = String::new();
+        }
+        for (mut text, mut color) in &mut escort_query_text {
+            **text = transport
+                .as_deref()
+                .map(|t| t.hud_status())
+                .unwrap_or_default();
+            color.0 = if transport
+                .as_deref()
+                .is_some_and(|t| t.health_fraction < 0.3 || t.remaining_seconds() < 15.0)
+            {
+                Color::srgb(1.0, 0.65, 0.3)
+            } else {
+                Color::srgb(0.55, 0.95, 1.0)
+            };
+        }
+        return;
+    }
     // Update mission name
     for mut text in mission_query.iter_mut() {
         if active_module.is_caldari_gallente() {
@@ -135,14 +192,34 @@ pub fn update_mission_display(
         }
     }
 
+    if active_module.is_caldari_gallente() {
+        for (mut text, mut color) in &mut objective_query {
+            **text = cg_campaign
+                .as_deref()
+                .and_then(|cg| cg.current_mission())
+                .map(|mission| mission.primary_objective.to_string())
+                .unwrap_or_default();
+            color.0 = Color::srgb(0.65, 0.85, 0.95);
+        }
+        for mut text in &mut souls_query {
+            **text = String::new();
+        }
+        for mut text in &mut kill_query {
+            **text = String::new();
+        }
+        for (mut text, _) in &mut escort_query_text {
+            **text = String::new();
+        }
+        return;
+    }
     // Update objective
     for (mut text, mut color) in objective_query.iter_mut() {
         if let Some(mission) = campaign.current_mission() {
             if campaign.primary_complete {
-                **text = format!("\u{2713} {}", mission.primary_objective);
+                **text = format!("OK {}", mission.primary_objective);
                 color.0 = Color::srgb(0.3, 1.0, 0.3); // Bright green when complete
             } else {
-                **text = format!("\u{25ef} {}", mission.primary_objective);
+                **text = format!("> {}", mission.primary_objective);
                 color.0 = Color::srgb(0.5, 0.8, 0.5); // Dim green when incomplete
             }
         } else {
@@ -155,7 +232,7 @@ pub fn update_mission_display(
         if campaign.in_mission {
             let bonus = if let Some(mission) = campaign.current_mission() {
                 if campaign.mission_souls >= mission.souls_to_liberate {
-                    " \u{2713}"
+                    " OK"
                 } else {
                     ""
                 }
@@ -174,7 +251,7 @@ pub fn update_mission_display(
             if let Some(mission) = campaign.current_mission() {
                 if mission.kill_count_target > 0 {
                     let check = if campaign.enemies_killed >= mission.kill_count_target {
-                        " \u{2713}"
+                        " OK"
                     } else {
                         ""
                     };

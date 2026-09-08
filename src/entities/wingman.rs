@@ -230,8 +230,9 @@ pub fn spawn_wingman(
             },
             WingmanWeapon::default(),
             sprite,
-            // Ship renders already face UP - no rotation needed
-            Transform::from_xyz(spawn_pos.x, spawn_pos.y, LAYER_PLAYER),
+            Transform::from_xyz(spawn_pos.x, spawn_pos.y, LAYER_PLAYER).with_rotation(
+                Quat::from_rotation_z(super::enemy::get_ship_rotation_correction(rifter_type_id)),
+            ),
         ))
         .id()
 }

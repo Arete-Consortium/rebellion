@@ -27,7 +27,7 @@ except ImportError:
     sys.exit(1)
 
 SHIPS_DIR = Path(__file__).resolve().parent.parent / "assets" / "ships"
-PREVIEW_DIR = Path(__file__).resolve().parent.parent / "assets" / "_orientation_preview"
+PREVIEW_DIR = Path(__file__).resolve().parent.parent / "build" / "ship-review" / "orientation-preview"
 
 
 def load_mask(path: Path) -> np.ndarray:

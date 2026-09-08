@@ -6,7 +6,7 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
-use crate::entities::player::{Movement, Player, ShipStats};
+use crate::entities::player::{Player, ShipStats};
 use crate::systems::joystick::JoystickState;
 
 /// Ability types matching ShipDef.special descriptions
@@ -212,7 +212,7 @@ pub struct AbilityEndedEvent {
 }
 
 /// Temporary effect modifiers while ability is active
-#[derive(Component, Debug, Clone, Default)]
+#[derive(Component, Debug, Clone)]
 pub struct AbilityEffects {
     /// Speed multiplier (1.0 = normal)
     pub speed_multiplier: f32,
@@ -228,16 +228,28 @@ pub struct AbilityEffects {
     pub extra_projectiles: u32,
 }
 
-impl AbilityEffects {
-    pub fn reset(&mut self) {
-        self.speed_multiplier = 1.0;
-        self.damage_taken_multiplier = 1.0;
-        self.damage_dealt_multiplier = 1.0;
-        self.range_multiplier = 1.0;
-        self.invulnerable = false;
-        self.extra_projectiles = 0;
+impl Default for AbilityEffects {
+    fn default() -> Self {
+        Self {
+            speed_multiplier: 1.0,
+            damage_taken_multiplier: 1.0,
+            damage_dealt_multiplier: 1.0,
+            range_multiplier: 1.0,
+            invulnerable: false,
+            extra_projectiles: 0,
+        }
     }
 }
+
+impl AbilityEffects {
+    pub fn reset(&mut self) {
+        *self = Self::default();
+    }
+}
+
+/// Resolve temporary modifiers before the player's movement and firing tick.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct AbilityUpdate;
 
 /// Plugin for ability system
 pub struct AbilityPlugin;
@@ -256,6 +268,7 @@ impl Plugin for AbilityPlugin {
                     ability_end_effects,
                 )
                     .chain()
+                    .in_set(AbilityUpdate)
                     .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
             );
     }
@@ -316,10 +329,10 @@ fn ability_update_cooldowns(time: Res<Time>, mut query: Query<&mut Ability, With
 
 /// Apply ability effects when active
 fn ability_apply_effects(
-    mut query: Query<(&Ability, &mut AbilityEffects, &mut ShipStats, &mut Movement), With<Player>>,
+    mut query: Query<(&Ability, &mut AbilityEffects, &mut ShipStats), With<Player>>,
     time: Res<Time>,
 ) {
-    for (ability, mut effects, mut stats, mut movement) in query.iter_mut() {
+    for (ability, mut effects, mut stats) in query.iter_mut() {
         // Reset effects first
         effects.reset();
 
@@ -363,11 +376,6 @@ fn ability_apply_effects(
                 // These spawn entities - handled elsewhere
             }
             AbilityType::None => {}
-        }
-
-        // Apply speed effect to movement
-        if effects.speed_multiplier != 1.0 {
-            movement.max_speed *= effects.speed_multiplier;
         }
     }
 }

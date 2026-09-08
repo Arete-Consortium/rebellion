@@ -51,7 +51,7 @@ pub const TRIGLAVIAN_INVASION_SHIPS: &[ShipDef] = &[
         unlock_stage: 0,
     },
     ShipDef {
-        type_id: 11381,
+        type_id: 11379,
         name: "Hawk",
         class: ShipClass::Frigate,
         role: "Caldari Assault Frigate",
@@ -87,7 +87,7 @@ pub const TRIGLAVIAN_INVASION_SHIPS: &[ShipDef] = &[
         unlock_stage: 0,
     },
     ShipDef {
-        type_id: 35683,
+        type_id: 34828,
         name: "Jackdaw",
         class: ShipClass::Destroyer,
         role: "Caldari T3 Tactical",
@@ -147,7 +147,7 @@ pub const TRIGLAVIAN_INVASION_SHIPS: &[ShipDef] = &[
         unlock_stage: 0,
     },
     ShipDef {
-        type_id: 17713,
+        type_id: 17715,
         name: "Gila",
         class: ShipClass::Cruiser,
         role: "Guristas Drone Cruiser",
@@ -171,11 +171,21 @@ impl Plugin for AbyssalDepthsPlugin {
             .add_systems(Startup, register_module)
             .add_systems(
                 OnEnter(GameState::Playing),
-                setup_abyssal.run_if(is_abyssal),
+                setup_abyssal
+                    .run_if(crate::core::not_resuming_gameplay)
+                    .run_if(is_abyssal),
             )
             .add_systems(
                 OnExit(GameState::Playing),
-                cleanup_abyssal.run_if(is_abyssal),
+                cleanup_abyssal
+                    .run_if(crate::core::not_pausing_gameplay)
+                    .run_if(is_abyssal),
+            )
+            .add_systems(
+                OnExit(GameState::Paused),
+                cleanup_abyssal
+                    .run_if(crate::core::not_resuming_gameplay)
+                    .run_if(is_abyssal),
             )
             .add_systems(
                 Update,

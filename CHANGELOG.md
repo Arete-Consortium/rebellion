@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Confirmed Rebellion as a free portfolio and community project, including future campaigns.
+- Updated the production plan and contributor priorities; superseded historical paid archive proposals with dated decision notes.
+
 ## [2.0.0] - 2026-04-04
 
 ### Added

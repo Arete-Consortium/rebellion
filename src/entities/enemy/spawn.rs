@@ -32,7 +32,7 @@ pub fn spawn_enemy(
         // Destroyer
         16236 => ("Coercer", 120.0, 65.0, 250, ShipClass::Destroyer),
         // Battlecruiser
-        24690 => ("Harbinger", 400.0, 50.0, 500, ShipClass::Battlecruiser),
+        24696 => ("Harbinger", 400.0, 50.0, 500, ShipClass::Battlecruiser),
 
         // === CALDARI ===
         // Frigates — bumped from 25–45 to 35–55 for better TTK across all modes
@@ -42,7 +42,7 @@ pub fn spawn_enemy(
         // Destroyer
         16238 => ("Cormorant", 100.0, 70.0, 200, ShipClass::Destroyer),
         // Battlecruiser
-        24688 => ("Drake", 450.0, 45.0, 500, ShipClass::Battlecruiser),
+        24698 => ("Drake", 450.0, 45.0, 500, ShipClass::Battlecruiser),
 
         // === GALLENTE ===
         // Frigates — bumped from 25–40 to 35–50 for better TTK across all modes
@@ -50,9 +50,12 @@ pub fn spawn_enemy(
         594 => ("Incursus", 50.0, 85.0, 95, ShipClass::Frigate),
         608 => ("Atron", 35.0, 130.0, 75, ShipClass::Frigate),
         // Destroyer
-        16242 => ("Catalyst", 90.0, 75.0, 200, ShipClass::Destroyer),
+        16240 => ("Catalyst", 90.0, 75.0, 200, ShipClass::Destroyer),
         // Battlecruiser
         24700 => ("Myrmidon", 380.0, 55.0, 450, ShipClass::Battlecruiser),
+
+        624 => ("Maller", 180.0, 60.0, 300, ShipClass::Cruiser),
+        622 => ("Stabber", 140.0, 95.0, 280, ShipClass::Cruiser),
 
         // === MINMATAR ===
         // Frigates
@@ -126,8 +129,8 @@ pub fn spawn_enemy(
     let liberation = match type_id {
         20185 => 5, // Bestower (transport) - more slaves
         2006 => 3,  // Apocalypse - capital crew
-        24690 => 2, // Harbinger/Absolution - larger crew
-        11547 => 3, // Abaddon - battleship
+        24696 => 2, // Harbinger/Absolution - larger crew
+        24692 => 3, // Abaddon - battleship
         _ => 1,     // Regular frigates/cruisers
     };
 
@@ -148,9 +151,8 @@ pub fn spawn_enemy(
         ..default()
     };
 
-    // Get faction-appropriate engine trail (pointing up since enemies face down)
-    let mut engine_trail = get_faction_engine_trail(type_id);
-    engine_trail.offset = Vec2::new(0.0, 25.0); // Offset up since enemies face down
+    // Trails use ship-local aft; the effect system applies gameplay facing.
+    let engine_trail = get_faction_engine_trail(type_id);
 
     // Get rotation: 180deg base (face down) + per-ship correction
     let base_rotation = std::f32::consts::PI; // Face down
@@ -162,6 +164,7 @@ pub fn spawn_enemy(
         commands
             .spawn((
                 Enemy,
+                EnemySpriteRotation(total_rotation),
                 stats,
                 weapon,
                 ai,
@@ -180,6 +183,7 @@ pub fn spawn_enemy(
         commands
             .spawn((
                 Enemy,
+                EnemySpriteRotation(0.0),
                 stats,
                 weapon,
                 ai,

@@ -2,6 +2,11 @@
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
 
+Rebellion is a free portfolio and community project. The current focus is
+finishing the three-mission Caldari–Gallente release. See the
+[production plan](docs/PRODUCTION_PLAN.md) for the active backlog and acceptance
+criteria before starting a larger feature.
+
 ## How to Contribute
 
 ### Reporting Issues
@@ -137,16 +142,15 @@ cd web && python3 -m http.server 8080
 ## Areas for Contribution
 
 ### High Priority
-- Triglavian Invasion campaign content (missions, dialogue, bosses)
-- Unit tests for core systems (scoring, collision, spawning)
-- Performance profiling and optimization
-- Accessibility improvements
+- Reproducible playtest reports for the complete Caldari–Gallente slice
+- Save, input and mission-progression fixes with focused regression coverage
+- Ship identity, orientation and combat-readability review
+- Rendered performance measurements and accessibility improvements
 
 ### Medium Priority
-- Additional ship abilities per faction
-- New enemy patterns and formations
-- Tutorial system improvements
-- Localization support
+- Clear onboarding and accurate control prompts
+- Enemy and boss pattern improvements within the finishing slice
+- Current contributor documentation and small, reproducible test fixtures
 
 ### Nice to Have
 - Multiplayer support

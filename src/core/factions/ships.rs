@@ -213,7 +213,7 @@ pub const AMARR_SHIPS: &[ShipDef] = &[
         unlock_stage: 0,
     },
     ShipDef {
-        type_id: 11186,
+        type_id: 11184,
         name: "Crusader",
         class: ShipClass::Interceptor,
         role: "Fast Strike",
@@ -225,7 +225,7 @@ pub const AMARR_SHIPS: &[ShipDef] = &[
         unlock_stage: 4, // Unlocks after Act 1
     },
     ShipDef {
-        type_id: 11184,
+        type_id: 11186,
         name: "Malediction",
         class: ShipClass::Interceptor,
         role: "Rocket Interceptor",
@@ -280,7 +280,7 @@ pub const AMARR_ENEMIES: &[EnemyShipDef] = &[
         score: 250,
     },
     EnemyShipDef {
-        type_id: 24690,
+        type_id: 24696,
         name: "Harbinger",
         class: ShipClass::Battlecruiser,
         health: 400.0,
@@ -333,7 +333,7 @@ pub const CALDARI_SHIPS: &[ShipDef] = &[
         unlock_stage: 0,
     },
     ShipDef {
-        type_id: 11381,
+        type_id: 11379,
         name: "Hawk",
         class: ShipClass::AssaultFrigate,
         role: "Assault Missile",
@@ -345,7 +345,7 @@ pub const CALDARI_SHIPS: &[ShipDef] = &[
         unlock_stage: 4, // Unlocks after Act 1
     },
     ShipDef {
-        type_id: 11387,
+        type_id: 11381,
         name: "Harpy",
         class: ShipClass::AssaultFrigate,
         role: "Railgun Sniper",
@@ -357,7 +357,7 @@ pub const CALDARI_SHIPS: &[ShipDef] = &[
         unlock_stage: 4, // Unlocks after Act 1
     },
     ShipDef {
-        type_id: 35683,
+        type_id: 34828,
         name: "Jackdaw",
         class: ShipClass::TacticalDestroyer,
         role: "Mode Switcher",
@@ -412,7 +412,7 @@ pub const CALDARI_ENEMIES: &[EnemyShipDef] = &[
         score: 200,
     },
     EnemyShipDef {
-        type_id: 24688,
+        type_id: 24698,
         name: "Drake",
         class: ShipClass::Battlecruiser,
         health: 450.0,
@@ -465,7 +465,7 @@ pub const GALLENTE_SHIPS: &[ShipDef] = &[
         unlock_stage: 0,
     },
     ShipDef {
-        type_id: 11373,
+        type_id: 12044,
         name: "Enyo",
         class: ShipClass::AssaultFrigate,
         role: "Heavy Blaster",
@@ -477,7 +477,7 @@ pub const GALLENTE_SHIPS: &[ShipDef] = &[
         unlock_stage: 4, // Unlocks after Act 1
     },
     ShipDef {
-        type_id: 11377,
+        type_id: 12042,
         name: "Ishkur",
         class: ShipClass::AssaultFrigate,
         role: "Assault Drones",
@@ -489,7 +489,7 @@ pub const GALLENTE_SHIPS: &[ShipDef] = &[
         unlock_stage: 4, // Unlocks after Act 1
     },
     ShipDef {
-        type_id: 35685,
+        type_id: 35683,
         name: "Hecate",
         class: ShipClass::TacticalDestroyer,
         role: "Mode Switcher",
@@ -534,7 +534,7 @@ pub const GALLENTE_ENEMIES: &[EnemyShipDef] = &[
         score: 75,
     },
     EnemyShipDef {
-        type_id: 16242,
+        type_id: 16240,
         name: "Catalyst",
         class: ShipClass::Destroyer,
         health: 90.0,

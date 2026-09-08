@@ -67,7 +67,7 @@ fn build_caldari_pool() -> FactionShipPool {
         player_ships: vec![
             // Hawk - Assault Frigate, Missile Boat
             ModuleShip {
-                type_id: 11381,
+                type_id: 11379,
                 name: "Hawk",
                 class: "Assault Frigate",
                 role: "Missile Boat",
@@ -81,7 +81,7 @@ fn build_caldari_pool() -> FactionShipPool {
             },
             // Harpy - Assault Frigate, Railgun Platform
             ModuleShip {
-                type_id: 11387,
+                type_id: 11381,
                 name: "Harpy",
                 class: "Assault Frigate",
                 role: "Railgun Platform",
@@ -95,7 +95,7 @@ fn build_caldari_pool() -> FactionShipPool {
             },
             // Jackdaw - T3 Tactical Destroyer (unlockable)
             ModuleShip {
-                type_id: 35683,
+                type_id: 34828,
                 name: "Jackdaw",
                 class: "Tactical Destroyer",
                 role: "Mode-Switching Platform",
@@ -111,13 +111,13 @@ fn build_caldari_pool() -> FactionShipPool {
         enemy_ships: vec![
             // Gallente enemies when playing Caldari
             EnemyShipDef {
-                type_id: 11373, // Enyo
+                type_id: 12044, // Enyo
                 name: "Enyo",
                 class: "Assault Frigate",
                 spawn_weight: 30,
             },
             EnemyShipDef {
-                type_id: 11371, // Ishkur
+                type_id: 12042, // Ishkur
                 name: "Ishkur",
                 class: "Assault Frigate",
                 spawn_weight: 30,
@@ -143,7 +143,7 @@ fn build_gallente_pool() -> FactionShipPool {
         player_ships: vec![
             // Enyo - Assault Frigate, Blaster Brawler
             ModuleShip {
-                type_id: 11373,
+                type_id: 12044,
                 name: "Enyo",
                 class: "Assault Frigate",
                 role: "Blaster Brawler",
@@ -157,7 +157,7 @@ fn build_gallente_pool() -> FactionShipPool {
             },
             // Ishkur - Assault Frigate, Drone Boat
             ModuleShip {
-                type_id: 11371,
+                type_id: 12042,
                 name: "Ishkur",
                 class: "Assault Frigate",
                 role: "Drone Boat",
@@ -171,7 +171,7 @@ fn build_gallente_pool() -> FactionShipPool {
             },
             // Hecate - T3 Tactical Destroyer (unlockable)
             ModuleShip {
-                type_id: 35685,
+                type_id: 35683,
                 name: "Hecate",
                 class: "Tactical Destroyer",
                 role: "Mode-Switching Platform",
@@ -187,13 +187,13 @@ fn build_gallente_pool() -> FactionShipPool {
         enemy_ships: vec![
             // Caldari enemies when playing Gallente
             EnemyShipDef {
-                type_id: 11381, // Hawk
+                type_id: 11379, // Hawk
                 name: "Hawk",
                 class: "Assault Frigate",
                 spawn_weight: 30,
             },
             EnemyShipDef {
-                type_id: 11387, // Harpy
+                type_id: 11381, // Harpy
                 name: "Harpy",
                 class: "Assault Frigate",
                 spawn_weight: 30,

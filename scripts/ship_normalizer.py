@@ -10,7 +10,7 @@ Improvements over v1:
 - Better handling of wide-wing ships (carriers, titans)
 
 Usage:
-    python3 scripts/ship_normalizer.py --input assets/ships --output assets/ships_normalized_v2
+    python3 scripts/ship_normalizer.py --input assets/ships --output build/ship-review/ships_normalized_v2
 """
 
 import argparse
@@ -620,8 +620,8 @@ def generate_contact_sheet(
 def main():
     parser = argparse.ArgumentParser(description="Normalize ship assets for Rebellion v2")
     parser.add_argument("--input", default="assets/ships", help="Source ship image directory")
-    parser.add_argument("--output", default="assets/ships_normalized_v2", help="Output directory")
-    parser.add_argument("--contact-sheet", default="assets/ships_audit_v2_contact_sheet.png", help="Contact sheet output path")
+    parser.add_argument("--output", default="build/ship-review/ships_normalized_v2", help="Output directory")
+    parser.add_argument("--contact-sheet", default="build/ship-review/ships_audit_v2_contact_sheet.png", help="Contact sheet output path")
     parser.add_argument("--config", default="", help="Optional JSON config for type_id→class overrides")
     args = parser.parse_args()
 

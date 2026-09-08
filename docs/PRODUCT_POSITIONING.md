@@ -154,3 +154,13 @@ Before calling this positioning "final":
 - 2026-07-25 — Initial positioning distilled from user conversation and senior engineer review
 
 **This document is append-only.** Changes require discussion in `sessions/` and a note in `CHANGELOG.md`.
+
+## 2026-09-07 — Confirmed portfolio and community direction
+
+The owner confirmed that Rebellion will be free and is a personal portfolio
+and community project. This supersedes the tentative paid-expansion proposal
+in "Monetization & Distribution" above: the game and future campaigns remain
+free. The production objective is a polished playable release, a clear
+engineering/design case study, and a useful path for community feedback and
+contributions. Current milestones live in [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md).
+The decision is recorded in [the project session note](../sessions/2026-09-07-community-project-direction.md).

@@ -21,17 +21,24 @@ impl Plugin for SpawningPlugin {
             .add_systems(
                 OnEnter(GameState::Playing),
                 (reset_wave_manager, spawn_enemy_carrier)
+                    .run_if(not_resuming_gameplay)
                     .run_if(not_last_stand)
                     .run_if(not_abyssal),
             )
-            .add_systems(OnExit(GameState::Playing), cleanup_carrier)
+            .add_systems(
+                OnExit(GameState::Playing),
+                cleanup_carrier.run_if(not_pausing_gameplay),
+            )
+            .add_systems(
+                OnExit(GameState::Paused),
+                cleanup_carrier.run_if(not_resuming_gameplay),
+            )
             .add_systems(
                 FixedUpdate,
                 (
-                    wave_spawning,
+                    wave_spawning.run_if(uses_legacy_waves),
                     handle_spawn_events,
                     animate_carrier,
-                    carrier_launch_fighters,
                     tick_carrier_flash,
                 )
                     .run_if(in_state(GameState::Playing))
@@ -39,6 +46,14 @@ impl Plugin for SpawningPlugin {
                     .run_if(not_abyssal),
             );
     }
+}
+
+/// Chapter modules own their wave rosters and completion count. Legacy spawners must not
+/// inject additional waves or carrier fighters into that campaign.
+fn uses_legacy_waves(module: Option<Res<crate::games::ActiveModule>>) -> bool {
+    module
+        .map(|m| !m.is_caldari_gallente() && !m.is_elder_fleet())
+        .unwrap_or(true)
 }
 
 /// Run condition: Last Stand mode is NOT active
@@ -60,8 +75,8 @@ pub struct EnemyCarrier {
     pub timer: f32,
     /// Warp-in progress (0.0 = warping, 1.0 = arrived)
     pub warp_progress: f32,
-    /// Cooldown before next fighter launch
-    pub launch_cooldown: Timer,
+    /// Upcoming mission wave represented by this arrival.
+    pub wave_number: u32,
 }
 
 /// Brief flash/glow effect spawned at each fighter launch point.
@@ -91,7 +106,7 @@ fn spawn_enemy_carrier(
             base_y: carrier_y,
             timer: 0.0,
             warp_progress: 0.0, // Start warping in
-            launch_cooldown: Timer::from_seconds(4.5, TimerMode::Once),
+            wave_number: 1,
         },
         Transform::from_xyz(0.0, carrier_y + 200.0, -50.0), // Start above screen, z=-50 for background
         Visibility::Visible,
@@ -123,50 +138,56 @@ fn spawn_enemy_carrier(
     );
 }
 
-/// Animate the carrier — warp-in, then slow vertical scroll so the hull
-/// treadmills past the player, selling "we're flying across the deck."
+/// Reset the visual carrier for the next scheduled wave. Gameplay owns the
+/// enemy count; this never injects unrelated fighters into a mission.
+pub fn prepare_carrier_wave(carriers: &mut Query<&mut EnemyCarrier>, wave: u32) -> bool {
+    let mut ready = true;
+    for mut carrier in carriers.iter_mut() {
+        if carrier.wave_number != wave {
+            carrier.wave_number = wave;
+            carrier.warp_progress = 0.0;
+            carrier.timer = 0.0;
+        }
+        ready &= carrier.warp_progress >= 1.0;
+    }
+    ready
+}
+
+/// A carrier arrives above the action, deploys a wave and fades back into
+/// the distant battle. Keep combat silhouettes much brighter than the hull.
 fn animate_carrier(
     time: Res<Time>,
-    mut carrier_query: Query<(&mut EnemyCarrier, &mut Transform, &mut Sprite)>,
+    mut carrier_query: Query<(&mut EnemyCarrier, &mut Transform, Option<&mut Sprite>)>,
 ) {
     let dt = time.delta_secs();
-    // Screen is 700 tall + carrier is 1800 tall — reset point keeps carrier
-    // always covering the screen vertically.
-    let carrier_half = crate::core::SIZE_CARRIER / 2.0;
-    let screen_half = crate::core::SCREEN_HEIGHT / 2.0;
-    // Scroll speed: slow and steady. Tuned so a full hull pass ≈ 45s.
-    const HULL_SCROLL_SPEED: f32 = 40.0;
-
-    for (mut carrier, mut transform, mut sprite) in carrier_query.iter_mut() {
+    for (mut carrier, mut transform, sprite) in &mut carrier_query {
         carrier.timer += dt;
-
-        // Warp-in animation (first 2 seconds) — hull materializes into place,
-        // centered so it covers the screen before the scroll begins.
-        if carrier.warp_progress < 1.0 {
-            carrier.warp_progress = (carrier.warp_progress + dt * 0.5).min(1.0);
-
-            // Target = carrier centered so bow is above screen, mid-hull
-            // visible. Bias up 0.25×half so the bow enters first.
-            let target_y = carrier_half * 0.25;
-            let start_y = target_y + 200.0;
-            transform.translation.y =
-                start_y + (target_y - start_y) * ease_out_cubic(carrier.warp_progress);
-            carrier.base_y = target_y;
-
-            let alpha = carrier.warp_progress * 0.9;
-            let warp_tint = 1.0 - (1.0 - carrier.warp_progress) * 0.3;
-            sprite.color = Color::srgba(warp_tint, warp_tint, 1.0, alpha);
-        } else {
-            // Continuous scroll downward so the hull treadmills past.
-            transform.translation.y -= HULL_SCROLL_SPEED * dt;
-            // Wrap: when carrier's top edge drops below screen bottom, loop
-            // back up with bottom edge just above screen top.
-            if transform.translation.y + carrier_half < -screen_half {
-                transform.translation.y = screen_half + carrier_half;
-            }
-            sprite.color = Color::srgba(1.0, 1.0, 1.0, 0.9);
+        carrier.warp_progress = (carrier.warp_progress + dt / 2.0).min(1.0);
+        let progress = carrier.warp_progress;
+        transform.translation.y = carrier.base_y + 220.0 * (1.0 - ease_out_cubic(progress));
+        // Warp stretch narrows to the actual top-down silhouette on arrival.
+        transform.scale = Vec3::new(0.3 + 0.7 * progress, 2.8 - 1.8 * progress, 1.0);
+        let departure = ((carrier.timer - 5.0) / 2.0).clamp(0.0, 1.0);
+        if let Some(mut sprite) = sprite {
+            sprite.color = Color::srgba(0.55, 0.68, 0.82, 0.42 * progress * (1.0 - departure));
         }
     }
+}
+
+/// Hangar pulse at an actual scheduled launch; no independent enemy spawner.
+pub fn carrier_launch_flash(commands: &mut Commands, position: Vec2, color: Color) {
+    commands.spawn((
+        CarrierLaunchFlash {
+            life: 0.45,
+            max: 0.45,
+        },
+        Sprite {
+            color: color.with_alpha(0.5),
+            custom_size: Some(Vec2::new(14.0, 4.0)),
+            ..default()
+        },
+        Transform::from_xyz(position.x, position.y, -20.0),
+    ));
 }
 
 /// Ease out cubic for smooth deceleration
@@ -174,94 +195,6 @@ fn ease_out_cubic(t: f32) -> f32 {
     1.0 - (1.0 - t).powi(3)
 }
 
-/// Pick the appropriate fighter frigate type_id for the enemy faction.
-fn fighter_type_for(faction: Faction) -> u32 {
-    match faction {
-        Faction::Caldari => 603,  // Merlin
-        Faction::Gallente => 594, // Incursus
-        Faction::Amarr => 597,    // Punisher
-        Faction::Minmatar => 587, // Rifter
-    }
-}
-
-/// Periodically launch a WING of fighters from the background carrier —
-/// multiple ships at once with staggered hangar-bay flashes.
-fn carrier_launch_fighters(
-    time: Res<Time>,
-    mut commands: Commands,
-    session: Res<GameSession>,
-    sprite_cache: Res<crate::assets::ShipSpriteCache>,
-    mut carriers: Query<(&Transform, &mut EnemyCarrier)>,
-) {
-    let delta = time.delta();
-    for (carrier_t, mut carrier) in carriers.iter_mut() {
-        // Wait until carrier has fully warped in
-        if carrier.warp_progress < 1.0 {
-            continue;
-        }
-        carrier.launch_cooldown.tick(delta);
-        if !carrier.launch_cooldown.finished() {
-            continue;
-        }
-        // Reset cooldown — 2.5-4.5 seconds between wings (was 5-8s for single).
-        let next = 2.5 + fastrand::f32() * 2.0;
-        carrier.launch_cooldown = Timer::from_seconds(next, TimerMode::Once);
-
-        let fighter_type = fighter_type_for(session.enemy_faction);
-        let sprite = sprite_cache.get(fighter_type);
-
-        // Wing size: 2-4 fighters. Spread them across the carrier's hangar
-        // footprint so it reads as simultaneous fleet deployment.
-        let wing_size = 2 + fastrand::u32(0..3);
-        let carrier_half = crate::core::SIZE_CARRIER * 0.35;
-        for i in 0..wing_size {
-            let t = if wing_size > 1 {
-                i as f32 / (wing_size - 1) as f32
-            } else {
-                0.5
-            };
-            let offset_x = carrier_half * (t - 0.5);
-            let jitter_x = (fastrand::f32() - 0.5) * 40.0;
-            let jitter_y = fastrand::f32() * 30.0;
-            // Hull is now the full-screen backdrop — launch fighters from
-            // just above the screen top regardless of carrier scroll phase so
-            // every wave stays visible to the player.
-            let launch_y = crate::core::SCREEN_HEIGHT / 2.0 + 40.0 - jitter_y;
-            let launch_pos = Vec2::new(carrier_t.translation.x + offset_x + jitter_x, launch_y);
-
-            let _fighter_entity = crate::entities::enemy::spawn_enemy(
-                &mut commands,
-                fighter_type,
-                launch_pos,
-                crate::entities::enemy::EnemyBehavior::Homing,
-                sprite.clone(),
-                None,
-            );
-
-            // Hangar-bay flash at each launch point — big and warm
-            commands.spawn((
-                CarrierLaunchFlash {
-                    life: 0.6,
-                    max: 0.6,
-                },
-                Sprite {
-                    color: Color::srgba(1.0, 0.85, 0.45, 1.0),
-                    custom_size: Some(Vec2::splat(120.0)),
-                    ..default()
-                },
-                Transform::from_xyz(launch_pos.x, launch_pos.y, -40.0),
-            ));
-        }
-
-        info!(
-            "Carrier launched wing of {} {} fighters",
-            wing_size,
-            session.enemy_faction.short_name()
-        );
-    }
-}
-
-/// Fade and expand the launch-flash sprite, then despawn.
 fn tick_carrier_flash(
     time: Res<Time>,
     mut commands: Commands,
@@ -281,7 +214,10 @@ fn tick_carrier_flash(
 }
 
 /// Cleanup carrier when leaving playing state
-fn cleanup_carrier(mut commands: Commands, carrier_query: Query<Entity, With<EnemyCarrier>>) {
+fn cleanup_carrier(
+    mut commands: Commands,
+    carrier_query: Query<Entity, Or<(With<EnemyCarrier>, With<CarrierLaunchFlash>)>>,
+) {
     for entity in carrier_query.iter() {
         if let Some(ec) = commands.get_entity(entity) {
             ec.despawn_recursive();
@@ -391,7 +327,7 @@ fn wave_spawning(
     session: Res<crate::core::GameSession>,
     enemy_query: Query<Entity, With<crate::entities::Enemy>>,
     boss_query: Query<Entity, With<crate::entities::Boss>>,
-    carrier_query: Query<&Transform, With<EnemyCarrier>>,
+    mut carrier_query: Query<&mut EnemyCarrier>,
     mut wave_events: EventWriter<SpawnWaveEvent>,
     mut boss_spawn_events: EventWriter<super::boss::BossEntitySpawned>,
     mut boss_defeated_events: EventReader<super::boss::BossEntityDefeated>,
@@ -402,7 +338,7 @@ fn wave_spawning(
     // Get carrier position for spawning enemies
     let carrier_pos = carrier_query
         .get_single()
-        .map(|t| Vec2::new(t.translation.x, t.translation.y))
+        .map(|carrier| Vec2::new(0.0, carrier.base_y))
         .unwrap_or(Vec2::new(0.0, SCREEN_HEIGHT / 2.0 - 100.0));
     let dt = time.delta_secs();
 
@@ -478,7 +414,11 @@ fn wave_spawning(
 
     // Handle wave delay
     if manager.in_delay {
+        let carrier_ready = prepare_carrier_wave(&mut carrier_query, manager.wave + 1);
         manager.wave_delay -= dt;
+        if !carrier_ready {
+            return;
+        }
         if manager.wave_delay <= 0.0 {
             manager.in_delay = false;
             manager.wave += 1;
@@ -573,6 +513,12 @@ fn wave_spawning(
             let enemy_def = session.random_enemy();
             let type_id = enemy_def.type_id;
 
+            let total_count = if manager.endless_mode {
+                endless.wave_enemy_count()
+            } else {
+                (wave_def.enemy_count as f32 * 1.7).ceil() as u32
+            };
+
             // Pick behavior based on stage progression
             let behavior_idx = fastrand::usize(..wave_def.behaviors.len());
             let behavior = wave_def.behaviors[behavior_idx];
@@ -586,15 +532,15 @@ fn wave_spawning(
                 }
                 SpawnPattern::Line => {
                     // Line formation emanating from carrier
-                    let spacing = 300.0 / (wave_def.enemy_count as f32 + 1.0);
-                    let idx = wave_def.enemy_count - manager.enemies_remaining;
+                    let spacing = 300.0 / (total_count as f32 + 1.0);
+                    let idx = total_count.saturating_sub(manager.enemies_remaining);
                     let x = carrier_pos.x + spacing * (idx as f32 + 1.0) - 150.0;
                     Vec2::new(x, carrier_pos.y - 40.0)
                 }
                 SpawnPattern::VFormation => {
                     // V formation launching from carrier bay
-                    let idx = wave_def.enemy_count - manager.enemies_remaining;
-                    let center_idx = wave_def.enemy_count / 2;
+                    let idx = total_count.saturating_sub(manager.enemies_remaining);
+                    let center_idx = total_count / 2;
                     let offset = (idx as i32 - center_idx as i32) as f32;
                     let x = carrier_pos.x + offset * 50.0;
                     let y = carrier_pos.y - 30.0 - offset.abs() * 25.0;
@@ -616,6 +562,7 @@ fn wave_spawning(
                 }
             };
 
+            carrier_launch_flash(&mut commands, pos, session.enemy_faction.primary_color());
             let sprite = sprite_cache.get(type_id);
 
             // Use specialized spawn functions for special enemy types

@@ -19,65 +19,28 @@ impl Plugin for MusicPlugin {
         app.init_resource::<MusicAssets>()
             .init_resource::<MusicState>();
 
-        app.add_systems(Startup, (generate_music, load_music_file_overrides).chain())
-            .add_systems(
-                Update,
-                (
-                    manage_menu_music.run_if(in_state(GameState::MainMenu)),
-                    manage_gameplay_music
-                        .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
-                    update_music_intensity
-                        .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
-                    handle_state_music_transitions,
-                ),
-            );
+        app.add_systems(Startup, generate_music).add_systems(
+            Update,
+            (
+                manage_menu_music.run_if(in_state(GameState::MainMenu)),
+                manage_gameplay_music
+                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+                update_music_intensity,
+                handle_state_music_transitions,
+            ),
+        );
     }
 }
 
 /// Generated music assets
 #[derive(Resource, Default)]
 pub struct MusicAssets {
-    // Procedural fallbacks — always populated at startup.
+    // Generated once at startup and reused throughout the session.
     pub menu_ambient: Option<Handle<AudioSource>>,
     pub gameplay_ambient: Option<Handle<AudioSource>>,
     pub boss_ambient: Option<Handle<AudioSource>>,
     pub victory_sting: Option<Handle<AudioSource>>,
     pub defeat_sting: Option<Handle<AudioSource>>,
-    // Optional file-based overrides loaded from `assets/audio/music/`.
-    // When the asset's load state is Loaded, the play system prefers
-    // these over the procedural fallback. When the file is missing or
-    // failed to load, procedural plays.
-    pub menu_file: Option<Handle<AudioSource>>,
-    pub gameplay_file: Option<Handle<AudioSource>>,
-    pub boss_file: Option<Handle<AudioSource>>,
-    pub victory_file: Option<Handle<AudioSource>>,
-    pub defeat_file: Option<Handle<AudioSource>>,
-}
-
-impl MusicAssets {
-    /// Pick the best handle for a given slot — file override if it has
-    /// finished loading, else procedural fallback.
-    pub fn effective(
-        &self,
-        slot: MusicType,
-        asset_server: &AssetServer,
-    ) -> Option<Handle<AudioSource>> {
-        let (file, proc) = match slot {
-            MusicType::Menu => (&self.menu_file, &self.menu_ambient),
-            MusicType::Gameplay => (&self.gameplay_file, &self.gameplay_ambient),
-            MusicType::Boss => (&self.boss_file, &self.boss_ambient),
-            MusicType::None => return None,
-        };
-        if let Some(h) = file {
-            if matches!(
-                asset_server.get_load_state(h.id()),
-                Some(bevy::asset::LoadState::Loaded)
-            ) {
-                return Some(h.clone());
-            }
-        }
-        proc.clone()
-    }
 }
 
 /// Current music state
@@ -148,31 +111,6 @@ fn generate_music(mut music: ResMut<MusicAssets>, mut audio_sources: ResMut<Asse
     }
 
     info!("Music generation complete!");
-}
-
-/// Try to load file-based music overrides from `assets/audio/music/`.
-/// Loading is async — handles start in the Loading state and either
-/// resolve to Loaded (file present + valid) or Failed (404 or bad
-/// format). The `effective()` helper on MusicAssets picks file vs.
-/// procedural at play time based on load state, so missing files are
-/// silent fallback to procedural (no error to the player).
-///
-/// Drop tracks at:
-///   assets/audio/music/menu.ogg     (main menu)
-///   assets/audio/music/gameplay.ogg (during stages)
-///   assets/audio/music/boss.ogg     (boss fights)
-///   assets/audio/music/victory.ogg  (stage complete sting)
-///   assets/audio/music/defeat.ogg   (game over sting)
-///
-/// .ogg is preferred for size; .wav and .mp3 also work via Bevy's
-/// default audio loaders.
-fn load_music_file_overrides(mut music: ResMut<MusicAssets>, asset_server: Res<AssetServer>) {
-    music.menu_file = Some(asset_server.load("audio/music/menu.ogg"));
-    music.gameplay_file = Some(asset_server.load("audio/music/gameplay.ogg"));
-    music.boss_file = Some(asset_server.load("audio/music/boss.ogg"));
-    music.victory_file = Some(asset_server.load("audio/music/victory.ogg"));
-    music.defeat_file = Some(asset_server.load("audio/music/defeat.ogg"));
-    info!("Queued music file overrides — files at assets/audio/music/* will replace procedural tracks if present");
 }
 
 // =============================================================================
@@ -440,7 +378,6 @@ fn generate_defeat_sting() -> Option<AudioSource> {
 fn manage_menu_music(
     mut commands: Commands,
     music_assets: Res<MusicAssets>,
-    asset_server: Res<AssetServer>,
     mut music_state: ResMut<MusicState>,
     settings: Res<crate::systems::audio::SoundSettings>,
 ) {
@@ -451,8 +388,8 @@ fn manage_menu_music(
             commands.entity(entity).despawn();
         }
 
-        // Spawn menu music — file override if loaded, else procedural.
-        if let Some(source) = music_assets.effective(MusicType::Menu, &asset_server) {
+        // All shipped music is generated locally.
+        if let Some(source) = music_assets.menu_ambient.clone() {
             if settings.enabled {
                 let entity = commands
                     .spawn((
@@ -481,13 +418,11 @@ fn manage_menu_music(
 fn manage_gameplay_music(
     mut commands: Commands,
     music_assets: Res<MusicAssets>,
-    asset_server: Res<AssetServer>,
     mut music_state: ResMut<MusicState>,
     settings: Res<crate::systems::audio::SoundSettings>,
-    boss_query: Query<&crate::entities::Boss>,
+    game_state: Res<State<GameState>>,
 ) {
-    let has_boss = !boss_query.is_empty();
-    let target_type = if has_boss {
+    let target_type = if *game_state.get() == GameState::BossFight {
         MusicType::Boss
     } else {
         MusicType::Gameplay
@@ -500,8 +435,10 @@ fn manage_gameplay_music(
             commands.entity(entity).despawn();
         }
 
-        // File override if loaded, else procedural fallback.
-        let source = music_assets.effective(target_type, &asset_server);
+        let source = match target_type {
+            MusicType::Boss => music_assets.boss_ambient.clone(),
+            _ => music_assets.gameplay_ambient.clone(),
+        };
 
         if let Some(source) = source {
             if settings.enabled {
@@ -536,51 +473,30 @@ fn handle_state_music_transitions(
     settings: Res<crate::systems::audio::SoundSettings>,
     game_state: Res<State<GameState>>,
 ) {
-    // Play victory sting on victory
-    if *game_state.get() == GameState::Victory && music_state.current_type != MusicType::None {
-        // Stop current music
-        if let Some(entity) = music_state.current_track {
-            commands.entity(entity).despawn();
-        }
-        music_state.current_track = None;
-        music_state.current_type = MusicType::None;
-
-        // Play victory sting
-        if let Some(source) = music_assets.victory_sting.clone() {
-            if settings.enabled {
-                commands.spawn((
-                    AudioPlayer(source),
-                    PlaybackSettings {
-                        mode: PlaybackMode::Despawn,
-                        volume: Volume::new(settings.music_volume * settings.master_volume * 0.5),
-                        ..default()
-                    },
-                ));
-            }
-        }
+    if !game_state.is_changed() {
+        return;
     }
-
-    // Play defeat sting on game over
-    if *game_state.get() == GameState::GameOver && music_state.current_type != MusicType::None {
-        // Stop current music
-        if let Some(entity) = music_state.current_track {
-            commands.entity(entity).despawn();
+    let source = match game_state.get() {
+        GameState::StageComplete | GameState::SliceComplete | GameState::Victory => {
+            music_assets.victory_sting.clone()
         }
-        music_state.current_track = None;
-        music_state.current_type = MusicType::None;
-
-        // Play defeat sting
-        if let Some(source) = music_assets.defeat_sting.clone() {
-            if settings.enabled {
-                commands.spawn((
-                    AudioPlayer(source),
-                    PlaybackSettings {
-                        mode: PlaybackMode::Despawn,
-                        volume: Volume::new(settings.music_volume * settings.master_volume * 0.5),
-                        ..default()
-                    },
-                ));
-            }
+        GameState::GameOver => music_assets.defeat_sting.clone(),
+        _ => return,
+    };
+    if let Some(entity) = music_state.current_track.take() {
+        commands.entity(entity).despawn();
+    }
+    music_state.current_type = MusicType::None;
+    if settings.enabled {
+        if let Some(source) = source {
+            commands.spawn((
+                AudioPlayer(source),
+                PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    volume: Volume::new(settings.music_volume * settings.master_volume * 0.5),
+                    ..default()
+                },
+            ));
         }
     }
 }
@@ -602,6 +518,7 @@ fn update_music_intensity(
     mut music_state: ResMut<MusicState>,
     settings: Res<crate::systems::audio::SoundSettings>,
     music_query: Query<&AudioSink, With<MusicTrack>>,
+    game_state: Res<State<GameState>>,
 ) {
     // Map combo multiplier to a 0.0..1.0 intensity range
     // multiplier 1.0 -> 0.0, multiplier 5.0+ -> 1.0
@@ -617,11 +534,21 @@ fn update_music_intensity(
         1.5 // slower fade back to ambient
     };
     let dt = time.delta_secs();
-    music_state.volume += (target_scale - music_state.volume) * (lerp_speed * dt).min(1.0);
+    if matches!(game_state.get(), GameState::Playing | GameState::BossFight) {
+        music_state.volume += (target_scale - music_state.volume) * (lerp_speed * dt).min(1.0);
+    }
 
-    // Apply to the active music track via AudioSink
-    let base_volume = settings.music_volume * settings.master_volume * 0.35;
-    let final_volume = base_volume * music_state.volume;
+    // Apply settings in menus too, so the sliders change the music already playing.
+    let scale = match music_state.current_type {
+        MusicType::Menu => 0.4,
+        MusicType::Gameplay | MusicType::Boss => 0.35 * music_state.volume,
+        MusicType::None => 0.0,
+    };
+    let final_volume = if settings.enabled {
+        settings.music_volume * settings.master_volume * scale
+    } else {
+        0.0
+    };
 
     for sink in &music_query {
         sink.set_volume(final_volume);
@@ -635,4 +562,65 @@ fn update_music_intensity(
 /// Create AudioSource from samples — works on both native and WASM
 fn create_audio_source(samples: &[f32], sample_rate: u32) -> Option<AudioSource> {
     super::wav_encoder::create_audio_source(samples, sample_rate)
+}
+
+#[cfg(test)]
+mod transition_tests {
+    use super::*;
+
+    #[test]
+    fn boss_music_uses_game_state_and_results_stop_combat_with_one_sting() {
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, bevy::state::app::StatesPlugin))
+            .init_state::<GameState>()
+            .init_resource::<Assets<AudioSource>>()
+            .init_resource::<crate::systems::audio::SoundSettings>()
+            .init_resource::<ScoreSystem>()
+            .add_plugins(MusicPlugin);
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(GameState::Playing);
+        app.update();
+        assert_eq!(
+            app.world().resource::<MusicState>().current_type,
+            MusicType::Gameplay
+        );
+        // CG bosses have no legacy Boss component: the state must still select boss music.
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(GameState::BossFight);
+        app.update();
+        assert_eq!(
+            app.world().resource::<MusicState>().current_type,
+            MusicType::Boss
+        );
+        let boss_track = app.world().resource::<MusicState>().current_track.unwrap();
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(GameState::StageComplete);
+        app.update();
+        assert!(app.world().get_entity(boss_track).is_err());
+        assert_eq!(
+            app.world().resource::<MusicState>().current_type,
+            MusicType::None
+        );
+        let victory = app
+            .world()
+            .resource::<MusicAssets>()
+            .victory_sting
+            .clone()
+            .unwrap();
+        let stings = |app: &mut App| {
+            app.world_mut()
+                .query::<&AudioPlayer>()
+                .iter(app.world())
+                .filter(|audio| audio.0 == victory)
+                .count()
+        };
+        assert_eq!(stings(&mut app), 1);
+        for _ in 0..10 {
+            app.update();
+        }
+        assert_eq!(stings(&mut app), 1);
+    }
 }

@@ -277,6 +277,7 @@ pub(crate) fn update_upgrade_shop_selection(
 
 pub(crate) fn upgrade_shop_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<MenuSelection>,
     mut save_data: ResMut<SaveData>,
@@ -286,14 +287,14 @@ pub(crate) fn upgrade_shop_input(
     sp_query: Query<Entity, With<UpgradeShopRoot>>,
 ) {
     // Navigation
-    let nav = get_nav_input(&keyboard, &joystick);
+    let nav = get_nav_input(&keyboard, &joystick, &bindings);
     if nav != 0 && selection.total > 0 {
         let new_index = (selection.index as i32 + nav).rem_euclid(selection.total as i32) as usize;
         selection.index = new_index;
     }
 
     // Purchase
-    if is_confirm(&keyboard, &joystick) {
+    if is_confirm(&keyboard, &joystick, &bindings) {
         for (item, upgrade_item) in item_query.iter() {
             if item.index == selection.index {
                 if save_data.purchase_upgrade(upgrade_item.upgrade) {
@@ -312,7 +313,7 @@ pub(crate) fn upgrade_shop_input(
     }
 
     // Back
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         next_state.set(GameState::MainMenu);
     }
 }

@@ -39,9 +39,14 @@ pub struct HudPlugin;
 
 impl Plugin for HudPlugin {
     fn build(&self, app: &mut App) {
+        for destination in crate::core::NON_COMBAT_STATES {
+            app.add_systems(OnEnter(destination), despawn_hud);
+        }
         app.add_systems(
             OnEnter(GameState::Playing),
-            (spawn_hud, spawn_inventory_hud).run_if(not_last_stand),
+            (spawn_hud, spawn_inventory_hud)
+                .run_if(crate::core::not_resuming_gameplay)
+                .run_if(not_last_stand),
         )
         .add_systems(
             Update,
@@ -69,8 +74,8 @@ impl Plugin for HudPlugin {
                 .run_if(not_last_stand),
         )
         .add_systems(
-            OnExit(GameState::Playing),
-            despawn_hud.run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+            OnExit(GameState::Paused),
+            despawn_hud.run_if(crate::core::not_resuming_gameplay),
         );
     }
 }

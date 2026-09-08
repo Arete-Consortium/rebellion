@@ -12,6 +12,11 @@ use bevy::prelude::*;
 #[derive(Component, Debug)]
 pub struct Friendly;
 
+/// Enemy weapon override for an attack on a specific escort. If that escort
+/// leaves, the enemy returns to targeting the player.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct EscortAttacker(pub Entity);
+
 /// Data for an escort target — health, path waypoints, movement speed
 #[derive(Component, Debug, Clone)]
 pub struct EscortData {
@@ -142,7 +147,7 @@ pub fn update_escort_movement(
 /// Despawn escort entities when leaving gameplay states
 pub fn despawn_escorts(mut commands: Commands, escort_query: Query<Entity, With<Friendly>>) {
     for entity in escort_query.iter() {
-        commands.entity(entity).despawn();
+        commands.entity(entity).despawn_recursive();
     }
 }
 
@@ -155,8 +160,18 @@ impl Plugin for EscortPlugin {
             Update,
             update_escort_movement.run_if(in_state(GameState::Playing)),
         )
-        .add_systems(OnExit(GameState::Playing), despawn_escorts)
-        .add_systems(OnExit(GameState::BossFight), despawn_escorts);
+        .add_systems(
+            OnExit(GameState::Playing),
+            despawn_escorts.run_if(crate::core::not_pausing_gameplay),
+        )
+        .add_systems(
+            OnExit(GameState::BossFight),
+            despawn_escorts.run_if(crate::core::not_pausing_gameplay),
+        )
+        .add_systems(
+            OnExit(GameState::Paused),
+            despawn_escorts.run_if(crate::core::not_resuming_gameplay),
+        );
     }
 }
 

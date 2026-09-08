@@ -87,27 +87,43 @@ pub fn detect_player_projectile_hits(
 pub fn detect_enemy_projectile_hits(
     projectile_query: Query<(Entity, &Transform), With<EnemyProjectile>>,
     player_query: Query<(Entity, &Transform, &Hitbox), With<Player>>,
+    escort_query: Query<(Entity, &Transform, &Hitbox, &EscortData), With<Friendly>>,
     mut contact_events: EventWriter<ContactRaw>,
 ) {
-    let Ok((player_entity, player_transform, hitbox)) = player_query.get_single() else {
-        return;
-    };
-    let player_pos = player_transform.translation.truncate();
-    let hit_radius_sq = (hitbox.radius + 4.0) * (hitbox.radius + 4.0);
-
     for (proj_entity, proj_transform) in projectile_query.iter() {
         let proj_pos = proj_transform.translation.truncate();
-        let dist_sq = (proj_pos - player_pos).length_squared();
-
-        if dist_sq < hit_radius_sq {
-            contact_events.send(ContactRaw {
-                contact_type: RawContactType::EnemyProjectilePlayer {
-                    projectile: proj_entity,
-                    player: player_entity,
-                    projectile_pos: proj_pos,
-                    player_pos,
-                },
-            });
+        // One projectile has one ship recipient. A pilot overlapping the
+        // transport can intercept fire, including during defensive maneuvers.
+        if let Ok((player_entity, player_transform, hitbox)) = player_query.get_single() {
+            let player_pos = player_transform.translation.truncate();
+            if proj_pos.distance_squared(player_pos) < (hitbox.radius + 4.0).powi(2) {
+                contact_events.send(ContactRaw {
+                    contact_type: RawContactType::EnemyProjectilePlayer {
+                        projectile: proj_entity,
+                        player: player_entity,
+                        projectile_pos: proj_pos,
+                        player_pos,
+                    },
+                });
+                continue;
+            }
+        }
+        for (escort, transform, hitbox, data) in &escort_query {
+            let escort_pos = transform.translation.truncate();
+            if data.health > 0.0
+                && !data.reached_end
+                && proj_pos.distance_squared(escort_pos) < (hitbox.radius + 4.0).powi(2)
+            {
+                contact_events.send(ContactRaw {
+                    contact_type: RawContactType::EnemyProjectileEscort {
+                        projectile: proj_entity,
+                        escort,
+                        projectile_pos: proj_pos,
+                        escort_pos,
+                    },
+                });
+                break;
+            }
         }
     }
 }

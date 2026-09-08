@@ -80,6 +80,9 @@ pub fn update_powerup_indicators(
 
                 // Pulse between orange and bright red
                 bg_color.0 = Color::srgb(1.0, 0.2 + pulse * 0.4, 0.1);
+            } else {
+                // A fresh pickup renews the same HUD entity after a warning.
+                bg_color.0 = timer_bar.powerup_type.color();
             }
         }
     }
@@ -130,9 +133,9 @@ pub fn update_buff_expiration_warnings(
 
     // Check each buff timer
     let buffs = [
-        (effects.overdrive_timer, Color::srgb(0.3, 0.9, 1.0)), // Cyan
-        (effects.damage_boost_timer, Color::srgb(1.0, 0.4, 0.2)), // Orange/red
-        (effects.invuln_timer, Color::srgb(1.0, 0.9, 0.4)),    // Gold
+        (effects.overdrive_timer, PowerupType::Overdrive.color()),
+        (effects.damage_boost_timer, PowerupType::DamageBoost.color()),
+        (effects.invuln_timer, PowerupType::Invulnerability.color()),
     ];
 
     for (timer, color) in buffs {
@@ -171,6 +174,70 @@ pub fn update_buff_expiration_warnings(
         // No expiring buffs - hide warnings
         for (_, mut bg) in warning_query.iter_mut() {
             bg.0 = Color::NONE;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn refreshed_boosters_restore_timer_bar_color_and_width() {
+        let mut app = App::new();
+        app.init_resource::<Time>();
+        app.add_systems(Update, update_powerup_indicators);
+        let player = app
+            .world_mut()
+            .spawn((
+                Player,
+                PowerupEffects {
+                    overdrive_timer: 0.5,
+                    damage_boost_timer: 0.5,
+                    invuln_timer: 0.5,
+                },
+            ))
+            .id();
+        let bars: Vec<_> = [
+            PowerupType::Overdrive,
+            PowerupType::DamageBoost,
+            PowerupType::Invulnerability,
+        ]
+        .into_iter()
+        .map(|kind| {
+            let entity = app
+                .world_mut()
+                .spawn((
+                    PowerupTimerBar { powerup_type: kind },
+                    Node::default(),
+                    BackgroundColor(kind.color()),
+                ))
+                .id();
+            (entity, kind)
+        })
+        .collect();
+        app.update();
+        for (entity, kind) in &bars {
+            assert_ne!(
+                app.world().get::<BackgroundColor>(*entity).unwrap().0,
+                kind.color()
+            );
+        }
+        *app.world_mut().get_mut::<PowerupEffects>(player).unwrap() = PowerupEffects {
+            overdrive_timer: 5.0,
+            damage_boost_timer: 10.0,
+            invuln_timer: 3.0,
+        };
+        app.update();
+        for (entity, kind) in bars {
+            assert_eq!(
+                app.world().get::<BackgroundColor>(entity).unwrap().0,
+                kind.color()
+            );
+            assert_eq!(
+                app.world().get::<Node>(entity).unwrap().width,
+                Val::Percent(100.0)
+            );
         }
     }
 }

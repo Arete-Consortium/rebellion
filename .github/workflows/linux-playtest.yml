@@ -1,0 +1,74 @@
+name: Linux Playtest
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/linux-playtest']
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'scripts/*linux*'
+      - 'docs/LINUX_PLAYTEST.md'
+      - '.github/workflows/linux-playtest.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-playtest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-x86_64:
+    # Build against the older glibc baseline for Ubuntu 22.04 and newer.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: always
+      CARGO_BUILD_JOBS: 2
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      REBELLION_HOME: ${{ runner.temp }}/rebellion-tests
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: linux-playtest-ubuntu22
+      - name: Install build and software-rendering dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libasound2-dev libudev-dev libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev libxkbcommon-x11-0 libvulkan1 mesa-vulkan-drivers xvfb xauth
+      - name: Fetch locked dependencies
+        run: cargo fetch --locked --target x86_64-unknown-linux-gnu
+      - name: Run gameplay regressions
+        run: cargo test --offline --locked --no-fail-fast
+      - name: Package game and assets
+        run: bash scripts/package-linux-playtest.sh
+      - name: Test extracted package with software Vulkan
+        env:
+          WGPU_BACKEND: vulkan
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+          WINIT_UNIX_BACKEND: x11
+        run: xvfb-run -a -s '-screen 0 1280x800x24' python3 scripts/smoke-linux-playtest.py dist/linux-playtest/Rebellion-linux-x86_64.tar.gz build/linux-smoke
+      - name: Upload tested Linux package
+        uses: actions/upload-artifact@v7
+        with:
+          name: Rebellion-linux-x86_64
+          path: |
+            dist/linux-playtest/*.tar.gz
+            dist/linux-playtest/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload startup evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Rebellion-linux-startup-evidence
+          path: build/linux-smoke/
+          if-no-files-found: ignore
+          retention-days: 30

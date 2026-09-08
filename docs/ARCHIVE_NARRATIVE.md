@@ -268,3 +268,11 @@ Each loading screen displays three rotating facts from EVE lore relevant to the 
 - 2026-07-25 — Initial narrative framework distilled from user conversation
 
 **This document is append-only.** Changes require a note in `CHANGELOG.md`.
+
+## 2026-09-07 — Free archive access
+
+Rebellion is a free portfolio and community project. The historical
+"Purchase Archive Access" mockup above is superseded. Use "In development"
+for unreleased archives and clear mission prerequisites for gameplay unlocks.
+Future campaigns remain free; archive access has no purchase requirement.
+See [PRODUCTION_PLAN.md](PRODUCTION_PLAN.md) for the current release scope.

@@ -10,10 +10,22 @@ use crate::systems::ability::{AbilityActivatedEvent, AbilityType};
 
 use super::{SoundAssets, SoundSettings, WarningState};
 
+#[derive(Component)]
+pub struct WeaponVoice;
+
+#[derive(Component)]
+pub struct ExplosionVoice {
+    pub boss: bool,
+}
+
+#[derive(Component)]
+pub struct HealthWarningVoice;
+
 /// Play weapon firing sounds with subtle variation
 pub fn play_weapon_sounds(
     mut commands: Commands,
     mut fire_events: EventReader<PlayerFireEvent>,
+    voices: Query<Entity, With<WeaponVoice>>,
     sounds: Res<SoundAssets>,
     settings: Res<SoundSettings>,
 ) {
@@ -22,23 +34,30 @@ pub fn play_weapon_sounds(
         return;
     }
 
+    let mut remaining = 8usize.saturating_sub(voices.iter().count()).min(2);
     for event in fire_events.read() {
+        if remaining == 0 {
+            continue;
+        }
         let sound = match event.weapon_type {
             WeaponType::Autocannon | WeaponType::Artillery => sounds.autocannon.clone(),
-            WeaponType::Laser | WeaponType::Railgun => sounds.laser.clone(),
+            WeaponType::Laser => sounds.laser.clone(),
+            WeaponType::Railgun => sounds.railgun.clone(),
             WeaponType::MissileLauncher => sounds.missile.clone(),
-            WeaponType::Drone => sounds.laser.clone(), // Drones use laser-like sound
+            WeaponType::Drone => sounds.drone.clone(),
             WeaponType::Disintegrator => sounds.laser.clone(), // Triglavian beam sound
-            WeaponType::Vorton => sounds.laser.clone(), // EDENCOM arc sound
+            WeaponType::Vorton => sounds.laser.clone(),        // EDENCOM arc sound
         };
 
         if let Some(source) = sound {
+            remaining -= 1;
             // Add subtle volume and speed variation to avoid repetition
             let volume_var = 0.9 + fastrand::f32() * 0.2; // 0.9 - 1.1
             let speed_var = 0.95 + fastrand::f32() * 0.1; // 0.95 - 1.05 pitch variation
 
             commands.spawn((
                 AudioPlayer(source),
+                WeaponVoice,
                 PlaybackSettings {
                     mode: PlaybackMode::Despawn,
                     volume: Volume::new(
@@ -56,6 +75,7 @@ pub fn play_weapon_sounds(
 pub fn play_explosion_sounds(
     mut commands: Commands,
     mut destroy_events: EventReader<EnemyDestroyedEvent>,
+    voices: Query<&ExplosionVoice>,
     sounds: Res<SoundAssets>,
     settings: Res<SoundSettings>,
 ) {
@@ -64,7 +84,14 @@ pub fn play_explosion_sounds(
         return;
     }
 
+    let mut ordinary = 8usize
+        .saturating_sub(voices.iter().filter(|v| !v.boss).count())
+        .min(3);
+    let mut boss_available = !voices.iter().any(|voice| voice.boss);
     for event in destroy_events.read() {
+        if (event.was_boss && !boss_available) || (!event.was_boss && ordinary == 0) {
+            continue;
+        }
         // Select explosion sound based on enemy type/size
         let (sound, base_volume, base_pitch) = if event.was_boss {
             // Boss = large, deep explosion
@@ -80,12 +107,20 @@ pub fn play_explosion_sounds(
         };
 
         if let Some(source) = sound {
+            if event.was_boss {
+                boss_available = false;
+            } else {
+                ordinary -= 1;
+            }
             // Add variation
             let volume_var = 0.9 + fastrand::f32() * 0.2;
             let pitch_var = 0.95 + fastrand::f32() * 0.1;
 
             commands.spawn((
                 AudioPlayer(source),
+                ExplosionVoice {
+                    boss: event.was_boss,
+                },
                 PlaybackSettings {
                     mode: PlaybackMode::Despawn,
                     volume: Volume::new(
@@ -187,83 +222,69 @@ pub fn play_health_warnings(
     sounds: Res<SoundAssets>,
     settings: Res<SoundSettings>,
     mut warning_state: ResMut<WarningState>,
+    active_warnings: Query<Entity, With<HealthWarningVoice>>,
     time: Res<Time>,
 ) {
-    if !settings.enabled {
-        return;
-    }
-
-    // Cooldown between warnings
-    warning_state.warning_cooldown -= time.delta_secs();
-
+    warning_state.warning_cooldown = (warning_state.warning_cooldown - time.delta_secs()).max(0.0);
     let Ok(stats) = player_query.get_single() else {
+        *warning_state = WarningState::default();
         return;
     };
-
-    let shield_pct = stats.shield / stats.max_shield;
-    let armor_pct = stats.armor / stats.max_armor;
-    let hull_pct = stats.hull / stats.max_hull;
-
-    const WARNING_THRESHOLD: f32 = 0.20;
-
-    // Shield warning
-    if shield_pct <= WARNING_THRESHOLD && shield_pct > 0.0 {
-        if !warning_state.shield_warned && warning_state.warning_cooldown <= 0.0 {
-            if let Some(source) = sounds.shield_warning.clone() {
-                commands.spawn((
-                    AudioPlayer(source),
-                    PlaybackSettings {
-                        mode: PlaybackMode::Despawn,
-                        volume: Volume::new(settings.sfx_volume * settings.master_volume * 0.9),
-                        ..default()
-                    },
-                ));
-                warning_state.shield_warned = true;
-                warning_state.warning_cooldown = 3.0; // 3 second cooldown between warnings
-            }
-        }
-    } else if shield_pct > WARNING_THRESHOLD {
+    let fractions = [
+        stats.shield / stats.max_shield.max(1.0),
+        stats.armor / stats.max_armor.max(1.0),
+        stats.hull / stats.max_hull.max(1.0),
+    ];
+    // Hysteresis prevents shield regeneration around 20% from chattering.
+    if fractions[0] > 0.25 {
         warning_state.shield_warned = false;
     }
-
-    // Armor warning (more urgent)
-    if armor_pct <= WARNING_THRESHOLD && armor_pct > 0.0 {
-        if !warning_state.armor_warned && warning_state.warning_cooldown <= 0.0 {
-            if let Some(source) = sounds.armor_warning.clone() {
-                commands.spawn((
-                    AudioPlayer(source),
-                    PlaybackSettings {
-                        mode: PlaybackMode::Despawn,
-                        volume: Volume::new(settings.sfx_volume * settings.master_volume * 0.95),
-                        ..default()
-                    },
-                ));
-                warning_state.armor_warned = true;
-                warning_state.warning_cooldown = 2.5;
-            }
-        }
-    } else if armor_pct > WARNING_THRESHOLD {
+    if fractions[1] > 0.25 {
         warning_state.armor_warned = false;
     }
-
-    // Hull warning (critical - most urgent)
-    if hull_pct <= WARNING_THRESHOLD && hull_pct > 0.0 {
-        if !warning_state.hull_warned && warning_state.warning_cooldown <= 0.0 {
-            if let Some(source) = sounds.hull_warning.clone() {
-                commands.spawn((
-                    AudioPlayer(source),
-                    PlaybackSettings {
-                        mode: PlaybackMode::Despawn,
-                        volume: Volume::new(settings.sfx_volume * settings.master_volume),
-                        ..default()
-                    },
-                ));
-                warning_state.hull_warned = true;
-                warning_state.warning_cooldown = 2.0;
-            }
-        }
-    } else if hull_pct > WARNING_THRESHOLD {
+    if fractions[2] > 0.25 {
         warning_state.hull_warned = false;
+    }
+    if !settings.enabled || stats.hull <= 0.0 {
+        return;
+    }
+    let Some(layer) = (0..3)
+        .rev()
+        .find(|&i| fractions[i] > 0.0 && fractions[i] <= 0.20)
+    else {
+        warning_state.last_priority = 0;
+        return;
+    };
+    let priority = layer as u8 + 1;
+    let (warned, source) = match layer {
+        0 => (warning_state.shield_warned, sounds.shield_warning.clone()),
+        1 => (warning_state.armor_warned, sounds.armor_warning.clone()),
+        _ => (warning_state.hull_warned, sounds.hull_warning.clone()),
+    };
+    if warned || (warning_state.warning_cooldown > 0.0 && priority <= warning_state.last_priority) {
+        return;
+    }
+    if let Some(source) = source {
+        // Escalating hull danger interrupts an earlier, less urgent alarm.
+        for entity in &active_warnings {
+            commands.entity(entity).despawn();
+        }
+        commands.spawn((
+            AudioPlayer(source),
+            HealthWarningVoice,
+            PlaybackSettings {
+                mode: PlaybackMode::Despawn,
+                volume: Volume::new(settings.sfx_volume * settings.master_volume * 0.9),
+                ..default()
+            },
+        ));
+        match layer {
+            0 => warning_state.shield_warned = true,
+            1 => warning_state.armor_warned = true,
+            _ => warning_state.hull_warned = true,
+        }
+        warning_state.last_priority = priority;
+        warning_state.warning_cooldown = 3.0;
     }
 }
 
@@ -355,5 +376,171 @@ pub fn play_boss_spawn_sound(
                 },
             ));
         }
+    }
+}
+
+/// One audio cue per carrier arrival, including subsequent waves on the same entity.
+pub fn play_carrier_warps(
+    mut commands: Commands,
+    carriers: Query<(Entity, &crate::systems::spawning::EnemyCarrier)>,
+    sounds: Res<SoundAssets>,
+    settings: Res<SoundSettings>,
+    mut heard: Local<std::collections::HashMap<Entity, u32>>,
+) {
+    heard.retain(|entity, _| carriers.get(*entity).is_ok());
+    for (entity, carrier) in &carriers {
+        if heard.get(&entity) == Some(&carrier.wave_number) {
+            continue;
+        }
+        heard.insert(entity, carrier.wave_number);
+        if settings.enabled {
+            if let Some(source) = sounds.carrier_warp.clone() {
+                commands.spawn((
+                    AudioPlayer(source),
+                    PlaybackSettings {
+                        mode: PlaybackMode::Despawn,
+                        volume: Volume::new(settings.master_volume * settings.sfx_volume * 0.65),
+                        ..default()
+                    },
+                ));
+            }
+        }
+    }
+}
+
+pub fn play_chapter_boss_alert(
+    mut commands: Commands,
+    sounds: Res<SoundAssets>,
+    settings: Res<SoundSettings>,
+) {
+    if settings.enabled {
+        if let Some(source) = sounds.boss_spawn.clone() {
+            commands.spawn((
+                AudioPlayer(source),
+                PlaybackSettings {
+                    mode: PlaybackMode::Despawn,
+                    volume: Volume::new(settings.master_volume * settings.sfx_volume * 0.55),
+                    ..default()
+                },
+            ));
+        }
+    }
+}
+
+#[cfg(test)]
+mod playback_tests {
+    use super::*;
+    use crate::entities::{Player, ShipStats};
+
+    fn audio_app() -> App {
+        let mut app = App::new();
+        let mut assets = Assets::<AudioSource>::default();
+        let shield = assets.add(super::super::generators::generate_shield_warning().unwrap());
+        let armor = assets.add(super::super::generators::generate_armor_warning().unwrap());
+        let hull = assets.add(super::super::generators::generate_hull_warning().unwrap());
+        app.insert_resource(SoundAssets {
+            shield_warning: Some(shield.clone()),
+            armor_warning: Some(armor.clone()),
+            hull_warning: Some(hull.clone()),
+            explosion_small: Some(shield),
+            explosion_medium: Some(armor),
+            explosion_large: Some(hull),
+            ..default()
+        })
+        .insert_resource(assets)
+        .init_resource::<SoundSettings>()
+        .init_resource::<WarningState>()
+        .init_resource::<Time>()
+        .add_event::<EnemyDestroyedEvent>();
+        app
+    }
+
+    #[test]
+    fn critical_hull_warning_interrupts_shield_cooldown_and_does_not_repeat() {
+        let mut app = audio_app();
+        app.add_systems(Update, play_health_warnings);
+        let stats = ShipStats::default();
+        let player = app
+            .world_mut()
+            .spawn((
+                Player,
+                ShipStats {
+                    shield: stats.max_shield * 0.1,
+                    ..stats
+                },
+            ))
+            .id();
+        app.update();
+        assert!(app.world().resource::<WarningState>().shield_warned);
+        let first = app
+            .world_mut()
+            .query_filtered::<Entity, With<HealthWarningVoice>>()
+            .single(app.world());
+        {
+            let mut stats = app.world_mut().get_mut::<ShipStats>(player).unwrap();
+            stats.armor = stats.max_armor * 0.1;
+            stats.hull = stats.max_hull * 0.1;
+        }
+        app.update();
+        assert!(app.world().resource::<WarningState>().hull_warned);
+        assert!(app.world().resource::<WarningState>().warning_cooldown > 0.0);
+        assert!(app.world().get_entity(first).is_err());
+        let (voice, sound) = app
+            .world_mut()
+            .query_filtered::<(Entity, &AudioPlayer), With<HealthWarningVoice>>()
+            .single(app.world());
+        assert_eq!(
+            Some(&sound.0),
+            app.world().resource::<SoundAssets>().hull_warning.as_ref()
+        );
+        for _ in 0..10 {
+            app.update();
+        }
+        assert_eq!(
+            app.world_mut()
+                .query_filtered::<Entity, With<HealthWarningVoice>>()
+                .single(app.world()),
+            voice
+        );
+    }
+
+    #[test]
+    fn crowded_explosions_reserve_boss_audio_and_drain_dropped_events() {
+        let mut app = audio_app();
+        app.add_systems(Update, play_explosion_sounds);
+        for _ in 0..8 {
+            app.world_mut().spawn(ExplosionVoice { boss: false });
+        }
+        for i in 0..101 {
+            app.world_mut().send_event(EnemyDestroyedEvent {
+                enemy: Entity::PLACEHOLDER,
+                position: Vec2::ZERO,
+                enemy_type: "test".into(),
+                score_value: 50,
+                was_boss: i == 100,
+                liberation_value: 0,
+                type_id: 587,
+            });
+        }
+        app.update();
+        let mut voices = app.world_mut().query::<&ExplosionVoice>();
+        assert_eq!(voices.iter(app.world()).count(), 9);
+        assert_eq!(voices.iter(app.world()).filter(|v| v.boss).count(), 1);
+        let entities: Vec<_> = app
+            .world_mut()
+            .query_filtered::<Entity, With<ExplosionVoice>>()
+            .iter(app.world())
+            .collect();
+        for entity in entities {
+            app.world_mut().despawn(entity);
+        }
+        app.update();
+        assert_eq!(
+            app.world_mut()
+                .query::<&ExplosionVoice>()
+                .iter(app.world())
+                .count(),
+            0
+        );
     }
 }

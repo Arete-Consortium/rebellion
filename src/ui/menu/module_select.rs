@@ -17,51 +17,14 @@ pub(crate) fn is_elder_fleet(active_module: Res<ActiveModule>) -> bool {
     active_module.is_elder_fleet()
 }
 
-/// Run condition: not on mobile (desktop / native). Used to gate
-/// spawn_module_select so the picker doesn't flash on mobile during
-/// the one frame between OnEnter(ModuleSelect) and the auto-skip.
-pub(crate) fn not_on_mobile(mobile: Res<crate::systems::touch_joystick::MobileMode>) -> bool {
-    !mobile.active
-}
-
-/// Mobile fast-path: when MobileMode is active, skip ModuleSelect and
-/// FactionSelect entirely and drop the player into StageSelect with
-/// Elder Fleet / Minmatar vs Amarr pre-locked. The 4-card module
-/// picker doesn't fit a portrait phone viewport, and for the scoped-
-/// down "Minmatar campaign on mobile" goal we don't need the choice.
-/// Desktop builds early-return because MobileMode is never active.
-///
-/// Uses NextState directly instead of TransitionEvent because the
-/// TransitionState can only hold one in-flight fade — the fade from
-/// MainMenu → ModuleSelect is still finishing when this OnEnter runs,
-/// so a TransitionEvent fired from here would be dropped silently and
-/// strand the user on a black ModuleSelect screen.
-pub(crate) fn mobile_skip_to_stage_select(
-    mobile: Res<crate::systems::touch_joystick::MobileMode>,
-    mut active_module: ResMut<ActiveModule>,
-    mut endless: ResMut<crate::core::EndlessMode>,
-    mut abyssal: ResMut<crate::games::abyssal_depths::AbyssalState>,
-    mut session: ResMut<GameSession>,
-    mut next_state: ResMut<NextState<GameState>>,
-) {
-    if !mobile.active {
-        return;
-    }
-    active_module.set_module("elder_fleet");
-    endless.active = false;
-    abyssal.active = false;
-    *session = GameSession::new(Faction::Minmatar, Faction::Amarr);
-    info!("Mobile: auto-skipping ModuleSelect → StageSelect (Elder Fleet, Minmatar)");
-    next_state.set(GameState::StageSelect);
-}
-
 pub(crate) fn spawn_module_select(
     mut commands: Commands,
     mut selection: ResMut<MenuSelection>,
     faction_icons: Res<crate::assets::FactionIconCache>,
+    bindings: Res<KeyBindings>,
 ) {
     selection.index = 0;
-    selection.total = 4; // Elder Fleet, Caldari vs Gallente, Abyssal Depths, Endless
+    selection.total = 2; // The two faction-conflict chapters.
 
     commands
         .spawn((
@@ -81,7 +44,7 @@ pub(crate) fn spawn_module_select(
         .with_children(|parent| {
             // Kicker line above title
             parent.spawn((
-                Text::new("— NEW EDEN · CAMPAIGN SELECT —"),
+                Text::new("NEW EDEN"),
                 TextFont {
                     font_size: 12.0,
                     ..default()
@@ -91,7 +54,7 @@ pub(crate) fn spawn_module_select(
 
             // Main title
             parent.spawn((
-                Text::new("SELECT OPERATION"),
+                Text::new("SELECT CHAPTER"),
                 TextFont {
                     font_size: 40.0,
                     ..default()
@@ -131,9 +94,9 @@ pub(crate) fn spawn_module_select(
                     spawn_module_card(
                         row,
                         0,
-                        "THE ELDER FLEET",
-                        "Minmatar Liberation",
-                        "Strike against Imperial slavers.\n13 missions across 3 acts.",
+                        "MINMATAR / AMARR",
+                        "The Elder Fleet",
+                        "Republic or Empire.\nChoose your side of the conflict.",
                         Color::srgb(0.8, 0.5, 0.2),
                         CardIcon::FactionVs(Faction::Minmatar, Faction::Amarr),
                         &faction_icons,
@@ -143,35 +106,11 @@ pub(crate) fn spawn_module_select(
                     spawn_module_card(
                         row,
                         1,
-                        "CALDARI PRIME",
-                        "Faction Warfare",
-                        "Caldari vs Gallente conflict.\n5 missions of brutal combat.",
+                        "CALDARI / GALLENTE",
+                        "Battle of Caldari Prime",
+                        "State or Federation.\nThree-mission campaign playtest.",
                         Color::srgb(0.2, 0.4, 0.7),
                         CardIcon::FactionVs(Faction::Caldari, Faction::Gallente),
-                        &faction_icons,
-                    );
-
-                    // Triglavian Invasion — EDENCOM + empires vs Collective
-                    spawn_module_card(
-                        row,
-                        2,
-                        "TRIGLAVIAN INVASION",
-                        "EDENCOM Counter-Strike",
-                        "The Collective breaches New Eden.\nEmpire fleets + EDENCOM deploy.",
-                        Color::srgb(0.75, 0.25, 0.35), // Triglavian crimson
-                        CardIcon::SoloEmblem("triglavian"),
-                        &faction_icons,
-                    );
-
-                    // Endless Mode — Deathless Circle
-                    spawn_module_card(
-                        row,
-                        3,
-                        "ENDLESS",
-                        "Deathless Incursion",
-                        "Infinite waves of enemies.\nSurvive as long as you can!",
-                        Color::srgb(0.7, 0.2, 0.2),
-                        CardIcon::SoloEmblem("deathless"),
                         &faction_icons,
                     );
                 });
@@ -183,7 +122,7 @@ pub(crate) fn spawn_module_select(
 
             // Instructions
             parent.spawn((
-                Text::new("D-PAD Navigate  •  A Select  •  B Back"),
+                Text::new(menu_hint(&bindings, "Select", "Back")),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -384,12 +323,19 @@ fn spawn_faction_emblem(
 
 pub(crate) fn module_select_input(
     keyboard: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     joystick: Res<JoystickState>,
     mut selection: ResMut<MenuSelection>,
     mut active_module: ResMut<ActiveModule>,
     mut endless: ResMut<crate::core::EndlessMode>,
     mut abyssal: ResMut<crate::games::abyssal_depths::AbyssalState>,
     mut session: ResMut<GameSession>,
+    (mut campaign, mut cg_campaign, mut slice_mode, mut ef_campaign): (
+        ResMut<CampaignState>,
+        ResMut<crate::games::caldari_gallente::CGCampaignState>,
+        ResMut<crate::games::caldari_gallente::VerticalSliceMode>,
+        ResMut<crate::games::elder_fleet::ElderFleetCampaignState>,
+    ),
     time: Res<Time>,
     mut transitions: EventWriter<TransitionEvent>,
     mut cards: Query<(&MenuItem, &mut BackgroundColor, &mut BorderColor)>,
@@ -397,7 +343,7 @@ pub(crate) fn module_select_input(
     selection.cooldown -= time.delta_secs();
 
     // Navigation
-    let nav = get_nav_input(&keyboard, &joystick);
+    let nav = get_nav_input(&keyboard, &joystick, &bindings);
     if nav != 0 && selection.cooldown <= 0.0 {
         selection.index =
             (selection.index as i32 + nav).rem_euclid(selection.total as i32) as usize;
@@ -443,7 +389,11 @@ pub(crate) fn module_select_input(
     }
 
     // Confirm selection
-    if is_confirm(&keyboard, &joystick) {
+    if is_confirm(&keyboard, &joystick, &bindings) {
+        *campaign = CampaignState::default();
+        ef_campaign.reset();
+        *cg_campaign = crate::games::caldari_gallente::CGCampaignState::default();
+        *slice_mode = crate::games::caldari_gallente::VerticalSliceMode::Slice;
         match selection.index {
             0 => {
                 // Elder Fleet
@@ -463,33 +413,12 @@ pub(crate) fn module_select_input(
                 info!("Selected Caldari vs Gallente campaign");
                 transitions.send(TransitionEvent::to(GameState::FactionSelect));
             }
-            2 => {
-                // Triglavian Invasion (Abyssal Depths)
-                active_module.set_module("abyssal_depths");
-                endless.active = false;
-                abyssal.active = true;
-                // Cross-empire EDENCOM + invasion-era roster
-                session.chapter_ship_override =
-                    Some(crate::games::abyssal_depths::TRIGLAVIAN_INVASION_SHIPS);
-                info!("Selected TRIGLAVIAN INVASION!");
-                // Skip faction select, go straight to ship select
-                transitions.send(TransitionEvent::to(GameState::ShipSelect));
-            }
-            3 => {
-                // Endless Mode — every ship in the game is playable
-                active_module.set_module("elder_fleet");
-                endless.active = true;
-                abyssal.active = false;
-                session.chapter_ship_override = Some(&crate::games::abyssal_depths::ENDLESS_SHIPS);
-                info!("Selected ENDLESS MODE — full roster unlocked");
-                transitions.send(TransitionEvent::to(GameState::FactionSelect));
-            }
             _ => {}
         }
     }
 
     // Back to main menu
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.back() {
+    if is_cancel(&keyboard, &joystick, &bindings) {
         transitions.send(TransitionEvent::to(GameState::MainMenu));
     }
 }

@@ -28,12 +28,27 @@ pub(crate) struct BossIntroDialogue {
     pub(crate) timer: f32,
 }
 
-pub(crate) fn spawn_boss_intro(mut commands: Commands, campaign: Res<CampaignState>) {
+pub(crate) fn spawn_boss_intro(
+    mut commands: Commands,
+    campaign: Res<CampaignState>,
+    active: Res<crate::games::ActiveModule>,
+    ef: Res<crate::games::elder_fleet::ElderFleetCampaignState>,
+) {
     // Get boss data for dialogue and phase info
     let stage = (campaign.mission_index + 1) as u32;
     let boss_data = get_boss_for_stage(stage);
 
-    let (boss_name, boss_title, dialogue, phases) = if let Some(data) = &boss_data {
+    let (boss_name, boss_title, dialogue, phases) = if let Some(info) =
+        crate::games::elder_fleet::mission_info(&active, ef.current_mission)
+            .filter(|_| active.is_elder_fleet())
+    {
+        (
+            info.boss_name,
+            info.name,
+            format!("{} has engaged!", info.boss_name),
+            info.boss_phases,
+        )
+    } else if let Some(data) = &boss_data {
         (
             data.name.as_str(),
             data.title.as_str(),

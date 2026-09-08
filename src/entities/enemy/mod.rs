@@ -37,6 +37,9 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
+        for destination in NON_COMBAT_STATES {
+            app.add_systems(OnEnter(destination), cleanup_combat_actors);
+        }
         app.init_resource::<PlayerTracker>().add_systems(
             FixedUpdate,
             (
@@ -70,5 +73,24 @@ fn apply_endless_scale_system(
         stats.health *= scale.0;
         stats.max_health *= scale.0;
         commands.entity(entity).remove::<EndlessScale>();
+    }
+}
+
+/// A new mission starts from an empty battlefield; pause/boss overlays retain it.
+fn cleanup_combat_actors(
+    mut commands: Commands,
+    actors: Query<
+        Entity,
+        Or<(
+            With<Enemy>,
+            With<crate::entities::Boss>,
+            With<crate::entities::environment::EnvironmentObject>,
+            With<crate::entities::Collectible>,
+            With<crate::entities::Wingman>,
+        )>,
+    >,
+) {
+    for entity in &actors {
+        commands.entity(entity).despawn_recursive();
     }
 }

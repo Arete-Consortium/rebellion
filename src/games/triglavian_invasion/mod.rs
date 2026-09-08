@@ -44,7 +44,9 @@ impl Plugin for TriglavianInvasionPlugin {
         // Campaign systems
         app.add_systems(
             OnEnter(GameState::Playing),
-            start_trig_mission.run_if(is_triglavian_invasion),
+            start_trig_mission
+                .run_if(crate::core::not_resuming_gameplay)
+                .run_if(is_triglavian_invasion),
         )
         .add_systems(
             Update,

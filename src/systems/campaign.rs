@@ -23,6 +23,7 @@ impl Plugin for CampaignPlugin {
         app.add_systems(
             OnEnter(GameState::Playing),
             start_mission
+                .run_if(not_resuming_gameplay)
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
                 .run_if(not(is_abyssal_module))
@@ -78,6 +79,7 @@ impl Plugin for CampaignPlugin {
         .add_systems(
             OnEnter(GameState::BossFight),
             start_boss_fight
+                .run_if(not_resuming_gameplay)
                 .run_if(not(is_cg_module))
                 .run_if(not(is_triglavian_module))
                 .run_if(not(is_abyssal_module))

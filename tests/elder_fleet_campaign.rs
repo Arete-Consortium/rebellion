@@ -11,6 +11,24 @@ use rebellion::entities::{BossData, BossState, Enemy};
 use rebellion::games::elder_fleet::ef_campaign::ElderFleetCampaignState;
 use rebellion::games::ActiveModule;
 
+fn finish_carrier_arrival(app: &mut App) {
+    // The chapter deliberately keeps the combat lane clear during carrier warp-in.
+    for _ in 0..5 {
+        app.update();
+    }
+    assert_eq!(
+        app.world_mut()
+            .query_filtered::<Entity, With<Enemy>>()
+            .iter(app.world())
+            .count(),
+        0,
+        "wave must wait for its carrier"
+    );
+    for _ in 0..130 {
+        app.update();
+    }
+}
+
 #[test]
 fn elder_fleet_spawns_enemies_on_wave_start() {
     let mut app = build_headless_app();
@@ -31,10 +49,7 @@ fn elder_fleet_spawns_enemies_on_wave_start() {
         .set(GameState::Playing);
     app.update(); // OnEnter(Playing) + start_ef_mission
 
-    // Run updates to let spawn_ef_wave trigger
-    for _ in 0..5 {
-        app.update();
-    }
+    finish_carrier_arrival(&mut app);
 
     let enemy_count = {
         let mut q = app.world_mut().query::<&Enemy>();
@@ -125,9 +140,7 @@ fn elder_fleet_amarr_campaign_spawns_minmatar_enemies() {
         .set(GameState::Playing);
     app.update();
 
-    for _ in 0..5 {
-        app.update();
-    }
+    finish_carrier_arrival(&mut app);
 
     let enemy_count = {
         let mut q = app.world_mut().query::<&Enemy>();

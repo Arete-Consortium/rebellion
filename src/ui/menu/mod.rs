@@ -41,7 +41,7 @@ impl Plugin for MenuPlugin {
                 PreUpdate,
                 (
                     common::ensure_menu_items_interactive,
-                    common::handle_menu_item_taps,
+                    common::handle_menu_item_taps.after(crate::systems::joystick::poll_gamepad),
                 )
                     .chain(),
             )
@@ -70,14 +70,10 @@ impl Plugin for MenuPlugin {
                 despawn_menu::<main_menu::MainMenuRoot>,
             )
             // Module Select
-            // On mobile we auto-skip past the picker into StageSelect with
-            // Elder Fleet / Minmatar locked. Desktop keeps the full picker.
+            // Both conflicts share chapter, faction and hull selection.
             .add_systems(
                 OnEnter(GameState::ModuleSelect),
-                (
-                    module_select::spawn_module_select.run_if(module_select::not_on_mobile),
-                    module_select::mobile_skip_to_stage_select,
-                ),
+                (module_select::spawn_module_select,),
             )
             .add_systems(
                 Update,
@@ -122,18 +118,15 @@ impl Plugin for MenuPlugin {
             // Faction Select (unified 4-faction) - only for Elder Fleet module
             .add_systems(
                 OnEnter(GameState::FactionSelect),
-                faction_select::spawn_faction_select.run_if(module_select::is_elder_fleet),
+                faction_select::spawn_faction_select,
             )
             .add_systems(
                 Update,
-                faction_select::faction_select_input
-                    .run_if(in_state(GameState::FactionSelect))
-                    .run_if(module_select::is_elder_fleet),
+                faction_select::faction_select_input.run_if(in_state(GameState::FactionSelect)),
             )
             .add_systems(
                 OnExit(GameState::FactionSelect),
-                despawn_menu::<faction_select::FactionSelectRoot>
-                    .run_if(module_select::is_elder_fleet),
+                despawn_menu::<faction_select::FactionSelectRoot>,
             )
             // Difficulty Select
             .add_systems(
@@ -307,3 +300,6 @@ impl Plugin for MenuPlugin {
             .init_resource::<MenuSelection>();
     }
 }
+
+#[cfg(test)]
+mod playtest_tests;

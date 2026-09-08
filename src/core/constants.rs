@@ -163,7 +163,7 @@ pub const SIZE_BATTLESHIP: f32 = 182.0;
 
 /// Carrier sprite size — scales the hull as a massive backdrop you fly across,
 /// 2×+ screen height so the player reads as strafing the capital's deck.
-pub const SIZE_CARRIER: f32 = 1800.0;
+pub const SIZE_CARRIER: f32 = 420.0;
 
 /// Player ship size bonus (player ships slightly larger for visibility)
 pub const PLAYER_SIZE_BONUS: f32 = 1.15;

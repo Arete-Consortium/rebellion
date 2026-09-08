@@ -116,6 +116,16 @@ pub enum PowerupType {
     Invulnerability,
 }
 
+impl PowerupType {
+    pub fn color(self) -> Color {
+        match self {
+            Self::Overdrive => Color::srgb(0.3, 0.9, 1.0),
+            Self::DamageBoost => Color::srgb(1.0, 0.4, 0.2),
+            Self::Invulnerability => Color::srgb(1.0, 0.9, 0.4),
+        }
+    }
+}
+
 /// Container for a single powerup status box
 #[derive(Component)]
 pub struct PowerupStatusBox {

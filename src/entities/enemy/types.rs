@@ -11,6 +11,11 @@ use bevy::prelude::*;
 #[derive(Component, Debug)]
 pub struct Enemy;
 
+/// Sprite's spawn orientation, kept separate from the movement bank.
+/// Model entities use `ShipModelRotation` instead.
+#[derive(Component, Debug, Clone, Copy)]
+pub struct EnemySpriteRotation(pub f32);
+
 /// Enemy AI behavior type
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EnemyBehavior {
