@@ -1,5 +1,7 @@
 # Right-stick firing checkpoint — September 8
 
+Follow-up: the owner selected on-demand booster use. The [manual booster checkpoint](MANUAL_BOOSTER_PLAYTEST_2026-09-08.md) adds storage, D-pad selection and Y activation. This document preserves the preceding input candidate.
+
 The owner clarified the intended feel: pushing the right stick aims and fires in that direction, while triggers and bumpers remain available for combat utilities. This replaces the RT-fire layout in the [previous controller-only candidate](CONTROLLER_ONLY_PLAYTEST_2026-09-08.md).
 
 ## Current layout
