@@ -315,11 +315,15 @@ impl Plugin for AbilityPlugin {
 fn ability_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<JoystickState>,
+    bindings: Res<crate::core::KeyBindings>,
     mut query: Query<(Entity, &mut Ability, &mut ShipStats), With<Player>>,
     mut events: EventWriter<AbilityActivatedEvent>,
 ) {
-    let ability_pressed =
-        keyboard.just_pressed(KeyCode::ShiftLeft) || joystick.right_trigger_pressed();
+    let ability_pressed = if bindings.controller_only {
+        bindings.just_pressed(crate::core::Action::ActivateAbility, &keyboard, &joystick)
+    } else {
+        keyboard.just_pressed(KeyCode::ShiftLeft) || joystick.right_trigger_pressed()
+    };
 
     if !ability_pressed {
         return;

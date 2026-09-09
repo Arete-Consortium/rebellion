@@ -16,6 +16,7 @@ use rebellion::{
     },
 };
 use std::path::PathBuf;
+mod support;
 
 #[derive(Resource)]
 struct Review {
@@ -44,6 +45,7 @@ fn main() {
     std::env::set_var("REBELLION_HOME", profile);
     fastrand::seed(1944);
     let mut app = RebellionAppConfig::native().build();
+    support::install_controller(&mut app, 0.0);
     for mut window in app
         .world_mut()
         .query::<&mut Window>()

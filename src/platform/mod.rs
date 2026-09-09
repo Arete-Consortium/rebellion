@@ -10,7 +10,7 @@ use bevy::prelude::*;
 
 use crate::core::{GameState, InputConfig};
 use crate::systems::joystick::{JoystickPlugin, JoystickState};
-use crate::systems::touch_joystick::TouchJoystickPlugin;
+pub mod controller;
 
 /// Plugin that registers all platform input and runtime systems.
 pub struct PlatformPlugin;
@@ -18,13 +18,8 @@ pub struct PlatformPlugin;
 impl Plugin for PlatformPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<InputConfig>()
-            .add_plugins((JoystickPlugin, TouchJoystickPlugin))
-            // Pause system — ESC or Start button during gameplay triggers pause
-            .add_systems(
-                Update,
-                pause_trigger_system
-                    .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
-            );
+            .init_resource::<crate::systems::touch_joystick::MobileMode>()
+            .add_plugins((JoystickPlugin, controller::ControllerOnlyPlugin));
     }
 }
 
@@ -34,7 +29,7 @@ fn pause_trigger_system(
     joystick: Res<JoystickState>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    if keyboard.just_pressed(KeyCode::Escape) || joystick.start() {
+    if keyboard.just_pressed(KeyCode::Escape) || joystick.just_pressed(9) {
         next_state.set(GameState::Paused);
     }
 }

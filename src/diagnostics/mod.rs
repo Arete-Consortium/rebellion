@@ -17,7 +17,7 @@ pub struct DiagnosticsPlugin;
 
 impl Plugin for DiagnosticsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(PerfProfilePlugin)
+        app.add_plugins((PerfProfilePlugin, FrameTimeDiagnosticsPlugin))
             .init_resource::<BossFrameProfiler>()
             .add_systems(
                 Update,
@@ -32,8 +32,7 @@ impl Plugin for DiagnosticsPlugin {
 
 /// Rolling-frame profiler that warns when frame time spikes during boss fights.
 ///
-/// `FrameTimeDiagnosticsPlugin` is already registered by `TouchJoystickPlugin`
-/// in native builds, so we only attach a consumer system here.
+/// The diagnostics plugin owns frame sampling independently of input devices.
 #[derive(Resource)]
 pub struct BossFrameProfiler {
     samples: Vec<f32>,

@@ -207,6 +207,9 @@ pub(crate) fn is_cancel(
 }
 
 pub(crate) fn menu_hint(bindings: &KeyBindings, confirm: &str, cancel: &str) -> String {
+    if bindings.controller_only {
+        return format!("Left stick / D-pad Navigate  |  A {confirm}  |  B {cancel}");
+    }
     let label = |action| {
         bindings
             .get(action)

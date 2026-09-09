@@ -107,6 +107,7 @@ pub struct BarrelRollEvent {
 fn handle_maneuver_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<crate::systems::JoystickState>,
+    bindings: Res<crate::core::KeyBindings>,
     mut query: Query<(&Transform, &mut ManeuverState, &mut ShipStats, &Movement), With<Player>>,
     mut thrust_events: EventWriter<ThrustEvent>,
     mut roll_events: EventWriter<BarrelRollEvent>,
@@ -118,7 +119,11 @@ fn handle_maneuver_input(
     let pos = transform.translation.truncate();
 
     // Thrust: LB (button 4) or Left Shift
-    let thrust_pressed = keyboard.just_pressed(KeyCode::ShiftLeft) || joystick.buttons[4];
+    let thrust_pressed = if bindings.controller_only {
+        joystick.just_pressed(4)
+    } else {
+        keyboard.just_pressed(KeyCode::ShiftLeft) || joystick.buttons[4]
+    };
 
     if thrust_pressed
         && !maneuver.thrust_active
@@ -146,7 +151,11 @@ fn handle_maneuver_input(
     // Barrel Roll: RB (button 5) or Q/E
     let roll_left = keyboard.just_pressed(KeyCode::KeyQ);
     let roll_right = keyboard.just_pressed(KeyCode::KeyE);
-    let roll_rb = joystick.buttons[5];
+    let roll_rb = if bindings.controller_only {
+        joystick.just_pressed(5)
+    } else {
+        joystick.buttons[5]
+    };
 
     // Determine roll direction
     let roll_dir = if roll_left {

@@ -872,7 +872,7 @@ pub fn spawn_ability_indicator(parent: &mut ChildBuilder) {
                     // Key hint
                     row.spawn((
                         AbilityKeyHint,
-                        Text::new("[RT]"),
+                        Text::new("[LT]"),
                         TextFont {
                             font_size: 9.0,
                             ..default()

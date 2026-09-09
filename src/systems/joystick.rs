@@ -234,11 +234,14 @@ pub struct BackButtonEvent {
 
 #[derive(Resource, Default, Debug)]
 pub struct JoystickState {
+    /// Keep one device selected until it disconnects.
+    pub active_gamepad: Option<Entity>,
     pub left_x: f32,
     pub left_y: f32,
     pub right_x: f32,
     pub right_y: f32,
     pub left_trigger: f32,
+    pub prev_left_trigger: f32,
     pub right_trigger: f32,
     pub dpad_x: i8,
     pub dpad_y: i8,
@@ -344,7 +347,7 @@ impl JoystickState {
         self.just_pressed(1)
     }
     pub fn start(&self) -> bool {
-        self.just_pressed(7) || self.just_pressed(9)
+        self.just_pressed(9)
     }
     pub fn left_bumper(&self) -> bool {
         self.buttons[4]
@@ -363,6 +366,20 @@ impl JoystickState {
     }
     pub fn left_trigger_pressed(&self) -> bool {
         self.left_trigger > 0.1
+    }
+
+    pub fn ability_just_pressed(&self) -> bool {
+        self.left_trigger > 0.1 && self.prev_left_trigger <= 0.1
+    }
+
+    /// Analog movement without D-pad ammo selection leaking into steering.
+    pub fn stick_movement(&self) -> Vec2 {
+        let stick = Vec2::new(self.left_x, self.left_y);
+        if stick.length() <= DEFAULT_DEADZONE {
+            Vec2::ZERO
+        } else {
+            stick.clamp_length_max(1.0)
+        }
     }
 }
 
@@ -424,15 +441,20 @@ fn detect_gamepad(
 }
 
 /// Poll Bevy's gamepad state and write to JoystickState
-pub(crate) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Gamepad>) {
+pub(crate) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<(Entity, &Gamepad)>) {
     // Save previous state for edge detection
     state.prev_buttons = state.buttons;
     state.prev_dpad_x = state.dpad_x;
     state.prev_dpad_y = state.dpad_y;
     state.prev_left_y = state.left_y;
+    state.prev_left_trigger = state.left_trigger;
 
     // Use first connected gamepad
-    let Some(gamepad) = gamepads.iter().next() else {
+    let Some((entity, gamepad)) = state
+        .active_gamepad
+        .and_then(|entity| gamepads.get(entity).ok())
+        .or_else(|| gamepads.iter().next())
+    else {
         // No gamepad connected — keep previous state zeroed
         if state.connected {
             *state = JoystickState::default();
@@ -441,6 +463,10 @@ pub(crate) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Ga
         return;
     };
 
+    if state.active_gamepad != Some(entity) {
+        *state = JoystickState::default();
+        state.active_gamepad = Some(entity);
+    }
     state.connected = true;
 
     // Axes — store raw Bevy values (up = +1.0)
@@ -454,11 +480,21 @@ pub(crate) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<&Ga
         .get(GamepadAxis::LeftZ)
         .unwrap_or(0.0)
         .max(gamepad.get(GamepadButton::LeftTrigger2).unwrap_or(0.0))
+        .max(if gamepad.pressed(GamepadButton::LeftTrigger2) {
+            1.0
+        } else {
+            0.0
+        })
         .clamp(0.0, 1.0);
     state.right_trigger = gamepad
         .get(GamepadAxis::RightZ)
         .unwrap_or(0.0)
         .max(gamepad.get(GamepadButton::RightTrigger2).unwrap_or(0.0))
+        .max(if gamepad.pressed(GamepadButton::RightTrigger2) {
+            1.0
+        } else {
+            0.0
+        })
         .clamp(0.0, 1.0);
 
     // D-pad

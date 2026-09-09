@@ -605,7 +605,11 @@ fn player_movement(
     }
 
     // Combine with joystick input
-    let joy_input = joystick.movement();
+    let joy_input = if keybindings.controller_only {
+        joystick.stick_movement()
+    } else {
+        joystick.movement()
+    };
     if joy_input.length_squared() > input.length_squared() {
         input = joy_input;
     }
@@ -615,7 +619,11 @@ fn player_movement(
 
     // Apply acceleration
     if input != Vec2::ZERO {
-        let input_normalized = input.normalize();
+        let input_normalized = if keybindings.controller_only {
+            input.clamp_length_max(1.0)
+        } else {
+            input.normalize()
+        };
         // Scale thrust as well as the cap: friction otherwise keeps the ship
         // below its base cap, making a cap-only booster imperceptible.
         let accel = movement.acceleration * speed_mult;
@@ -740,7 +748,7 @@ fn player_shooting(
     // If right stick is pushed, use its direction for aiming
     let joystick_firing = if let Some(joy_aim) = joystick.aim_direction() {
         aim = joy_aim;
-        true
+        !keybindings.controller_only
     } else {
         false
     };
@@ -752,7 +760,8 @@ fn player_shooting(
     // Fire if: Fire binding pressed, right stick pushed (twin-stick),
     // or A/X held (face buttons — physical input, not remappable).
     // Without right-stick aim, default to travel direction / up.
-    let face_button_fire = joystick.buttons[0] || joystick.buttons[2];
+    let face_button_fire =
+        !keybindings.controller_only && (joystick.buttons[0] || joystick.buttons[2]);
     if face_button_fire && aim == Vec2::ZERO {
         aim = Vec2::new(0.0, 1.0);
         weapon.aim_direction = aim;

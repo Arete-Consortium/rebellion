@@ -14,6 +14,7 @@ use rebellion::{
     PowerupIconCache,
 };
 use std::path::PathBuf;
+mod support;
 
 #[derive(Resource)]
 struct Review {
@@ -41,6 +42,7 @@ fn main() {
     std::fs::write(profile.join("save.json"), r#"{"stage_progress":[],"unlocked_ships":[],"lifetime_credits":0,"high_scores":[],"settings":{"master_volume":0,"music_volume":0,"sfx_volume":0}}"#).unwrap();
     std::env::set_var("REBELLION_HOME", profile);
     let mut app = RebellionAppConfig::native().build();
+    support::install_controller(&mut app, 0.0);
     for mut window in app
         .world_mut()
         .query::<&mut Window>()

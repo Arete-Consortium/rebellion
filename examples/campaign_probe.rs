@@ -1,11 +1,11 @@
 //! Bounded, headless combat probe through the real chapter/faction/hull menus.
-//! cargo run --offline --locked --example campaign_probe -- [output-directory]
+//! cargo run --offline --locked --example campaign_probe -- [output-directory] [--controller]
 //! A scripted pilot uses ordinary movement/aim input. It never changes health,
 //! weapon stats, drops, enemy lifetimes or mission completion. This measures a
 //! bot run, not human difficulty, visual quality, frame rate or device support.
 use bevy::prelude::*;
 use rebellion::{
-    app_builder::build_headless_app,
+    app_builder::{build_headless_app, ControllerOnlyPlugin},
     core::*,
     entities::*,
     games::{caldari_gallente::CGCampaignState, GameModulesPlugin},
@@ -39,6 +39,25 @@ struct Probe {
     missions: [Mission; 3],
 }
 
+#[derive(Resource)]
+struct ProbeController(Entity);
+
+fn press_controller(app: &mut App, button: GamepadButton) {
+    let entity = app.world().resource::<ProbeController>().0;
+    app.world_mut()
+        .get_mut::<Gamepad>(entity)
+        .unwrap()
+        .digital_mut()
+        .press(button);
+    app.update();
+    app.world_mut()
+        .get_mut::<Gamepad>(entity)
+        .unwrap()
+        .digital_mut()
+        .reset_all();
+    tick(app, 12);
+}
+
 fn tick(app: &mut App, frames: usize) {
     for _ in 0..frames {
         app.update();
@@ -50,6 +69,11 @@ fn state(app: &App) -> GameState {
 }
 
 fn confirm(app: &mut App) {
+    if app.world().contains_resource::<ProbeController>() {
+        press_controller(app, GamepadButton::South);
+        tick(app, 65);
+        return;
+    }
     app.world_mut()
         .resource_mut::<ButtonInput<KeyCode>>()
         .press(KeyCode::Enter);
@@ -61,12 +85,23 @@ fn confirm(app: &mut App) {
 }
 
 fn choose(app: &mut App, index: usize, expected: GameState) {
-    app.world_mut().resource_mut::<MenuSelection>().index = index;
+    if app.world().contains_resource::<ProbeController>() {
+        for _ in 0..12 {
+            if app.world().resource::<MenuSelection>().index == index {
+                break;
+            }
+            press_controller(app, GamepadButton::DPadRight);
+        }
+        assert_eq!(app.world().resource::<MenuSelection>().index, index);
+    } else {
+        app.world_mut().resource_mut::<MenuSelection>().index = index;
+    }
     confirm(app);
     assert_eq!(state(app), expected);
 }
 
 fn main() {
+    let controller_only = std::env::args().any(|arg| arg == "--controller");
     let output = std::env::args()
         .nth(1)
         .map(std::path::PathBuf::from)
@@ -85,9 +120,18 @@ fn main() {
         app.init_resource::<rebellion::systems::audio::SoundAssets>();
         app.init_resource::<rebellion::systems::touch_joystick::MobileMode>();
         app.init_resource::<Probe>();
-        app.add_systems(FixedPreUpdate, pilot);
+        // Controller fixtures pass through real Gamepad polling and the player
+        // connection gate. Legacy probes retain their direct input helper.
+        app.add_systems(First, pilot);
         app.add_systems(FixedPostUpdate, observe_drops);
         app.add_systems(PostUpdate, observe);
+        if controller_only {
+            app.add_plugins(ControllerOnlyPlugin);
+            let entity = app.world_mut().spawn(Gamepad::default()).id();
+            app.insert_resource(ProbeController(entity));
+            tick(&mut app, 2);
+            confirm(&mut app); // Connect, acknowledge and release A.
+        }
         tick(&mut app, 125);
         assert_eq!(state(&app), GameState::MainMenu);
         confirm(&mut app);
@@ -121,6 +165,7 @@ fn main() {
             "simulation_seed": rebellion::simulation::DEFAULT_MISSION_SEED,
             "content_rng": "unseeded thread-local RNG; runs vary",
             "outcome": format!("{:?}", state(&app)),
+            "input_mode": if controller_only { "controller-only via Bevy Gamepad components" } else { "legacy headless input fixture" },
             "method": "scripted ordinary movement and aim; unmodified combat stats; default production executor; headless; no retries",
             "missions": probe.missions,
             "enemies_observed": probe.missions.iter().map(|m| m.enemies_seen.len()).collect::<Vec<_>>(),
@@ -131,17 +176,22 @@ fn main() {
     }
 }
 
-#[allow(clippy::type_complexity)]
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
 fn pilot(
     state: Res<State<GameState>>,
     time: Res<Time>,
     mut joystick: ResMut<JoystickState>,
+    controller: Option<Res<ProbeController>>,
+    mut gamepads: Query<&mut Gamepad>,
     player: Query<(&Transform, &Movement), With<Player>>,
     enemies: Query<(&Transform, &EnemyStats), With<Enemy>>,
     bullets: Query<(&Transform, &ProjectilePhysics), With<EnemyProjectile>>,
     pickups: Query<&Transform, With<Collectible>>,
 ) {
-    *joystick = JoystickState::default();
+    if controller.is_none() {
+        *joystick = JoystickState::default();
+    }
+    let mut intent = JoystickState::default();
     if !matches!(*state.get(), GameState::Playing | GameState::BossFight) {
         return;
     }
@@ -160,8 +210,11 @@ fn pilot(
         });
     if let Some((target, _)) = target {
         let aim = (target.translation.truncate() - position).normalize_or_zero();
-        joystick.right_x = aim.x;
-        joystick.right_y = aim.y; // Bevy: up is positive, as in game space.
+        intent.right_x = aim.x;
+        intent.right_y = aim.y; // Bevy: up is positive, as in game space.
+        if controller.is_some() {
+            intent.right_trigger = 1.0;
+        }
     }
     let mut goal = Vec2::new((time.elapsed_secs() * 0.6).sin() * 220.0, -160.0);
     if let Some(pickup) = pickups
@@ -203,8 +256,22 @@ fn pilot(
             }
         }
     }
-    joystick.left_x = best.1.x;
-    joystick.left_y = best.1.y;
+    intent.left_x = best.1.x;
+    intent.left_y = best.1.y;
+    if let Some(controller) = controller {
+        let mut pad = gamepads.get_mut(controller.0).unwrap();
+        for (axis, value) in [
+            (GamepadAxis::LeftStickX, intent.left_x),
+            (GamepadAxis::LeftStickY, intent.left_y),
+            (GamepadAxis::RightStickX, intent.right_x),
+            (GamepadAxis::RightStickY, intent.right_y),
+            (GamepadAxis::RightZ, intent.right_trigger),
+        ] {
+            pad.analog_mut().set(axis, value);
+        }
+    } else {
+        *joystick = intent;
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

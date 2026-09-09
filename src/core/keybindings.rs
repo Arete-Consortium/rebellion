@@ -143,6 +143,10 @@ pub fn key_label(k: KeyCode) -> String {
 /// Authoritative binding table.
 #[derive(Resource, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KeyBindings {
+    /// Player builds use the fixed controller layout. Legacy bindings remain
+    /// serializable for old saves and keyboard-driven development fixtures.
+    #[serde(skip)]
+    pub controller_only: bool,
     /// Backing store. `#[serde(default)]` lets a save blob that
     /// pre-dates the feature deserialize to an empty map; the
     /// migration step replaces that empty map with defaults.
@@ -193,7 +197,10 @@ impl KeyBindings {
         for (a, b) in entries {
             map.insert(*a, *b);
         }
-        Self { map }
+        Self {
+            map,
+            controller_only: false,
+        }
     }
 
     /// The actions that must remain bound. Attempting to `clear()` one
@@ -250,7 +257,9 @@ impl KeyBindings {
     /// Restore the default layout, displacing anything the player
     /// previously customized.
     pub fn reset_to_defaults(&mut self) {
+        let controller_only = self.controller_only;
         *self = Self::defaults();
+        self.controller_only = controller_only;
     }
 
     /// All actions known to the system, in declaration order.
@@ -300,6 +309,9 @@ impl KeyBindings {
         keyboard: &ButtonInput<KeyCode>,
         joystick: &crate::systems::JoystickState,
     ) -> bool {
+        if self.controller_only {
+            return crate::platform::controller::action_pressed(action, joystick, false);
+        }
         let Some(binding) = self.get(action) else {
             return false;
         };
@@ -319,6 +331,9 @@ impl KeyBindings {
         keyboard: &ButtonInput<KeyCode>,
         joystick: &crate::systems::JoystickState,
     ) -> bool {
+        if self.controller_only {
+            return crate::platform::controller::action_pressed(action, joystick, true);
+        }
         let Some(binding) = self.get(action) else {
             return false;
         };

@@ -82,6 +82,15 @@ const CAPTURE_DEBOUNCE_SECONDS: f32 = 0.5;
 
 pub(crate) fn spawn_controls_menu(mut commands: Commands, keybindings: Res<KeyBindings>) {
     commands.init_resource::<ControlsCaptureState>();
+    if keybindings.controller_only {
+        commands.insert_resource(MenuSelection {
+            index: 0,
+            total: 1,
+            cooldown: 0.0,
+        });
+        spawn_controller_guide(&mut commands);
+        return;
+    }
 
     // Build the row list outside the closure so we can also compute
     // the total count for `MenuSelection`.
@@ -281,6 +290,12 @@ pub(crate) fn controls_menu_input(
     mut keybindings: ResMut<KeyBindings>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
+    if keybindings.controller_only {
+        if joystick.back() {
+            next_state.set(GameState::Options);
+        }
+        return;
+    }
     // Capture gate: nav/confirm are inert while waiting for a button.
     if capture.capturing.is_some() {
         return;
@@ -328,6 +343,10 @@ pub(crate) fn controls_capture_input(
     mut capture: ResMut<ControlsCaptureState>,
     mut keybindings: ResMut<KeyBindings>,
 ) {
+    if keybindings.controller_only {
+        capture.capturing = None;
+        return;
+    }
     let Some(action) = capture.capturing else {
         return;
     };
@@ -366,6 +385,72 @@ pub(crate) fn controls_capture_input(
             return;
         }
     }
+}
+
+fn spawn_controller_guide(commands: &mut Commands) {
+    commands
+        .spawn((
+            ControlsMenuRoot,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                row_gap: Val::Px(12.0),
+                padding: UiRect::all(Val::Px(24.0)),
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.02, 0.02, 0.05, 0.97)),
+        ))
+        .with_children(|p| {
+            p.spawn((
+                Text::new("CONTROLLER"),
+                TextFont {
+                    font_size: 32.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.6, 0.85, 1.0)),
+            ));
+            for &(action, input) in crate::platform::controller::CONTROL_GUIDE {
+                p.spawn(Node {
+                    width: Val::Percent(90.0),
+                    max_width: Val::Px(520.0),
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..default()
+                })
+                .with_children(|row| {
+                    row.spawn((
+                        Text::new(action),
+                        TextFont {
+                            font_size: 16.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.65, 0.7, 0.78)),
+                    ));
+                    row.spawn((
+                        Text::new(input),
+                        TextFont {
+                            font_size: 16.0,
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                    ));
+                });
+            }
+            p.spawn((
+                Text::new("Aim freely. Hold RT to fire.\nB Back"),
+                TextFont {
+                    font_size: 16.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.6, 0.85, 1.0)),
+                Node {
+                    margin: UiRect::top(Val::Px(16.0)),
+                    ..default()
+                },
+            ));
+        });
 }
 
 // ============================================================================

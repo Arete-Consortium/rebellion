@@ -6,6 +6,8 @@
 
 use bevy::prelude::*;
 
+pub use crate::platform::controller::{ControllerGate, ControllerOnlyPlugin};
+
 use crate::core::events::BossDefeatedEvent;
 use crate::core::{
     ActCompleteEvent, CampaignBossSpawned, GameEventsPlugin, GameState, KeyBindingsPlugin,
