@@ -38,6 +38,7 @@ fn update_salt_miner_system(
     time: Res<Time>,
     keyboard: Res<ButtonInput<KeyCode>>,
     joystick: Res<crate::systems::JoystickState>,
+    bindings: Res<KeyBindings>,
     mut salt_miner: ResMut<SaltMinerSystem>,
     mut end_events: EventWriter<SaltMinerEndedEvent>,
     mut screen_flash: ResMut<crate::systems::ScreenFlash>,
@@ -54,8 +55,12 @@ fn update_salt_miner_system(
         info!("Salt Miner mode ended!");
     }
 
-    // B key or gamepad Y button to activate salt miner when meter is full
-    let activate_pressed = keyboard.just_pressed(KeyCode::KeyB) || joystick.salt_miner();
+    // Keep charged combat utility reachable without leaving the aim stick.
+    let activate_pressed = if bindings.controller_only {
+        joystick.just_pressed(4)
+    } else {
+        keyboard.just_pressed(KeyCode::KeyB) || joystick.salt_miner()
+    };
 
     if activate_pressed && salt_miner.can_activate() && salt_miner.try_activate() {
         info!("SALT MINER MODE ACTIVATED! 5x score for 8 seconds!");

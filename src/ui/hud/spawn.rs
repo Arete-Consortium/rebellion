@@ -306,7 +306,7 @@ pub fn spawn_hud(
                                     left,
                                     SaltMinerBar,
                                     Color::srgb(0.8, 0.2, 0.8),
-                                    "SALT MINER",
+                                    "OVERLOAD [LB]",
                                 );
                                 // Ammo type indicator (for autocannons)
                                 spawn_ammo_indicator(left);
@@ -923,7 +923,7 @@ pub fn spawn_ammo_indicator(parent: &mut ChildBuilder) {
         .with_children(|row| {
             // Label
             row.spawn((
-                Text::new("AMMO"),
+                Text::new("AMMO [X/B]"),
                 TextFont {
                     font_size: 10.0,
                     ..default()

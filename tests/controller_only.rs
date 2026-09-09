@@ -236,7 +236,77 @@ fn disconnect_freezes_health_position_projectiles_and_ability_timers_in_both_com
 }
 
 #[test]
-fn aim_interact_and_old_saved_bindings_cannot_fire_or_activate_ability() {
+fn right_stick_fires_in_its_direction_and_centering_stops_fire() {
+    for game_state in [GameState::Playing, GameState::BossFight] {
+        let (mut app, controller, player) = combat(game_state);
+        let mut shots = app
+            .world()
+            .resource::<Events<PlayerFireEvent>>()
+            .get_cursor();
+        for direction in [
+            Vec2::X,
+            Vec2::Y,
+            Vec2::NEG_X,
+            Vec2::NEG_Y,
+            Vec2::new(1.0, 1.0),
+            Vec2::new(-1.0, 1.0),
+            Vec2::new(-1.0, -1.0),
+            Vec2::new(1.0, -1.0),
+        ] {
+            pad(
+                &mut app,
+                controller,
+                &[],
+                &[
+                    (GamepadAxis::RightStickX, direction.x),
+                    (GamepadAxis::RightStickY, direction.y),
+                ],
+            );
+            app.world_mut().get_mut::<Weapon>(player).unwrap().cooldown = 0.0;
+            tick(&mut app, 1);
+            let fired: Vec<_> = shots
+                .read(app.world().resource::<Events<PlayerFireEvent>>())
+                .collect();
+            assert!(!fired.is_empty(), "stick direction {direction:?} must fire");
+            assert!(fired
+                .iter()
+                .all(|shot| shot.direction.distance(direction.normalize()) < 0.001));
+            assert_eq!(
+                app.world()
+                    .get::<Ability>(player)
+                    .unwrap()
+                    .cooldown_remaining,
+                0.0
+            );
+            // Small centered-stick noise must neither fire nor change the saved aim.
+            pad(
+                &mut app,
+                controller,
+                &[],
+                &[(GamepadAxis::RightStickX, 0.1)],
+            );
+            app.world_mut().get_mut::<Weapon>(player).unwrap().cooldown = 0.0;
+            tick(&mut app, 1);
+            assert_eq!(
+                shots
+                    .read(app.world().resource::<Events<PlayerFireEvent>>())
+                    .count(),
+                0
+            );
+            assert!(
+                app.world()
+                    .get::<Weapon>(player)
+                    .unwrap()
+                    .aim_direction
+                    .distance(direction.normalize())
+                    < 0.001
+            );
+        }
+    }
+}
+
+#[test]
+fn face_buttons_triggers_and_old_saved_bindings_cannot_fire_the_primary_weapon() {
     let (mut app, controller, player) = combat(GameState::Playing);
     app.world_mut()
         .resource_mut::<KeyBindings>()
@@ -244,8 +314,13 @@ fn aim_interact_and_old_saved_bindings_cannot_fire_or_activate_ability() {
     pad(
         &mut app,
         controller,
-        &[GamepadButton::South, GamepadButton::West],
-        &[(GamepadAxis::RightStickX, 1.0)],
+        &[
+            GamepadButton::South,
+            GamepadButton::East,
+            GamepadButton::West,
+            GamepadButton::North,
+        ],
+        &[(GamepadAxis::RightZ, 0.8)],
     );
     app.world_mut()
         .resource_mut::<ButtonInput<KeyCode>>()
@@ -259,31 +334,18 @@ fn aim_interact_and_old_saved_bindings_cannot_fire_or_activate_ability() {
         0
     );
     assert_eq!(
-        app.world().get::<Weapon>(player).unwrap().aim_direction,
-        Vec2::X
-    );
-    assert_eq!(
         app.world()
             .get::<Ability>(player)
             .unwrap()
             .cooldown_remaining,
         0.0
     );
-    pad(&mut app, controller, &[], &[(GamepadAxis::RightZ, 0.8)]);
-    tick(&mut app, 12);
     assert!(
-        app.world_mut()
-            .query_filtered::<Entity, With<PlayerProjectile>>()
-            .iter(app.world())
-            .count()
-            > 0
-    );
-    assert_eq!(
         app.world()
-            .get::<Ability>(player)
+            .get::<ManeuverState>(player)
             .unwrap()
-            .cooldown_remaining,
-        0.0
+            .thrust_cooldown
+            > 0.0
     );
 }
 
@@ -333,7 +395,7 @@ fn ability_and_maneuvers_require_a_new_press_and_have_separate_controls() {
         );
         pad(&mut app, controller, &[], &[]);
         tick(&mut app, 1);
-        pad(&mut app, controller, &[GamepadButton::LeftTrigger], &[]);
+        pad(&mut app, controller, &[GamepadButton::RightTrigger2], &[]);
         tick(&mut app, 1);
         assert!(
             app.world()
@@ -384,7 +446,24 @@ fn dpad_ammo_does_not_move_ship_and_analog_stick_preserves_strength() {
         .unwrap()
         .weapon_type = WeaponType::Autocannon;
     let start = app.world().get::<Transform>(player).unwrap().translation;
+    let initial_ammo = app.world().get::<Weapon>(player).unwrap().ammo_type;
     press(&mut app, controller, GamepadButton::DPadRight);
+    assert_eq!(
+        app.world().get::<Weapon>(player).unwrap().ammo_type,
+        initial_ammo.next()
+    );
+    press(&mut app, controller, GamepadButton::West);
+    assert_eq!(
+        app.world().get::<Weapon>(player).unwrap().ammo_type,
+        initial_ammo
+    );
+    pad(&mut app, controller, &[GamepadButton::East], &[]);
+    tick(&mut app, 20);
+    assert_eq!(
+        app.world().get::<Weapon>(player).unwrap().ammo_type,
+        initial_ammo.next(),
+        "holding B cycles only once"
+    );
     assert_eq!(
         app.world().get::<Transform>(player).unwrap().translation,
         start
@@ -411,6 +490,44 @@ fn dpad_ammo_does_not_move_ship_and_analog_stick_preserves_strength() {
         );
     }
     assert!(speeds[0] > 0.0 && speeds[1] > speeds[0] * 2.0);
+}
+
+#[test]
+fn overload_uses_lb_without_spending_maneuver_capacitor_or_triggering_on_y() {
+    for game_state in [GameState::Playing, GameState::BossFight] {
+        let (mut app, controller, player) = combat(game_state);
+        app.world_mut().resource_mut::<SaltMinerSystem>().meter = 100.0;
+        press(&mut app, controller, GamepadButton::North);
+        assert!(!app.world().resource::<SaltMinerSystem>().is_active);
+        let cap = app.world().get::<ShipStats>(player).unwrap().capacitor;
+        pad(&mut app, controller, &[GamepadButton::LeftTrigger], &[]);
+        tick(&mut app, 1);
+        assert!(app.world().resource::<SaltMinerSystem>().is_active);
+        assert!(
+            !app.world()
+                .get::<ManeuverState>(player)
+                .unwrap()
+                .thrust_active
+        );
+        assert_eq!(
+            app.world()
+                .get::<Ability>(player)
+                .unwrap()
+                .cooldown_remaining,
+            0.0
+        );
+        assert!(app.world().get::<ShipStats>(player).unwrap().capacitor >= cap);
+        {
+            let mut overload = app.world_mut().resource_mut::<SaltMinerSystem>();
+            overload.is_active = false;
+            overload.meter = 100.0;
+        }
+        tick(&mut app, 2);
+        assert!(
+            !app.world().resource::<SaltMinerSystem>().is_active,
+            "held LB cannot reactivate overload"
+        );
+    }
 }
 
 fn menu_app() -> (App, Entity) {

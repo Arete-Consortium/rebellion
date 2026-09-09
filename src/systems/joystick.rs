@@ -243,6 +243,7 @@ pub struct JoystickState {
     pub left_trigger: f32,
     pub prev_left_trigger: f32,
     pub right_trigger: f32,
+    pub prev_right_trigger: f32,
     pub dpad_x: i8,
     pub dpad_y: i8,
     pub prev_dpad_x: i8,
@@ -330,6 +331,10 @@ impl JoystickState {
     }
     pub fn right_trigger_pressed(&self) -> bool {
         self.right_trigger > 0.1
+    }
+
+    pub fn thrust_just_pressed(&self) -> bool {
+        self.right_trigger_pressed() && self.prev_right_trigger <= 0.1
     }
     pub fn context_action(&self) -> bool {
         self.buttons[0]
@@ -448,6 +453,7 @@ pub(crate) fn poll_gamepad(mut state: ResMut<JoystickState>, gamepads: Query<(En
     state.prev_dpad_y = state.dpad_y;
     state.prev_left_y = state.left_y;
     state.prev_left_trigger = state.left_trigger;
+    state.prev_right_trigger = state.right_trigger;
 
     // Use first connected gamepad
     let Some((entity, gamepad)) = state

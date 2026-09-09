@@ -118,9 +118,9 @@ fn handle_maneuver_input(
 
     let pos = transform.translation.truncate();
 
-    // Thrust: LB (button 4) or Left Shift
+    // Player layout: RT thrusts; legacy fixtures keep Shift/LB.
     let thrust_pressed = if bindings.controller_only {
-        joystick.just_pressed(4)
+        joystick.thrust_just_pressed()
     } else {
         keyboard.just_pressed(KeyCode::ShiftLeft) || joystick.buttons[4]
     };

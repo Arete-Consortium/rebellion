@@ -748,7 +748,7 @@ fn player_shooting(
     // If right stick is pushed, use its direction for aiming
     let joystick_firing = if let Some(joy_aim) = joystick.aim_direction() {
         aim = joy_aim;
-        !keybindings.controller_only
+        true
     } else {
         false
     };
@@ -769,7 +769,7 @@ fn player_shooting(
     let fire_pressed = keybindings.pressed(crate::core::Action::Fire, &keyboard, &joystick)
         || joystick_firing
         || face_button_fire
-        || joystick.right_trigger_pressed();
+        || (!keybindings.controller_only && joystick.right_trigger_pressed());
 
     let ability_burst = ability.pending_burst;
     if (fire_pressed && weapon.cooldown <= 0.0) || ability_burst > 0 {

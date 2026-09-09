@@ -439,7 +439,7 @@ fn spawn_controller_guide(commands: &mut Commands) {
                 });
             }
             p.spawn((
-                Text::new("Aim freely. Hold RT to fire.\nB Back"),
+                Text::new("Push right stick to fire. Center it to stop.\nB Back"),
                 TextFont {
                     font_size: 16.0,
                     ..default()

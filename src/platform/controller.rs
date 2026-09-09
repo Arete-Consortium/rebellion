@@ -8,14 +8,13 @@ use bevy::prelude::*;
 /// Fixed player layout. The Controls screen uses the same labels.
 pub const CONTROL_GUIDE: &[(&str, &str)] = &[
     ("MOVE", "Left stick"),
-    ("AIM", "Right stick"),
-    ("FIRE", "RT"),
+    ("AIM / FIRE", "Push right stick"),
     ("HULL ABILITY", "LT"),
-    ("THRUST", "LB"),
+    ("THRUST", "RT"),
     ("DODGE", "RB + left stick"),
-    ("AMMUNITION", "D-pad left / right"),
+    ("AMMUNITION", "X / B or D-pad left / right"),
     ("INTERACT / CONFIRM", "A"),
-    ("OVERLOAD", "Y"),
+    ("OVERLOAD", "LB"),
     ("PAUSE", "Menu"),
     ("BACK", "B"),
 ];
@@ -30,7 +29,7 @@ pub fn action_pressed(action: Action, pad: &JoystickState, edge: bool) -> bool {
         }
     };
     match action {
-        Action::Fire => pad.right_trigger_pressed(),
+        Action::Fire => pad.fire(),
         Action::ActivateAbility => {
             if edge {
                 pad.ability_just_pressed()
@@ -41,14 +40,30 @@ pub fn action_pressed(action: Action, pad: &JoystickState, edge: bool) -> bool {
         Action::Confirm => button(0),
         Action::Cancel => button(1),
         Action::Pause => button(9),
-        Action::CycleAmmoPrev | Action::MenuLeft => {
+        Action::CycleAmmoPrev => {
+            button(2)
+                || if edge {
+                    pad.dpad_just_left()
+                } else {
+                    pad.dpad_x < 0
+                }
+        }
+        Action::CycleAmmoNext => {
+            button(1)
+                || if edge {
+                    pad.dpad_just_right()
+                } else {
+                    pad.dpad_x > 0
+                }
+        }
+        Action::MenuLeft => {
             if edge {
                 pad.dpad_just_left()
             } else {
                 pad.dpad_x < 0
             }
         }
-        Action::CycleAmmoNext | Action::MenuRight => {
+        Action::MenuRight => {
             if edge {
                 pad.dpad_just_right()
             } else {
@@ -244,7 +259,7 @@ fn spawn_connection_overlay(mut commands: Commands) {
                 TextColor(Color::WHITE),
             ));
             p.spawn((
-                Text::new("Left stick moves. Right stick aims. RT fires."),
+                Text::new("Left stick moves. Push right stick to aim and fire."),
                 TextFont {
                     font_size: 16.0,
                     ..default()

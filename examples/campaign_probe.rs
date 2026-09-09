@@ -212,9 +212,6 @@ fn pilot(
         let aim = (target.translation.truncate() - position).normalize_or_zero();
         intent.right_x = aim.x;
         intent.right_y = aim.y; // Bevy: up is positive, as in game space.
-        if controller.is_some() {
-            intent.right_trigger = 1.0;
-        }
     }
     let mut goal = Vec2::new((time.elapsed_secs() * 0.6).sin() * 220.0, -160.0);
     if let Some(pickup) = pickups
