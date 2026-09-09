@@ -1,5 +1,7 @@
 # Controller-only checkpoint — September 8
 
+Follow-up: the owner clarified that pushing the right stick should aim **and fire**. The [twin-stick checkpoint](TWIN_STICK_PLAYTEST_2026-09-08.md) supersedes the fire/utility bindings below and records the current candidates. This report preserves the earlier RT-fire build.
+
 The owner selected controller-only play for Rebellion. This checkpoint follows the [hull ability fixes](HULL_ABILITY_PLAYTEST_2026-09-08.md) and makes that input direction explicit in menus, combat and connection handling.
 
 ## Player behavior

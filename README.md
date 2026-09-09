@@ -10,7 +10,7 @@ The current finishing target is the **Caldari–Gallente three-mission vertical 
 
 ## Run on desktop
 
-**Controller required.** The [controller-only checkpoint](docs/CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) records the current Apple Silicon Mac and Intel/AMD Ubuntu candidates. For Linux runtime libraries, downloads and source packaging, see the [Linux playtest instructions](docs/LINUX_PLAYTEST.md).
+**Controller required.** The [twin-stick checkpoint](docs/TWIN_STICK_PLAYTEST_2026-09-08.md) records the current Apple Silicon Mac and Intel/AMD Ubuntu candidates. For Linux runtime libraries, downloads and source packaging, see the [Linux playtest instructions](docs/LINUX_PLAYTEST.md).
 
 Install a current stable [Rust toolchain](https://rust-lang.org/tools/install/) and your platform's compiler tools. The manifest declares Rust 1.85 or later. On macOS, install Xcode Command Line Tools; Linux builds also need ALSA, udev, XKB, and Wayland development libraries (see the CI workflow).
 
@@ -36,13 +36,15 @@ Fixed controller layout (Xbox button names):
 
 | Action | Input |
 | --- | --- |
-| Move / aim | Left stick / right stick |
-| Fire / hull ability | RT / LT |
-| Thrust / dodge | LB / RB |
-| Previous / next ammunition | D-pad left / right |
-| Interact / overload | A / Y |
+| Move / aim and fire | Left stick / push right stick |
+| Thrust / hull ability | RT / LT |
+| Dodge / overload | RB / LB |
+| Previous / next ammunition | X / B or D-pad left / right |
+| Interact | A |
 | Pause | Menu |
 | Menu navigation / confirm / back | Left stick or D-pad / A / B |
+
+Center the right stick to stop firing. Boosters activate on pickup.
 
 Connect a controller, release the sticks/buttons, then press and release A to continue. Losing the controller freezes play until you reconnect and acknowledge it. Keyboard, mouse and touch do not control player builds. The Controls screen shows the fixed layout. See the [controller playtest guide](docs/CONTROLLER_PLAYTEST.md) for physical-device checks. For a test run that keeps existing saves separate:
 
@@ -68,7 +70,7 @@ The project supports WebAssembly. Install the `wasm32-unknown-unknown` Rust targ
 ## Continue development
 
 - [Production plan, milestones and prioritized backlog](docs/PRODUCTION_PLAN.md)
-- [Current Mac and Linux candidates: controller-only play](docs/CONTROLLER_ONLY_PLAYTEST_2026-09-08.md)
+- [Current Mac and Linux candidates: right-stick firing](docs/TWIN_STICK_PLAYTEST_2026-09-08.md)
 - [Hull ability fixes and three-mission probes](docs/HULL_ABILITY_PLAYTEST_2026-09-08.md)
 - [Previous booster combat checkpoint](docs/BOOSTER_COMBAT_PLAYTEST_2026-09-08.md)
 - [Approved classic booster artwork](docs/CLASSIC_BOOSTER_PLAYTEST_2026-09-08.md)
