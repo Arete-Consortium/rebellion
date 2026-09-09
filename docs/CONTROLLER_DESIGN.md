@@ -1,4 +1,7 @@
 # Controller-First Input Design
+
+Historical design proposal. The September 8, 2026 controller-only decision supersedes the bindings and planned behavior below. Use the [current controller guide](CONTROLLER_PLAYTEST.md) and [verified checkpoint](CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) for the shipped layout.
+
 ## EVE Rebellion - Devil Blade Style Vertical Scroller
 
 ---

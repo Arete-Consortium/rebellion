@@ -1,6 +1,6 @@
 # Ubuntu / Linux playtest checkpoint — September 8
 
-This preserves the first Linux candidate. The [hull ability checkpoint](HULL_ABILITY_PLAYTEST_2026-09-08.md) records the newer combat changes, 551-test validation and replacement candidate.
+This preserves the first Linux candidate. The [controller-only checkpoint](CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) records the current input direction and candidates; the [hull ability checkpoint](HULL_ABILITY_PLAYTEST_2026-09-08.md) preserves the intermediate combat changes and validation.
 
 The Intel/AMD **x86_64** candidate passed the [Ubuntu 22.04 workflow](https://github.com/Arete-Consortium/rebellion/actions/runs/34287059762).
 
@@ -26,6 +26,6 @@ tar -xzf Rebellion-linux-x86_64.tar.gz
 
 The archive includes the game, assets, launcher, license, build information and internal checksums. See [Linux setup and troubleshooting](LINUX_PLAYTEST.md) for runtime libraries, isolated saves and source builds. Generated executables remain in Actions artifacts and ignored `dist/` output.
 
-First qualify the complete Caldari/Gallente three-mission route on the physical PC. Record the distribution, GPU, selected hull, sound/controller behavior and booster readability. The RBL-14 runtime gaps identified at this checkpoint are covered by the [hull ability follow-up](HULL_ABILITY_PLAYTEST_2026-09-08.md); ability input/remapping cleanup is the next code priority.
+First qualify the complete Caldari/Gallente three-mission route on the physical PC. Record the distribution, GPU, selected hull, sound/controller behavior and booster readability. The RBL-14 runtime gaps identified at this checkpoint are covered by the [hull ability follow-up](HULL_ABILITY_PLAYTEST_2026-09-08.md); the [controller-only follow-up](CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) implements the subsequent input decision.
 
 This is a testing-branch candidate. It does not promote the game to a public release or change `main`.

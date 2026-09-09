@@ -64,6 +64,8 @@ The Linux artifact is built from `edef0f6c44e6dcc781f1e35f321bb90e6863593c`, mat
 
 ## Next work
 
+Follow-up: the owner selected controller-only play. The [controller-only checkpoint](CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) replaces the earlier input/remapping proposal below with a fixed controller layout and disconnect protection. This document preserves the preceding ability candidate.
+
 1. **RBL-05: controls.** Shift still overlaps thrust and hull ability activation. The ability consumer still uses hardcoded Shift/right-trigger input instead of the remappable ability action; right trigger also fires and can reactivate an ability when its cooldown finishes. Define separate actions, consume the configured binding, and test remap/reset/reload/pause before physical-controller acceptance. Ability cost tests isolate the ability from the separate thrust cost.
 2. **Human playtest when the owner is available.** Check Amarr's new baseline range, close-range positioning, slow-field readability, burst feedback, Tristan boss pacing, booster pickup readability and sound levels. Test the actual connected controller on each intended platform.
 3. **Truthful objectives (RBL-01).** Review objectives that say “destroy” while permitting wave escape. Keep pickup/boss tuning tied to observed human play. RBL-06 separately covers retained run statistics and best-score comparison.

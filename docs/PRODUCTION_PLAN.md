@@ -5,7 +5,9 @@ Prepared 2026-09-07. Status: proposed production roadmap for the existing
 the local repairs. This is the active planning document; the
 [repair baseline](COMPLETION_PLAN.md) preserves completed work and verification.
 
-Latest combat checkpoint: [hull ability effects and campaign probes](HULL_ABILITY_PLAYTEST_2026-09-08.md) connects defensive protection, burst activation, Scorch range, close-range damage and Warp Disruptor movement. Both starter factions again reached all three CG mission results with ordinary scripted input and default parallel scheduling. There are 551 passing tests; human balance and controller qualification remain open. Ability input/remapping cleanup is the next code priority. The [booster combat checkpoint](BOOSTER_COMBAT_PLAYTEST_2026-09-08.md) preserves the preceding build's evidence.
+Current input direction: the owner requested **controller-only play** on September 8. The [controller-only checkpoint](CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) implements a fixed twin-stick layout, explicit trigger actions, a connection screen and disconnect protection. The older remapping screen is replaced by a controller guide in player builds. Keyboard input remains available only to development fixtures. Physical-device qualification remains open.
+
+Previous combat checkpoint: [hull ability effects and campaign probes](HULL_ABILITY_PLAYTEST_2026-09-08.md) connects defensive protection, burst activation, Scorch range, close-range damage and Warp Disruptor movement, with 551 passing tests and complete starter-route probes. The [booster combat checkpoint](BOOSTER_COMBAT_PLAYTEST_2026-09-08.md) preserves the preceding build's evidence.
 
 Latest presentation follow-up: [classic booster correction](CLASSIC_BOOSTER_PLAYTEST_2026-09-08.md) replaces shared industrial artwork with archived finished-drug bottles, prioritizes the classic families, covers remaining consumables with newer boosters, and makes the previously unreachable Mindflood pickup available in normal drops. The [first booster/HUD checkpoint](BOOSTER_PLAYTEST_2026-09-08.md) is preserved as history.
 
@@ -19,7 +21,7 @@ The owner confirmed on 2026-09-07 that Rebellion is a free portfolio and communi
 
 ## Product target and scope
 
-Build an immediately playable, controller-friendly EVE arcade shooter in
+Build an immediately playable, controller-only EVE arcade shooter in
 which ship choice changes how the player survives and attacks. The first
 release should demonstrate responsive combat, readable danger, distinctive
 faction weapons, satisfying bosses and a reason to replay.
@@ -29,8 +31,8 @@ people can enjoy the game, understand the engineering and design work behind
 it, and contribute useful feedback or improvements. Paid content and
 monetization work are outside this production plan.
 
-**Current deliverable: a Mac playtest with both conflict chapters, and a complete three-mission Caldari–Gallente slice.** Keep
-the existing Rust/Bevy foundation. Qualify the current Mac first; add Windows
+**Current deliverable: Mac and Ubuntu x86_64 playtests with both conflict chapters, and a complete three-mission Caldari–Gallente slice.** Keep
+the existing Rust/Bevy foundation. Qualify both reference computers; add Windows
 qualification before claiming a Windows release. Keep other native platforms
 and the browser as explicit qualification milestones. The Elder Fleet conflict exposes its existing faction-specific campaign for playtesting. Nightmare, survival and other modes stay outside the main chapter selection while these routes are qualified.
 
@@ -38,7 +40,7 @@ and the browser as explicit qualification milestones. The Elder Fleet conflict e
 | --- | --- |
 | Both conflict choices; three CG missions and their boss encounters | Further campaigns, Nightmare and survival-mode releases |
 | Two faction perspectives and a small, validated starter roster | More hulls, T3 unlocks and large upgrade trees |
-| Keyboard and physical controller support throughout the full route | Mobile/touch qualification and platform-specific store integrations |
+| Controller-only menus and combat throughout the full route | Mobile platforms and platform-specific store integrations |
 | Reliable mission progress, settings and local best scores | Online accounts, multiplayer and online leaderboards |
 | Consistent ship sprites, legible effects, coherent audio and results | Full 3D conversion, engine migration and a new content-editor framework |
 
@@ -50,7 +52,7 @@ Confirmed direction and decisions to settle at the first milestone:
 | Decision | Proposed direction | Evidence still needed |
 | --- | --- | --- |
 | Release model | **Confirmed: free portfolio and community project, including future campaigns** | Owner's direction recorded in [the project decision note](../sessions/2026-09-07-community-project-direction.md); retain asset sources and credits |
-| Reference platform | Current Mac for development and initial qualification | Exact supported OS, device, display/resolution and controller; Windows test machine if included |
+| Reference platform | Apple Silicon Mac and the owner's Intel/AMD Ubuntu PC | Exact supported OS, device, display/resolution and controller; Windows test machine if included |
 | Run length | Test the current 8–12-minute successful-run target | Timed complete runs; record learning time, menus and retries separately |
 | Starter roster | Three immediately available frigates per faction; 22 hull definitions across four factions | Human feel testing of roles, unlocks and final bow/stern qualification |
 | Progression | Mission continuation and local bests, with explicit reset rules | Resolve actual upgrade/unlock behavior against menu promises |
@@ -89,13 +91,13 @@ only after the demo meets its gates, applying the same process to that campaign.
 
 | Area | Concrete improvement | Acceptance evidence |
 | --- | --- | --- |
-| Movement and aiming | Tune response, acceleration, dead zones and aim behavior on the actual starter ships; preserve clear control under damage and effects | Captured keyboard/controller sessions; no stuck input or loss of control on focus loss/reconnect; record latency observations rather than claiming an unmeasured number |
+| Movement and aiming | Tune response, acceleration, dead zones and aim behavior on the actual starter ships; preserve clear control under damage and effects | Captured controller sessions; no stuck input or loss of control on focus loss/reconnect; record latency observations rather than claiming an unmeasured number |
 | Faction and ship identity | Give Caldari ranged/shield-oriented roles and Gallente close-range/drone-oriented roles; distinguish roles within each faction | Each offered ship has an understandable advantage and cost; no starter consistently loses on both survival and completion time in the pilot cohort |
 | Encounter teaching | Mission 1 teaches move/fire/defense; Mission 2 adds range and pattern reading; Mission 3 combines those skills | First-time players explain what each new threat asks them to do; increasing pressure comes from combinations and positioning as well as enemy counts |
 | Bosses | Create tactical phase changes, warning cues, dodge routes and recovery windows | Prototype a 0.6-second warning for heavy attacks, then tune from observed response time; recorded deaths reveal the source and a plausible avoidance response |
 | Scoring and retry | Track actual maximum chain, completion time and local personal bests; make results suggest one improvement goal | Correct statistics after an expiring combo; proposed retry-to-control target under five seconds with the chosen loadout retained |
 | Readability | Give hostile fire a consistent shape/brightness language; subordinate scenery and friendly effects; align visible hulls and hitboxes | Dense combat captures at gameplay scale; no reliance on color or sound alone; low-effects settings retain essential warnings |
-| Onboarding and accessibility | Brief in-play teaching, accurate button prompts, working remaps, independent audio/effect controls and reliable pause | Proposed clean-save target: controllable combat within 30 seconds; full keyboard/controller route with reduced shake and muted audio |
+| Onboarding and accessibility | Brief in-play teaching, accurate fixed-layout prompts, independent audio/effect controls and reliable pause | Proposed clean-save target: controllable combat within 30 seconds after connection; full controller route with reduced shake and muted audio |
 | Audio and presentation | Distinguish weapons, heavy threats, damage and rewards; reconcile optional music loading with supported formats | No missing required asset errors; generated tracks follow boss/results transitions; hearing review at ordinary and crowded combat levels |
 
 Prototype and compare small changes. Keep one recorded baseline encounter,
@@ -115,7 +117,7 @@ apply to the first demo; dependencies prevent broad refactors from delaying it.
 | RBL-02 / P0 | Apple Silicon Mac and Ubuntu 22.04 x86_64 candidates are packaged and pass clean-extraction launch checks; see the [Linux checkpoint](LINUX_PLAYTEST_REPORT_2026-09-08.md) | Automated packaging checks pass. Qualify sound, physical controller behavior, hardware performance and a complete packaged human run on the reference computers |
 | RBL-03 / P0 | Implemented for the Mac candidate: atomic native saves, one valid backup, recovery and damaged-primary preservation; see September 8 evidence | Mac regressions pass. Complete cross-platform qualification and add a visible recovery/write-failure notice before public release |
 | RBL-04 / P0 | Exercise the whole CG route and its persistence promises; the headless suite does not prove it | Starter/mission/boss transition matrix passes, with a regression for every reproduced blocker and a recorded packaged run |
-| RBL-05 / P1 | Finish offered menu/pause remappings at their runtime consumers; see [gameplay review](GAMEPLAY_REVIEW.md) | New binding works, displaced binding follows the chosen policy, prompts update, reset/reload/cancel and controller reconnect behave correctly |
+| RBL-05 / P1 | Qualify the owner's controller-only direction; see the [controller checkpoint](CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) | Fixed controls reach every offered route; aim/fire/ability/maneuver actions remain distinct; old bindings cannot interfere; disconnect freezes play and reconnection requires acknowledgement; physical controller and feedback checks pass |
 | RBL-06 / P1 | Extend run statistics: results now accurately label transient `score.chain` as Finishing Chain; maximum chain and run comparison remain work | A run statistics owner retains maximum chain, time and best-score comparison across transitions; results/save/retry tests agree |
 | RBL-07 / P1 | Add bounded, opt-in raw frame telemetry; current boss diagnostics use smoothed values | Repeatable release-build runs report raw-frame percentiles, maxima, threshold counts and entity peaks without unbounded storage or online collection |
 | RBL-08 / P1 | Repair signed environment-grid bounds, explosion-cap overshoot, and mobile-profile ordering; investigate per-projectile environment allocation | Behavioral edge cases pass; comparable fixtures measure the changed path; effect readability survives the cap |
@@ -124,7 +126,7 @@ apply to the first demo; dependencies prevent broad refactors from delaying it.
 | RBL-11 / P2 | Investigate narrower Egui features, optional developer gizmos and sprite-first model fallback | Required visuals survive both relevant configurations; measured build/package benefit justifies the change; no missing boss/wingman rendering |
 | RBL-12 / expansion | Repair Elder Fleet selection and saved unlocks using its actual nine-mission state | Native selector starts the selected mission, completion persists once, and re-entry after the final mission works; qualify the complete campaign before public exposure |
 | RBL-13 / P1 before public release | Prepare the portfolio and community handoff; the existing contributor guide has stale paths and expansion-first priorities | Verified play/download instructions, a 60–90-second gameplay capture, concise engineering case study, current contributor setup and a reproducible playtest/bug-report template |
-| RBL-14 / P1 | Runtime effects implemented and regression-tested in the [hull ability checkpoint](HULL_ABILITY_PLAYTEST_2026-09-08.md); qualify balance and readability on offered hulls | Defense, range, close damage, slowdown, cooldown bursts, drones, healing and expiry have actual-consumer checks. Human hull acceptance remains open; ability input overlap/remapping belongs to RBL-05 |
+| RBL-14 / P1 | Runtime effects implemented and regression-tested in the [hull ability checkpoint](HULL_ABILITY_PLAYTEST_2026-09-08.md); qualify balance and readability on offered hulls | Defense, range, close damage, slowdown, cooldown bursts, drones, healing and expiry have actual-consumer checks. Human hull acceptance remains open; controller ability input qualification belongs to RBL-05 |
 
 Keep state ownership simple: each campaign owns its mission index and
 completion; menus display that state; one persistence path records completed

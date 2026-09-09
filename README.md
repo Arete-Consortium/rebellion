@@ -10,7 +10,7 @@ The current finishing target is the **Caldari–Gallente three-mission vertical 
 
 ## Run on desktop
 
-**Current playtest builds:** the [hull ability checkpoint](docs/HULL_ABILITY_PLAYTEST_2026-09-08.md) records the Apple Silicon Mac package and Intel/AMD Ubuntu test candidate, with build and validation evidence. For Linux runtime libraries, downloads and source packaging, see the [Linux playtest instructions](docs/LINUX_PLAYTEST.md). The Linux package contains the executable, artwork/audio and launcher.
+**Controller required.** The [controller-only checkpoint](docs/CONTROLLER_ONLY_PLAYTEST_2026-09-08.md) records the current Apple Silicon Mac and Intel/AMD Ubuntu candidates. For Linux runtime libraries, downloads and source packaging, see the [Linux playtest instructions](docs/LINUX_PLAYTEST.md).
 
 Install a current stable [Rust toolchain](https://rust-lang.org/tools/install/) and your platform's compiler tools. The manifest declares Rust 1.85 or later. On macOS, install Xcode Command Line Tools; Linux builds also need ALSA, udev, XKB, and Wayland development libraries (see the CI workflow).
 
@@ -32,19 +32,19 @@ runtime launch to resolve assets from that folder automatically.
 
 Choose **PLAY**, select the Minmatar–Amarr or Caldari–Gallente chapter, then pick your faction, difficulty and hull. A first build takes time because Bevy compiles the rendering and audio stack. The packager refuses to overwrite an existing app; supply a new output directory as its fourth argument for subsequent candidates.
 
-Default keyboard bindings:
+Fixed controller layout (Xbox button names):
 
 | Action | Input |
 | --- | --- |
-| Move | W / A / S / D |
-| Aim | I / J / K / L |
-| Fire | Space |
-| Previous / next ammunition | Q / E |
-| Select ammunition | 1–5 |
-| Pause | Escape |
-| Menu navigation / confirm | Arrow keys / Enter |
+| Move / aim | Left stick / right stick |
+| Fire / hull ability | RT / LT |
+| Thrust / dodge | LB / RB |
+| Previous / next ammunition | D-pad left / right |
+| Interact / overload | A / Y |
+| Pause | Menu |
+| Menu navigation / confirm / back | Left stick or D-pad / A / B |
 
-The game also supports Xbox-style controllers. See the [Mac controller playtest guide](docs/CONTROLLER_PLAYTEST.md) for bindings and current verification limits. For a test run that keeps existing saves separate:
+Connect a controller, release the sticks/buttons, then press and release A to continue. Losing the controller freezes play until you reconnect and acknowledge it. Keyboard, mouse and touch do not control player builds. The Controls screen shows the fixed layout. See the [controller playtest guide](docs/CONTROLLER_PLAYTEST.md) for physical-device checks. For a test run that keeps existing saves separate:
 
 ```sh
 REBELLION_HOME=/tmp/rebellion-playtest cargo run --locked --release
@@ -68,7 +68,9 @@ The project supports WebAssembly. Install the `wasm32-unknown-unknown` Rust targ
 ## Continue development
 
 - [Production plan, milestones and prioritized backlog](docs/PRODUCTION_PLAN.md)
-- [Current Mac candidate: booster combat fixes and three-mission probes](docs/BOOSTER_COMBAT_PLAYTEST_2026-09-08.md)
+- [Current Mac and Linux candidates: controller-only play](docs/CONTROLLER_ONLY_PLAYTEST_2026-09-08.md)
+- [Hull ability fixes and three-mission probes](docs/HULL_ABILITY_PLAYTEST_2026-09-08.md)
+- [Previous booster combat checkpoint](docs/BOOSTER_COMBAT_PLAYTEST_2026-09-08.md)
 - [Approved classic booster artwork](docs/CLASSIC_BOOSTER_PLAYTEST_2026-09-08.md)
 - [Previous booster artwork and HUD checkpoint](docs/BOOSTER_PLAYTEST_2026-09-08.md)
 - [Transport objectives and clearer shields](docs/TRANSPORT_PLAYTEST_2026-09-08.md)
