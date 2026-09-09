@@ -10,7 +10,7 @@ The current finishing target is the **Caldari–Gallente three-mission vertical 
 
 ## Run on desktop
 
-**Ubuntu / Linux:** download the [verified Intel/AMD test candidate](docs/LINUX_PLAYTEST_REPORT_2026-09-08.md) or build the portable package using the [Linux playtest instructions](docs/LINUX_PLAYTEST.md). The package contains the executable, artwork/audio and launcher.
+**Current playtest builds:** the [hull ability checkpoint](docs/HULL_ABILITY_PLAYTEST_2026-09-08.md) records the Apple Silicon Mac package and Intel/AMD Ubuntu test candidate, with build and validation evidence. For Linux runtime libraries, downloads and source packaging, see the [Linux playtest instructions](docs/LINUX_PLAYTEST.md). The Linux package contains the executable, artwork/audio and launcher.
 
 Install a current stable [Rust toolchain](https://rust-lang.org/tools/install/) and your platform's compiler tools. The manifest declares Rust 1.85 or later. On macOS, install Xcode Command Line Tools; Linux builds also need ALSA, udev, XKB, and Wayland development libraries (see the CI workflow).
 

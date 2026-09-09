@@ -1,5 +1,7 @@
 # Ubuntu / Linux playtest checkpoint — September 8
 
+This preserves the first Linux candidate. The [hull ability checkpoint](HULL_ABILITY_PLAYTEST_2026-09-08.md) records the newer combat changes, 551-test validation and replacement candidate.
+
 The Intel/AMD **x86_64** candidate passed the [Ubuntu 22.04 workflow](https://github.com/Arete-Consortium/rebellion/actions/runs/34287059762).
 
 - [Download Rebellion-linux-x86_64](https://github.com/Arete-Consortium/rebellion/actions/runs/34287059762/artifacts/10080722928) — 35,874,979 bytes (about 36 MB). GitHub sign-in is required; this Actions artifact expires October 8, 2026.
@@ -24,6 +26,6 @@ tar -xzf Rebellion-linux-x86_64.tar.gz
 
 The archive includes the game, assets, launcher, license, build information and internal checksums. See [Linux setup and troubleshooting](LINUX_PLAYTEST.md) for runtime libraries, isolated saves and source builds. Generated executables remain in Actions artifacts and ignored `dist/` output.
 
-First qualify the complete Caldari/Gallente three-mission route on the physical PC. Record the distribution, GPU, selected hull, sound/controller behavior and booster readability. The next code priority remains [RBL-14 in the production plan](PRODUCTION_PLAN.md): complete the advertised hull abilities, including Afterburner invulnerability, and verify their actual effects and expiry.
+First qualify the complete Caldari/Gallente three-mission route on the physical PC. Record the distribution, GPU, selected hull, sound/controller behavior and booster readability. The RBL-14 runtime gaps identified at this checkpoint are covered by the [hull ability follow-up](HULL_ABILITY_PLAYTEST_2026-09-08.md); ability input/remapping cleanup is the next code priority.
 
 This is a testing-branch candidate. It does not promote the game to a public release or change `main`.

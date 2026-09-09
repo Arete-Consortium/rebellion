@@ -19,6 +19,8 @@ The right trigger accepts both axis and analog-button reporting. Input is sample
 
 ## Verification boundary
 
+The [hull ability checkpoint](HULL_ABILITY_PLAYTEST_2026-09-08.md) fixes combat effects but leaves an input issue for the next pass: RT also activates the hull ability and can activate it again when its cooldown ends. Shift overlaps ability activation and thrust. The configurable Activate Ability binding is not yet consumed by the ability system; do not treat remapping that action as verified. RBL-05 tracks this cleanup.
+
 Automated tests exercise analog-trigger reporting and held-input clearing on disconnect. Menu route tests use the shared input resource. These checks do not prove a physical Bluetooth controller's mapping, wireless stability, rumble or comfort.
 
 Physical qualification should cover: connect before launch; connect at the menu; select either chapter and side; move and shoot with RT and the right stick; pause/resume; disconnect while holding fire; reconnect; complete a mission and continue from the result screen. Check that releasing the stick stops menu movement and that B never confirms a choice. Record the controller model and macOS version with any failure.
