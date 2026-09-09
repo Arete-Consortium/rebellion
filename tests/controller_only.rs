@@ -45,6 +45,22 @@ fn connect(app: &mut App) -> Entity {
     entity
 }
 fn app() -> App {
+    // This suite deliberately loads/remaps legacy controls. Give its process
+    // a private save directory so SavePlugin cannot change the profile used
+    // by later integration-test executables (or the developer's real save).
+    static PROFILE: std::sync::Once = std::sync::Once::new();
+    PROFILE.call_once(|| {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let profile = std::env::temp_dir().join(format!(
+            "rebellion-controller-tests-{}-{nonce}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&profile).unwrap();
+        std::env::set_var("REBELLION_HOME", profile);
+    });
     let mut app = build_headless_app();
     app.add_plugins(ControllerOnlyPlugin);
     app
