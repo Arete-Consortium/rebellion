@@ -4,6 +4,7 @@
 //! weapon stats, drops, enemy lifetimes or mission completion. This measures a
 //! bot run, not human difficulty, visual quality, frame rate or device support.
 use bevy::prelude::*;
+use rebellion::entities::boosters::{BoosterActivatedEvent, BoosterInventory, BoosterKind};
 use rebellion::{
     app_builder::{build_headless_app, ControllerOnlyPlugin},
     core::*,
@@ -183,7 +184,8 @@ fn pilot(
     mut joystick: ResMut<JoystickState>,
     controller: Option<Res<ProbeController>>,
     mut gamepads: Query<&mut Gamepad>,
-    player: Query<(&Transform, &Movement), With<Player>>,
+    player: Query<(&Transform, &Movement, &PowerupEffects), With<Player>>,
+    inventory: Res<BoosterInventory>,
     enemies: Query<(&Transform, &EnemyStats), With<Enemy>>,
     bullets: Query<(&Transform, &ProjectilePhysics), With<EnemyProjectile>>,
     pickups: Query<&Transform, With<Collectible>>,
@@ -195,7 +197,7 @@ fn pilot(
     if !matches!(*state.get(), GameState::Playing | GameState::BossFight) {
         return;
     }
-    let Ok((transform, movement)) = player.get_single() else {
+    let Ok((transform, movement, effects)) = player.get_single() else {
         return;
     };
     let position = transform.translation.truncate();
@@ -253,10 +255,34 @@ fn pilot(
             }
         }
     }
+    // Spend stocked doses through ordinary controller input. Prefer damage
+    // while fighting, speed while moving, and defense near incoming bullets.
+    if controller.is_some() && time.elapsed_secs().fract() < 0.1 {
+        let kind = inventory.selected();
+        if inventory.count(kind) == 0 || kind.remaining(effects) > 0.0 {
+            intent.dpad_y = -1;
+        } else {
+            let useful = match kind {
+                BoosterKind::Pyrolancea => target.is_some(),
+                BoosterKind::Overclocker => best.1.length_squared() > 0.0,
+                BoosterKind::XInstinct => bullets
+                    .iter()
+                    .any(|(b, _)| b.translation.truncate().distance(position) < 120.0),
+            };
+            intent.buttons[3] = useful;
+        }
+    }
     intent.left_x = best.1.x;
     intent.left_y = best.1.y;
     if let Some(controller) = controller {
         let mut pad = gamepads.get_mut(controller.0).unwrap();
+        pad.digital_mut().reset_all();
+        if intent.buttons[3] {
+            pad.digital_mut().press(GamepadButton::North);
+        }
+        if intent.dpad_y < 0 {
+            pad.digital_mut().press(GamepadButton::DPadDown);
+        }
         for (axis, value) in [
             (GamepadAxis::LeftStickX, intent.left_x),
             (GamepadAxis::LeftStickY, intent.left_y),
@@ -282,6 +308,7 @@ fn observe(
     mut deaths: EventReader<EnemyDestroyedEvent>,
     mut damage: EventReader<PlayerDamagedEvent>,
     mut pickups: EventReader<CollectiblePickedUpEvent>,
+    mut booster_uses: EventReader<BoosterActivatedEvent>,
     mut last_state: Local<Option<(GameState, usize)>>,
 ) {
     let current = (*state.get(), campaign.mission_index);
@@ -317,6 +344,13 @@ fn observe(
                 }
             }
         }
+    }
+    for event in booster_uses.read() {
+        println!(
+            "probe: used {} in mission {}",
+            event.0.name(),
+            campaign.mission_index + 1
+        );
     }
     for event in deaths.read() {
         mission.kills += 1;

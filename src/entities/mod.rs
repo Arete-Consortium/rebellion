@@ -2,6 +2,7 @@
 //!
 //! All game entities: player, enemies, projectiles, collectibles, etc.
 
+pub mod boosters;
 pub mod boss;
 pub mod collectible;
 pub mod drone;

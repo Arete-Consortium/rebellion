@@ -138,17 +138,28 @@ pub fn play_explosion_sounds(
 pub fn play_pickup_sounds(
     mut commands: Commands,
     mut pickup_events: EventReader<CollectiblePickedUpEvent>,
+    mut booster_events: EventReader<crate::entities::boosters::BoosterActivatedEvent>,
     sounds: Res<SoundAssets>,
     settings: Res<SoundSettings>,
 ) {
     if !settings.enabled {
         pickup_events.clear();
+        booster_events.clear();
         return;
     }
 
-    for event in pickup_events.read() {
+    for (kind, activated) in pickup_events
+        .read()
+        .map(|event| (event.collectible_type, false))
+        .chain(booster_events.read().map(|event| (event.0.pickup(), true)))
+    {
         // Choose sound based on collectible type
-        let sound = match event.collectible_type {
+        let sound = match kind {
+            kind if !activated
+                && crate::entities::boosters::BoosterKind::from_pickup(kind).is_some() =>
+            {
+                sounds.pickup.clone()
+            }
             CollectibleType::Overdrive => sounds.powerup_overdrive.clone(),
             CollectibleType::DamageBoost => sounds.powerup_damage.clone(),
             CollectibleType::Invulnerability => sounds.powerup_invuln.clone(),

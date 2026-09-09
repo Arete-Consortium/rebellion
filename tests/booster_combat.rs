@@ -3,6 +3,7 @@
 use bevy::prelude::*;
 use rebellion::app_builder::build_headless_app;
 use rebellion::core::{CollectiblePickedUpEvent, CollectibleType, GameState, WeaponType};
+use rebellion::entities::boosters::{BoosterInventory, BoosterKind};
 use rebellion::entities::{
     Movement, Player, PlayerProjectile, PowerupEffects, ProjectileDamage, Weapon,
 };
@@ -46,6 +47,20 @@ fn pickup(app: &mut App, kind: CollectibleType) {
         position: Vec2::ZERO,
     });
     tick(app, 2);
+    if let Some(kind) = BoosterKind::from_pickup(kind) {
+        // The pickup stores a dose; use it through actual gamepad input.
+        while app.world().resource::<BoosterInventory>().selected() != kind {
+            app.world_mut()
+                .resource_mut::<BoosterInventory>()
+                .cycle(true);
+        }
+        let mut pad = Gamepad::default();
+        pad.digital_mut().press(GamepadButton::North);
+        let controller = app.world_mut().spawn(pad).id();
+        tick(app, 2);
+        app.world_mut().despawn(controller);
+        tick(app, 1);
+    }
 }
 
 fn speed(app: &mut App, player: Entity) -> f32 {
@@ -100,7 +115,7 @@ fn shot_damage(app: &mut App, player: Entity) -> f32 {
 }
 
 #[test]
-fn overclocker_changes_actual_speed_refreshes_and_expires_in_both_combat_states() {
+fn overclocker_changes_actual_speed_stores_repeats_and_expires_in_both_combat_states() {
     for state in [GameState::Playing, GameState::BossFight] {
         let (mut app, player) = setup(state);
         let base = app.world().get::<Movement>(player).unwrap().clone();
@@ -110,7 +125,7 @@ fn overclocker_changes_actual_speed_refreshes_and_expires_in_both_combat_states(
         pickup(&mut app, CollectibleType::Overdrive);
         assert!(
             (speed(&mut app, player) / normal - 1.5).abs() < 0.01,
-            "a second booster refreshes duration instead of multiplying again"
+            "a second collected dose stays stored while the effect is active"
         );
         tick(&mut app, 310);
         assert!(

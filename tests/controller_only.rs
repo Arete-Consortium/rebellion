@@ -1,5 +1,7 @@
 //! Exercise the shipped boundary using actual Bevy Gamepad components.
+use bevy::ecs::system::RunSystemOnce;
 use bevy::prelude::*;
+use rebellion::entities::boosters::{BoosterActivatedEvent, BoosterInventory, BoosterKind};
 use rebellion::{
     app_builder::{build_headless_app, ControllerGate, ControllerOnlyPlugin},
     core::*,
@@ -158,6 +160,314 @@ fn combat(game_state: GameState) -> (App, Entity, Entity) {
         tick(&mut app, 2);
     }
     (app, controller, player)
+}
+
+fn collect_booster(app: &mut App, player: Entity, kind: CollectibleType, copies: usize) {
+    let position = app
+        .world()
+        .get::<Transform>(player)
+        .unwrap()
+        .translation
+        .truncate();
+    app.world_mut()
+        .run_system_once(move |mut commands: Commands| {
+            for _ in 0..copies {
+                rebellion::entities::collectible::spawn_collectible(
+                    &mut commands,
+                    position,
+                    kind,
+                    None,
+                );
+            }
+        })
+        .unwrap();
+    tick(app, 2);
+}
+
+#[test]
+fn timed_boosters_wait_for_y_and_never_spend_empty_or_already_active_doses() {
+    for game_state in [GameState::Playing, GameState::BossFight] {
+        let (mut app, controller, player) = combat(game_state);
+        for kind in BoosterKind::ALL {
+            collect_booster(&mut app, player, kind.pickup(), 2);
+            while app.world().resource::<BoosterInventory>().selected() != kind {
+                press(&mut app, controller, GamepadButton::DPadDown);
+            }
+            assert_eq!(
+                kind.remaining(app.world().get::<PowerupEffects>(player).unwrap()),
+                0.0
+            );
+            assert_eq!(app.world().resource::<BoosterInventory>().count(kind), 2);
+            let mut activations = app
+                .world()
+                .resource::<Events<BoosterActivatedEvent>>()
+                .get_cursor();
+            // One update retains the activation event for this independent reader.
+            pad(&mut app, controller, &[GamepadButton::North], &[]);
+            tick(&mut app, 1);
+            assert_eq!(
+                activations
+                    .read(app.world().resource::<Events<BoosterActivatedEvent>>())
+                    .filter(|event| event.0 == kind)
+                    .count(),
+                1
+            );
+            pad(&mut app, controller, &[], &[]);
+            tick(&mut app, 1);
+            assert!(kind.remaining(app.world().get::<PowerupEffects>(player).unwrap()) > 0.0);
+            assert_eq!(app.world().resource::<BoosterInventory>().count(kind), 1);
+            press(&mut app, controller, GamepadButton::North);
+            assert_eq!(
+                app.world().resource::<BoosterInventory>().count(kind),
+                1,
+                "active effect cannot consume a second dose"
+            );
+            pad(&mut app, controller, &[GamepadButton::North], &[]);
+            tick(&mut app, 650);
+            assert_eq!(
+                app.world().resource::<BoosterInventory>().count(kind),
+                1,
+                "holding Y through expiry must not consume again"
+            );
+            pad(&mut app, controller, &[], &[]);
+            tick(&mut app, 1);
+            press(&mut app, controller, GamepadButton::North);
+            assert_eq!(app.world().resource::<BoosterInventory>().count(kind), 0);
+            press(&mut app, controller, GamepadButton::North);
+            assert_eq!(app.world().resource::<BoosterInventory>().count(kind), 0);
+        }
+    }
+}
+
+#[test]
+fn full_booster_slots_leave_excess_pickups_in_space_and_repairs_stay_instant() {
+    let (mut app, controller, player) = combat(GameState::Playing);
+    collect_booster(&mut app, player, CollectibleType::DamageBoost, 5);
+    assert_eq!(
+        app.world()
+            .resource::<BoosterInventory>()
+            .count(BoosterKind::Pyrolancea),
+        3
+    );
+    let count = app
+        .world_mut()
+        .query_filtered::<Entity, With<Collectible>>()
+        .iter(app.world())
+        .count();
+    assert_eq!(count, 2, "same-frame overflow stays available");
+    press(&mut app, controller, GamepadButton::North);
+    assert_eq!(
+        app.world()
+            .resource::<BoosterInventory>()
+            .count(BoosterKind::Pyrolancea),
+        3,
+        "one leftover pickup refills the freed space"
+    );
+    app.world_mut().get_mut::<ShipStats>(player).unwrap().shield = 0.0;
+    collect_booster(&mut app, player, CollectibleType::ShieldBoost, 1);
+    assert!(app.world().get::<ShipStats>(player).unwrap().shield >= 25.0);
+}
+
+#[test]
+fn booster_selection_skips_empty_slots_and_does_not_steer_change_ammo_or_activate_overload() {
+    let (mut app, controller, player) = combat(GameState::Playing);
+    app.world_mut()
+        .get_mut::<Weapon>(player)
+        .unwrap()
+        .weapon_type = WeaponType::Autocannon;
+    collect_booster(&mut app, player, CollectibleType::Overdrive, 1);
+    collect_booster(&mut app, player, CollectibleType::Invulnerability, 1);
+    let before = app.world().get::<Transform>(player).unwrap().translation;
+    let ammo = app.world().get::<Weapon>(player).unwrap().ammo_type;
+    press(&mut app, controller, GamepadButton::DPadDown);
+    assert_eq!(
+        app.world().resource::<BoosterInventory>().selected(),
+        BoosterKind::XInstinct
+    );
+    press(&mut app, controller, GamepadButton::DPadUp);
+    assert_eq!(
+        app.world().resource::<BoosterInventory>().selected(),
+        BoosterKind::Overclocker
+    );
+    assert_eq!(
+        app.world().get::<Transform>(player).unwrap().translation,
+        before
+    );
+    assert_eq!(app.world().get::<Weapon>(player).unwrap().ammo_type, ammo);
+    app.world_mut().resource_mut::<SaltMinerSystem>().meter = 100.0;
+    press(&mut app, controller, GamepadButton::North);
+    assert!(!app.world().resource::<SaltMinerSystem>().is_active);
+    assert!(
+        !app.world()
+            .get::<ManeuverState>(player)
+            .unwrap()
+            .thrust_active
+    );
+    assert_eq!(
+        app.world()
+            .get::<Ability>(player)
+            .unwrap()
+            .cooldown_remaining,
+        0.0
+    );
+}
+
+#[test]
+fn doses_survive_mission_continuation_but_reset_on_death_and_new_hull_selection() {
+    let (mut app, _, player) = combat(GameState::Playing);
+    collect_booster(&mut app, player, CollectibleType::DamageBoost, 2);
+    for state in [
+        GameState::BossFight,
+        GameState::StageComplete,
+        GameState::Playing,
+    ] {
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(state);
+        tick(&mut app, 3);
+        assert_eq!(
+            app.world()
+                .resource::<BoosterInventory>()
+                .count(BoosterKind::Pyrolancea),
+            2
+        );
+    }
+    for state in [
+        GameState::GameOver,
+        GameState::ShipSelect,
+        GameState::MainMenu,
+    ] {
+        app.world_mut()
+            .resource_mut::<BoosterInventory>()
+            .store(BoosterKind::Overclocker);
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(state);
+        tick(&mut app, 3);
+        assert!(app.world().resource::<BoosterInventory>().is_empty());
+    }
+}
+
+#[test]
+fn disconnect_preserves_booster_time_and_requires_a_fresh_y_after_acknowledgement() {
+    let (mut app, controller, player) = combat(GameState::BossFight);
+    collect_booster(&mut app, player, CollectibleType::DamageBoost, 2);
+    press(&mut app, controller, GamepadButton::North);
+    let timer = app
+        .world()
+        .get::<PowerupEffects>(player)
+        .unwrap()
+        .damage_boost_timer;
+    app.world_mut().despawn(controller);
+    tick(&mut app, 100);
+    assert_eq!(
+        app.world()
+            .get::<PowerupEffects>(player)
+            .unwrap()
+            .damage_boost_timer,
+        timer
+    );
+    assert_eq!(
+        app.world()
+            .resource::<BoosterInventory>()
+            .count(BoosterKind::Pyrolancea),
+        1
+    );
+    let replacement = app.world_mut().spawn(Gamepad::default()).id();
+    pad(&mut app, replacement, &[GamepadButton::North], &[]);
+    tick(&mut app, 5);
+    assert!(app.world().resource::<ControllerGate>().is_blocked());
+    pad(&mut app, replacement, &[], &[]);
+    tick(&mut app, 1);
+    press(&mut app, replacement, GamepadButton::South);
+    assert!(!app.world().resource::<ControllerGate>().is_blocked());
+    assert_eq!(
+        app.world()
+            .resource::<BoosterInventory>()
+            .count(BoosterKind::Pyrolancea),
+        1
+    );
+}
+
+#[test]
+fn pause_freezes_active_doses_and_explicit_restart_clears_inventory() {
+    let (mut app, controller, player) = combat(GameState::Playing);
+    collect_booster(&mut app, player, CollectibleType::DamageBoost, 2);
+    press(&mut app, controller, GamepadButton::North);
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Paused);
+    tick(&mut app, 2);
+    let timer = app
+        .world()
+        .get::<PowerupEffects>(player)
+        .unwrap()
+        .damage_boost_timer;
+    pad(&mut app, controller, &[GamepadButton::North], &[]);
+    tick(&mut app, 100);
+    assert_eq!(
+        app.world()
+            .get::<PowerupEffects>(player)
+            .unwrap()
+            .damage_boost_timer,
+        timer
+    );
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Playing);
+    tick(&mut app, 3);
+    assert_eq!(
+        app.world()
+            .resource::<BoosterInventory>()
+            .count(BoosterKind::Pyrolancea),
+        1
+    );
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Paused);
+    tick(&mut app, 2);
+    app.world_mut()
+        .resource_mut::<PauseContext>()
+        .request_restart();
+    app.world_mut()
+        .resource_mut::<NextState<GameState>>()
+        .set(GameState::Playing);
+    tick(&mut app, 3);
+    assert!(app.world().resource::<BoosterInventory>().is_empty());
+}
+
+#[test]
+fn manual_x_instinct_blocks_real_projectile_damage_and_expiry_restores_damage() {
+    let (mut app, controller, player) = combat(GameState::BossFight);
+    collect_booster(&mut app, player, CollectibleType::Invulnerability, 1);
+    press(&mut app, controller, GamepadButton::North);
+    for protected in [true, false] {
+        let position = app.world().get::<Transform>(player).unwrap().translation;
+        let shield = app.world().get::<ShipStats>(player).unwrap().shield;
+        app.world_mut().spawn((
+            EnemyProjectile,
+            Transform::from_translation(position),
+            ProjectilePhysics {
+                velocity: Vec2::ZERO,
+                lifetime: 2.0,
+            },
+            ProjectileDamage {
+                damage: 10.0,
+                damage_type: DamageType::Kinetic,
+                ammo_type: AmmoType::Sabot,
+                crit_chance: 0.0,
+                crit_multiplier: 1.0,
+            },
+        ));
+        tick(&mut app, 2);
+        let after = app.world().get::<ShipStats>(player).unwrap().shield;
+        if protected {
+            assert!(after >= shield);
+        } else {
+            assert!(after < shield, "expired protection must allow real damage");
+        }
+        tick(&mut app, 200);
+    }
 }
 
 #[test]

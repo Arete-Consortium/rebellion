@@ -4,6 +4,7 @@ use bevy::{
     prelude::*,
     render::view::screenshot::{save_to_disk, Screenshot},
 };
+use rebellion::entities::boosters::{BoosterInventory, BoosterKind};
 use rebellion::{
     app_builder::RebellionAppConfig,
     core::*,
@@ -81,6 +82,8 @@ fn review(
         (With<Player>, Without<ReviewPickup>),
     >,
     mut pickups: Query<(&ReviewPickup, &mut Transform, &mut CollectiblePhysics), Without<Player>>,
+    inventory: Res<BoosterInventory>,
+    mut gamepads: Query<&mut Gamepad>,
     mut exit: EventWriter<AppExit>,
 ) {
     review.seconds += time.delta_secs();
@@ -174,49 +177,69 @@ fn review(
         stats.max_hull = 1_000_000.0;
         stats.hull = stats.max_hull;
     }
+    if review.phase >= 2 {
+        // Drive the same physical button reports as a player; each pulse has
+        // a release gap. The helper controller is confined to this example.
+        for mut pad in &mut gamepads {
+            pad.digital_mut().reset_all();
+            let t = review.seconds;
+            if (0.9..1.0).contains(&t)
+                || (1.1..1.2).contains(&t)
+                || (1.3..1.4).contains(&t)
+                || (2.4..2.5).contains(&t)
+            {
+                pad.digital_mut().press(GamepadButton::North);
+            } else if (1.0..1.1).contains(&t) || (1.2..1.3).contains(&t) {
+                pad.digital_mut().press(GamepadButton::DPadDown);
+            }
+        }
+    }
     if review.phase == 2 && review.seconds > 0.7 {
-        let (_, effects, _) = player.single();
-        assert!(
-            effects.overdrive_timer > 0.0
-                && effects.damage_boost_timer > 0.0
-                && effects.invuln_timer > 0.0
-        );
+        let effects = player.single().1;
+        assert!(BoosterKind::ALL
+            .iter()
+            .all(|&kind| inventory.count(kind) == 1 && kind.remaining(effects) <= 0.0));
         commands
             .spawn(Screenshot::primary_window())
-            .observe(save_to_disk(review.output.join("boosters.png")));
+            .observe(save_to_disk(review.output.join("stored.png")));
         review.phase = 3;
     }
-    if review.phase == 3 && review.seconds > 4.0 {
-        // Renew Overclocker after its bar has entered the low-time warning.
+    if review.phase == 3 && review.seconds > 1.7 {
+        let effects = player.single().1;
+        assert!(BoosterKind::ALL
+            .iter()
+            .all(|&kind| inventory.count(kind) == 0 && kind.remaining(effects) > 0.0));
+        commands
+            .spawn(Screenshot::primary_window())
+            .observe(save_to_disk(review.output.join("active.png")));
+        review.phase = 4;
+    }
+    if review.phase == 4 && review.seconds > 2.2 {
         collected.send(CollectiblePickedUpEvent {
             collectible_type: CollectibleType::Overdrive,
             position: Vec2::new(0.0, -240.0),
             value: 1,
         });
-        review.phase = 4;
-    }
-    if review.phase == 4 && review.seconds > 4.4 {
-        assert!(player.single().1.overdrive_timer > 3.5);
-        commands
-            .spawn(Screenshot::primary_window())
-            .observe(save_to_disk(review.output.join("refreshed.png")));
         review.phase = 5;
     }
-    if review.phase == 5 && review.seconds > 11.0 {
-        let (_, effects, _) = player.single();
-        assert!(
-            effects.overdrive_timer <= 0.0
-                && effects.damage_boost_timer <= 0.0
-                && effects.invuln_timer <= 0.0
+    if review.phase == 5 && review.seconds > 11.5 {
+        let effects = player.single().1;
+        assert!(BoosterKind::ALL
+            .iter()
+            .all(|&kind| kind.remaining(effects) <= 0.0));
+        assert_eq!(
+            inventory.count(BoosterKind::Overclocker),
+            1,
+            "active-use attempt preserves the spare dose"
         );
         commands
             .spawn(Screenshot::primary_window())
-            .observe(save_to_disk(review.output.join("expired.png")));
+            .observe(save_to_disk(review.output.join("expired-reserve.png")));
         review.phase = 6;
     }
     if review.phase == 6 && review.seconds > 12.0 {
         std::fs::write(review.output.join("review-result.json"),
-            r#"{"loaded_icons":14,"real_pickup_spawn_path":true,"activation_refresh_and_expiration_verified":true,"scripted_not_human_playtest":true}"#).unwrap();
+            r#"{"loaded_icons":14,"real_pickup_spawn_path":true,"manual_storage_activation_and_expiration_verified":true,"scripted_not_human_playtest":true}"#).unwrap();
         exit.send(AppExit::Success);
     } else if review.seconds > 30.0 {
         panic!("booster review timed out in phase {}", review.phase);

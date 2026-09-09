@@ -13,6 +13,8 @@ pub const CONTROL_GUIDE: &[(&str, &str)] = &[
     ("THRUST", "RT"),
     ("DODGE", "RB + left stick"),
     ("AMMUNITION", "X / B or D-pad left / right"),
+    ("SELECT BOOSTER", "D-pad up / down"),
+    ("USE BOOSTER", "Y"),
     ("INTERACT / CONFIRM", "A"),
     ("OVERLOAD", "LB"),
     ("PAUSE", "Menu"),

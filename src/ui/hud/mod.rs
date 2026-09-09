@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 
 mod achievements;
+mod boosters;
 mod boss;
 mod combat;
 mod common;
@@ -44,7 +45,7 @@ impl Plugin for HudPlugin {
         }
         app.add_systems(
             OnEnter(GameState::Playing),
-            (spawn_hud, spawn_inventory_hud)
+            (spawn_hud, spawn_inventory_hud, boosters::spawn_booster_hud)
                 .run_if(crate::core::not_resuming_gameplay)
                 .run_if(not_last_stand),
         )
@@ -69,6 +70,7 @@ impl Plugin for HudPlugin {
                 update_ammo_display,
                 update_achievement_popup,
                 update_inventory_hud,
+                boosters::update_booster_hud,
             )
                 .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
                 .run_if(not_last_stand),

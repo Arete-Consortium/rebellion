@@ -5,6 +5,9 @@
 
 #![allow(dead_code)]
 
+use super::boosters::{
+    handle_booster_input, reset_boosters, BoosterActivatedEvent, BoosterInventory, BoosterKind,
+};
 use crate::core::*;
 use crate::systems::{check_liberation_milestone, ComboHeatSystem, DialogueEvent};
 use bevy::prelude::*;
@@ -225,6 +228,22 @@ pub struct CollectiblePlugin;
 
 impl Plugin for CollectiblePlugin {
     fn build(&self, app: &mut App) {
+        app.init_resource::<BoosterInventory>()
+            .add_event::<BoosterActivatedEvent>();
+        for state in [
+            GameState::MainMenu,
+            GameState::ModuleSelect,
+            GameState::ShipSelect,
+            GameState::GameOver,
+            GameState::Victory,
+            GameState::SliceComplete,
+        ] {
+            app.add_systems(OnEnter(state), reset_boosters);
+        }
+        app.add_systems(
+            OnExit(GameState::Paused),
+            reset_boosters.run_if(not_resuming_gameplay),
+        );
         app.add_systems(
             Update,
             (
@@ -233,12 +252,17 @@ impl Plugin for CollectiblePlugin {
                 collectible_rarity_effects,
                 spawn_orbital_particles,
                 update_orbital_particles,
-                collectible_pickup,
-                handle_pickup_effects,
+                (
+                    collectible_pickup,
+                    handle_pickup_effects,
+                    update_powerup_timers,
+                    handle_booster_input,
+                )
+                    .chain(),
                 super::items::recompute_stats,
-                update_powerup_timers,
             )
-                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
+                .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight)))
+                .run_if(|time: Res<Time<Virtual>>| !time.is_paused()),
         );
     }
 }
@@ -428,6 +452,7 @@ fn collectible_pickup(
         With<Collectible>,
     >,
     mut pickup_events: EventWriter<CollectiblePickedUpEvent>,
+    boosters: Res<BoosterInventory>,
     mut effect_events: EventWriter<PickupEffectEvent>,
     mut screen_shake: ResMut<crate::systems::effects::ScreenShake>,
     mut screen_flash: ResMut<crate::systems::effects::ScreenFlash>,
@@ -438,12 +463,20 @@ fn collectible_pickup(
 
     let player_pos = player_transform.translation.truncate();
     let pickup_radius = 30.0;
+    // Reserve capacity locally for every overlapping pickup this frame. The
+    // event consumer commits doses immediately after this system in the chain.
+    let mut reserved = boosters.clone();
 
     for (entity, transform, data, sprite, rarity_data) in collectible_query.iter() {
         let collectible_pos = transform.translation.truncate();
         let distance = (player_pos - collectible_pos).length();
 
         if distance < pickup_radius {
+            if let Some(kind) = BoosterKind::from_pickup(data.collectible_type) {
+                if !reserved.store(kind) {
+                    continue;
+                }
+            }
             // Get color from sprite for visual effect
             let color = sprite.map(|s| s.color).unwrap_or(Color::WHITE);
 
@@ -481,7 +514,6 @@ fn handle_pickup_effects(
     mut player_query: Query<
         (
             &mut super::player::ShipStats,
-            &mut PowerupEffects,
             Option<&mut super::items::Inventory>,
         ),
         With<super::Player>,
@@ -492,8 +524,9 @@ fn handle_pickup_effects(
     mut heat_system: ResMut<ComboHeatSystem>,
     mut dialogue_events: EventWriter<DialogueEvent>,
     mut rumble_events: EventWriter<crate::systems::RumbleRequest>,
+    mut boosters: ResMut<BoosterInventory>,
 ) {
-    let Ok((mut stats, mut effects, mut inventory)) = player_query.get_single_mut() else {
+    let Ok((mut stats, mut inventory)) = player_query.get_single_mut() else {
         return;
     };
 
@@ -538,20 +571,12 @@ fn handle_pickup_effects(
             CollectibleType::CapacitorCharge => {
                 stats.capacitor = (stats.capacitor + event.value as f32).min(stats.max_capacitor);
             }
-            CollectibleType::Overdrive => {
-                effects.overdrive_timer = 5.0; // 5 second speed boost
-                rumble_events.send(crate::systems::RumbleRequest::powerup());
-                info!("OVERDRIVE ACTIVATED!");
-            }
-            CollectibleType::DamageBoost => {
-                effects.damage_boost_timer = 10.0; // 10 second damage boost
-                rumble_events.send(crate::systems::RumbleRequest::powerup());
-                info!("DAMAGE BOOST!");
-            }
-            CollectibleType::Invulnerability => {
-                effects.invuln_timer = 3.0; // 3 seconds of invuln
-                rumble_events.send(crate::systems::RumbleRequest::powerup());
-                info!("INVULNERABLE!");
+            CollectibleType::Overdrive
+            | CollectibleType::DamageBoost
+            | CollectibleType::Invulnerability => {
+                if boosters.store(BoosterKind::from_pickup(event.collectible_type).unwrap()) {
+                    rumble_events.send(crate::systems::RumbleRequest::powerup());
+                }
             }
             CollectibleType::Nanite => {
                 heat_system.reduce_heat(50.0);
