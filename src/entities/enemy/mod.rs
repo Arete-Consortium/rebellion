@@ -47,13 +47,13 @@ impl Plugin for EnemyPlugin {
                 (
                     update_player_tracker,
                     enemy_spatial_awareness,
-                    enemy_movement,
+                    enemy_movement.after(crate::systems::ability::AbilityUpdate),
                     enemy_shooting,
                 )
                     .chain(),
                 // These can run in parallel
                 update_enemy_ship_rotation,
-                disintegrator_update,
+                disintegrator_update.after(crate::systems::ability::AbilityUpdate),
                 spawn::spawner_update,
                 enemy_bounds_check,
                 apply_endless_scale_system,

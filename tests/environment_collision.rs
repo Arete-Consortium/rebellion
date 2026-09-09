@@ -46,6 +46,8 @@ fn spawn_asteroid_over_player(
 fn send_fire_event(mut events: EventWriter<PlayerFireEvent>) {
     // Fire from below the asteroid so the projectile passes through it.
     events.send(PlayerFireEvent {
+        range_multiplier: 1.0,
+        close_range_multiplier: 1.0,
         position: Vec2::new(0.0, -300.0),
         direction: Vec2::new(0.0, 1.0),
         weapon_type: WeaponType::Laser,

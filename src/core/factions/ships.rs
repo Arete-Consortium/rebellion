@@ -185,7 +185,7 @@ pub const AMARR_SHIPS: &[ShipDef] = &[
         speed: 380.0,
         fire_rate: 6.0,
         damage: 12.0,
-        special: "Scorch: Extended laser range",
+        special: "Scorch: Laser range 500 to 750",
         unlock_stage: 0,
     },
     ShipDef {
@@ -329,7 +329,7 @@ pub const CALDARI_SHIPS: &[ShipDef] = &[
         speed: 420.0,
         fire_rate: 5.0,
         damage: 12.0,
-        special: "Warp Disruptor: Slow enemies",
+        special: "Warp Disruptor: 50% slow within 300",
         unlock_stage: 0,
     },
     ShipDef {
@@ -461,7 +461,7 @@ pub const GALLENTE_SHIPS: &[ShipDef] = &[
         speed: 410.0,
         fire_rate: 12.0,
         damage: 6.0,
-        special: "Close Range: +100% damage in melee",
+        special: "Close Range: 2x damage within 200 of launch",
         unlock_stage: 0,
     },
     ShipDef {

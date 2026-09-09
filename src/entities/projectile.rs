@@ -16,6 +16,31 @@ pub struct PlayerProjectile;
 #[derive(Component, Debug)]
 pub struct EnemyProjectile;
 
+/// Normal laser reach; Scorch extends this by 50% within the visible battlefield.
+pub const PLAYER_LASER_RANGE: f32 = 500.0;
+/// Close Range rewards hits within this distance of the muzzle at launch.
+pub const CLOSE_RANGE_DISTANCE: f32 = 200.0;
+
+/// Launch-time bonus, evaluated independently at each impact (including pierce).
+#[derive(Component, Debug, Clone, Copy)]
+pub struct CloseRangeBonus {
+    /// Muzzle position when the shot was fired, independent of later ship motion.
+    pub origin: Vec2,
+    /// Damage factor captured from the active ability at launch.
+    pub multiplier: f32,
+}
+
+impl CloseRangeBonus {
+    /// Scale only impacts inside the launch radius; piercing shots re-evaluate it.
+    pub fn damage_at(&self, damage: f32, impact: Vec2) -> f32 {
+        if self.origin.distance_squared(impact) <= CLOSE_RANGE_DISTANCE.powi(2) {
+            damage * self.multiplier
+        } else {
+            damage
+        }
+    }
+}
+
 /// Seeking/homing projectile - tracks nearest enemy
 #[derive(Component, Debug)]
 pub struct SeekingProjectile {
@@ -176,6 +201,8 @@ impl Plugin for ProjectilePlugin {
                 burn_tick,
             )
                 .chain()
+                .after(crate::systems::ability::AbilityUpdate)
+                .before(crate::simulation::CollisionPhase::Detection)
                 .run_if(in_state(GameState::Playing).or(in_state(GameState::BossFight))),
         );
     }
@@ -447,7 +474,7 @@ fn spawn_player_projectiles(
                 let missile_velocity = direction * (PLAYER_BULLET_SPEED * 0.7);
                 let missile_damage = event.damage * damage_mult * 1.25;
 
-                commands.spawn((
+                let mut entity = commands.spawn((
                     PlayerProjectile,
                     SeekingProjectile {
                         turn_rate: 4.0,
@@ -472,6 +499,12 @@ fn spawn_player_projectiles(
                     },
                     Transform::from_xyz(spawn_pos.x, spawn_pos.y, LAYER_PLAYER_BULLETS),
                 ));
+                if event.close_range_multiplier > 1.0 {
+                    entity.insert(CloseRangeBonus {
+                        origin: event.position,
+                        multiplier: event.close_range_multiplier,
+                    });
+                }
             } else if is_arc {
                 // Vorton — instantaneous chain-lightning arc. Fire a very
                 // fast, homing, short-lived bolt with large pierce so it
@@ -507,6 +540,12 @@ fn spawn_player_projectiles(
                 // baseline 3 + mod stacks (event.chain_targets already adds).
                 entity.insert(ChainOnHit(3 + event.chain_targets));
                 entity.insert(Pierce(1));
+                if event.close_range_multiplier > 1.0 {
+                    entity.insert(CloseRangeBonus {
+                        origin: event.position,
+                        multiplier: event.close_range_multiplier,
+                    });
+                }
             } else if is_beam {
                 // Disintegrator fires no discrete projectile — instead the
                 // fire event refreshes the persistent beam's active timer +
@@ -519,12 +558,14 @@ fn spawn_player_projectiles(
             } else {
                 // Standard projectile with bullet trail — mod overrides layered on.
                 let velocity = direction * PLAYER_BULLET_SPEED;
+                let lifetime = if event.weapon_type == WeaponType::Laser {
+                    PLAYER_LASER_RANGE * event.range_multiplier / PLAYER_BULLET_SPEED
+                } else {
+                    2.0
+                };
                 let mut entity = commands.spawn((
                     PlayerProjectile,
-                    ProjectilePhysics {
-                        velocity,
-                        lifetime: 2.0,
-                    },
+                    ProjectilePhysics { velocity, lifetime },
                     ProjectileDamage {
                         damage: event.damage * damage_mult,
                         damage_type,
@@ -540,6 +581,12 @@ fn spawn_player_projectiles(
                     },
                     Transform::from_xyz(spawn_pos.x, spawn_pos.y, LAYER_PLAYER_BULLETS),
                 ));
+                if event.close_range_multiplier > 1.0 {
+                    entity.insert(CloseRangeBonus {
+                        origin: event.position,
+                        multiplier: event.close_range_multiplier,
+                    });
+                }
                 if event.pierce > 0 {
                     entity.insert(Pierce(event.pierce));
                 }

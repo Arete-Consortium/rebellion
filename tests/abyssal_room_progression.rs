@@ -352,8 +352,23 @@ fn abyssal_hazard_deals_damage_to_player() {
     };
     assert!(start_hull > 0.0, "Player should spawn with positive hull");
 
-    // Run many frames to accumulate hazard damage (tick every 0.25s, dt ≈ 0.0167s)
-    // 60 frames ≈ 1.0s real time → 4 damage ticks at 80 DPS = 80 damage total
+    // Spawn protection now also covers hazards, just like enemy projectiles.
+    for _ in 0..60 {
+        app.update();
+    }
+    let protected_hull = app
+        .world_mut()
+        .query_filtered::<&rebellion::entities::ShipStats, With<rebellion::entities::Player>>()
+        .single(app.world())
+        .hull;
+    assert_eq!(protected_hull, start_hull);
+    for mut maneuver in app.world_mut()
+        .query_filtered::<&mut rebellion::systems::ManeuverState, With<rebellion::entities::Player>>()
+        .iter_mut(app.world_mut()) {
+        maneuver.invincible = false;
+        maneuver.invincibility_timer = 0.0;
+    }
+    // Once unprotected, standing in the hazard deals its normal damage.
     for _ in 0..60 {
         app.update();
     }

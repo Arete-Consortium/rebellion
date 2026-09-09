@@ -737,13 +737,16 @@ pub fn update_cg_boss(
         &mut CGBossAttack,
         &crate::entities::EnemyStats,
     )>,
-    player_query: Query<&Transform, (With<crate::entities::Player>, Without<CGBoss>)>,
+    player_query: Query<
+        (&Transform, Option<&crate::systems::AbilityEffects>),
+        (With<crate::entities::Player>, Without<CGBoss>),
+    >,
     mut commands: Commands,
     difficulty: Res<Difficulty>,
 ) {
     let player_pos = player_query
         .get_single()
-        .map(|t| t.translation.truncate())
+        .map(|(t, _)| t.translation.truncate())
         .unwrap_or(Vec2::ZERO);
 
     for (mut transform, mut boss, mut movement, mut attack, enemy_stats) in boss_query.iter_mut() {
@@ -754,7 +757,12 @@ pub fn update_cg_boss(
         boss.health = enemy_stats.health;
 
         // Movement - sweep pattern
-        movement.timer += dt;
+        let movement_scale = player_query
+            .get_single()
+            .ok()
+            .and_then(|(_, a)| a)
+            .map_or(1.0, |a| a.enemy_speed_at(player_pos, pos));
+        movement.timer += dt * movement_scale;
         let offset = (movement.timer * 0.5).sin() * 200.0;
         transform.translation.x = offset;
 

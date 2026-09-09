@@ -564,14 +564,23 @@ fn spawn_abyssal_hazard(commands: &mut Commands, position: Vec2) {
 fn update_hazards(
     time: Res<Time>,
     mut hazard_query: Query<(&mut AbyssalHazard, &Transform)>,
-    mut player_query: Query<(&Transform, &mut crate::entities::ShipStats), With<Player>>,
+    mut player_query: Query<
+        (
+            &Transform,
+            &mut crate::entities::ShipStats,
+            Option<&crate::systems::AbilityEffects>,
+            Option<&crate::entities::PowerupEffects>,
+            Option<&crate::systems::ManeuverState>,
+        ),
+        With<Player>,
+    >,
 ) {
     let dt = time.delta_secs();
 
     for (mut hazard, hazard_transform) in hazard_query.iter_mut() {
         let hazard_pos = hazard_transform.translation.truncate();
 
-        for (player_transform, mut stats) in player_query.iter_mut() {
+        for (player_transform, mut stats, ability, powerups, maneuver) in player_query.iter_mut() {
             let player_pos = player_transform.translation.truncate();
             let distance = (player_pos - hazard_pos).length();
 
@@ -581,10 +590,17 @@ fn update_hazards(
                 // Apply damage every 0.25s (tick-based DoT)
                 while hazard.damage_timer >= 0.25 {
                     hazard.damage_timer -= 0.25;
-                    let tick_damage = hazard.damage_per_second * 0.25;
+                    let tick_damage = crate::systems::ability::player_incoming_damage(
+                        hazard.damage_per_second * 0.25,
+                        ability,
+                        powerups,
+                        maneuver,
+                    );
 
                     // Use take_damage for proper overflow + shield-recharge-delay logic
-                    stats.take_damage(tick_damage, DamageType::Thermal);
+                    if tick_damage > 0.0 {
+                        stats.take_damage(tick_damage, DamageType::Thermal);
+                    }
                 }
             }
         }
@@ -1020,6 +1036,59 @@ fn despawn_abyssal_victory(mut commands: Commands, query: Query<Entity, With<Aby
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hazard_damage_respects_hardener_and_afterburner() {
+        use crate::systems::AbilityEffects;
+        use bevy::ecs::system::RunSystemOnce;
+        for (effects, expected) in [
+            (AbilityEffects::default(), 20.0),
+            (
+                AbilityEffects {
+                    damage_taken_multiplier: 0.5,
+                    ..default()
+                },
+                10.0,
+            ),
+            (
+                AbilityEffects {
+                    invulnerable: true,
+                    ..default()
+                },
+                0.0,
+            ),
+        ] {
+            let mut world = World::new();
+            let mut time: Time = Time::default();
+            time.advance_by(std::time::Duration::from_secs_f32(0.25));
+            world.insert_resource(time);
+            let player = world
+                .spawn((
+                    Player,
+                    Transform::default(),
+                    crate::entities::ShipStats::default(),
+                    effects,
+                ))
+                .id();
+            world.spawn((
+                AbyssalHazard {
+                    damage_per_second: 100.0,
+                    ..default()
+                },
+                Transform::default(),
+            ));
+            let before = world
+                .get::<crate::entities::ShipStats>(player)
+                .unwrap()
+                .shield;
+            world.run_system_once(update_hazards).unwrap();
+            let after = world
+                .get::<crate::entities::ShipStats>(player)
+                .unwrap()
+                .shield;
+            assert!((before - after - expected).abs() < 0.01);
+        }
+    }
 
     #[test]
     fn abyssal_state_default_values() {

@@ -664,6 +664,7 @@ fn player_shooting(
             &Transform,
             &mut Weapon,
             &AbilityEffects,
+            &mut Ability,
             &super::collectible::PowerupEffects,
             Option<&super::items::EffectiveStats>,
         ),
@@ -674,7 +675,9 @@ fn player_shooting(
     mut heat_system: ResMut<crate::systems::ComboHeatSystem>,
     mut screen_shake: ResMut<crate::systems::effects::ScreenShake>,
 ) {
-    let Ok((transform, mut weapon, ability_effects, powerups, eff)) = query.get_single_mut() else {
+    let Ok((transform, mut weapon, ability_effects, mut ability, powerups, eff)) =
+        query.get_single_mut()
+    else {
         return;
     };
     let eff = eff
@@ -759,7 +762,9 @@ fn player_shooting(
         || face_button_fire
         || joystick.right_trigger_pressed();
 
-    if fire_pressed && weapon.cooldown <= 0.0 {
+    let ability_burst = ability.pending_burst;
+    if (fire_pressed && weapon.cooldown <= 0.0) || ability_burst > 0 {
+        ability.pending_burst = 0;
         // Track heat (doesn't block firing, just affects fire rate)
         heat_system.on_fire();
 
@@ -773,10 +778,11 @@ fn player_shooting(
         let heat_mult = heat_system.fire_rate_mult();
         let fire_rate =
             weapon.fire_rate * ammo_mult * salt_miner_mult * heat_mult * eff.fire_rate_mult;
-        weapon.cooldown = 1.0 / fire_rate.max(0.1);
+        // An instant ability does not erase the ordinary weapon's cooldown.
+        weapon.cooldown = weapon.cooldown.max(1.0 / fire_rate.max(0.1));
 
         // Calculate burst parameters from ability effects + inventory mods
-        // extra_projectiles: 2 = triple shot (Rocket Barrage), 3 = quad shot (Salvo)
+        // A burst replaces the baseline volley; inventory extras still stack.
         // inventory mods (Scatter/Homing) add on top
         // Per-hull baseline bullet pattern so each weapon family plays
         // distinctly even before mods (autocannons twin-tracer, drones
@@ -786,11 +792,10 @@ fn player_shooting(
             WeaponType::Drone => (2u32, 24_f32.to_radians()),
             _ => (0u32, 0.0),
         };
-        let burst_count =
-            1 + ability_effects.extra_projectiles + eff.extra_projectiles + hull_burst_bonus;
+        let burst_count = (1 + ability_burst).max(1 + hull_burst_bonus) + eff.extra_projectiles;
         let spread_angle = if burst_count > 1 {
-            let ability_spread = if ability_effects.extra_projectiles > 0 {
-                ((1 + ability_effects.extra_projectiles) as f32 * 10.0).to_radians()
+            let ability_spread = if ability_burst > 0 {
+                ((1 + ability_burst) as f32 * 10.0).to_radians()
             } else {
                 0.0
             };
@@ -820,6 +825,8 @@ fn player_shooting(
             None
         };
         fire_events.send(PlayerFireEvent {
+            range_multiplier: ability_effects.range_multiplier,
+            close_range_multiplier: ability_effects.close_range_multiplier,
             position: transform.translation.truncate(),
             direction: weapon.aim_direction,
             weapon_type: weapon.weapon_type,

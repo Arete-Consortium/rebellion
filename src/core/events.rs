@@ -150,6 +150,10 @@ pub struct PlayerFireEvent {
     pub weapon_type: WeaponType,
     pub bullet_color: Color,
     pub damage: f32,
+    /// Snapshot of the active range bonus; already-fired shots retain it.
+    pub range_multiplier: f32,
+    /// Snapshot of the close-range hit bonus (1.0 when inactive).
+    pub close_range_multiplier: f32,
     /// Number of projectiles to spawn (1 = normal, 3+ = burst)
     pub burst_count: u32,
     /// Spread angle in radians for burst fire (0 = parallel)

@@ -13,6 +13,10 @@ use super::ai::PlayerTracker;
 pub(super) fn enemy_movement(
     time: Res<Time>,
     player_tracker: Res<PlayerTracker>,
+    player_ability: Query<
+        (&Transform, &crate::systems::AbilityEffects),
+        With<crate::entities::Player>,
+    >,
     mut query: Query<
         (
             &mut Transform,
@@ -27,8 +31,14 @@ pub(super) fn enemy_movement(
     let player_pos = player_tracker.position;
 
     for (mut transform, stats, mut ai, sprite_rotation) in query.iter_mut() {
-        ai.timer += dt;
         let pos = transform.translation.truncate();
+        let movement_dt = dt
+            * player_ability
+                .get_single()
+                .map_or(1.0, |(player, ability)| {
+                    ability.enemy_speed_at(player.translation.truncate(), pos)
+                });
+        ai.timer += movement_dt;
 
         let velocity = match ai.behavior {
             EnemyBehavior::Linear => Vec2::new(0.0, -1.0) * stats.speed,
@@ -108,8 +118,8 @@ pub(super) fn enemy_movement(
         // Combine behavior velocity with spatial awareness (dodge + separation + edge avoidance)
         let total_velocity = velocity + ai.dodge_impulse;
 
-        transform.translation.x += total_velocity.x * dt;
-        transform.translation.y += total_velocity.y * dt;
+        transform.translation.x += total_velocity.x * movement_dt;
+        transform.translation.y += total_velocity.y * movement_dt;
 
         // Slight tilt based on horizontal movement (visual effect only)
         let tilt = (total_velocity.x / stats.speed.max(1.0)).clamp(-1.0, 1.0) * 0.2;
@@ -202,6 +212,7 @@ pub(super) fn disintegrator_update(
             &mut crate::entities::ShipStats,
             &crate::entities::PowerupEffects,
             &crate::systems::ManeuverState,
+            Option<&crate::systems::AbilityEffects>,
         ),
         With<crate::entities::Player>,
     >,
@@ -211,15 +222,12 @@ pub(super) fn disintegrator_update(
 ) {
     let dt = time.delta_secs();
 
-    let Ok((player_transform, mut player_stats, powerups, maneuver)) =
+    let Ok((player_transform, mut player_stats, powerups, maneuver, ability)) =
         player_query.get_single_mut()
     else {
         return;
     };
     let player_pos = player_transform.translation.truncate();
-
-    // Check invulnerability
-    let player_invulnerable = powerups.is_invulnerable() || maneuver.invincible;
 
     for (enemy_transform, mut disintegrator, ai) in enemy_query.iter_mut() {
         if !ai.active {
@@ -238,9 +246,17 @@ pub(super) fn disintegrator_update(
         disintegrator.update(dt, in_range);
 
         // Apply damage if beam is active
-        if disintegrator.beam_active && !player_invulnerable {
+        if disintegrator.beam_active {
             // Damage per second = base * mult, convert to per-frame damage
-            let damage_per_frame = disintegrator.current_damage() * dt;
+            let damage_per_frame = crate::systems::ability::player_incoming_damage(
+                disintegrator.current_damage() * dt,
+                ability,
+                Some(powerups),
+                Some(maneuver),
+            );
+            if damage_per_frame <= 0.0 {
+                continue;
+            }
 
             // Apply damage directly to player
             let damage_result =

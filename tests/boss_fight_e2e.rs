@@ -15,6 +15,8 @@ use rebellion::simulation::state_hash::SimStateHash;
 /// Fire a player projectile straight upward toward the enemy.
 fn send_fire_event(mut events: EventWriter<PlayerFireEvent>) {
     events.send(PlayerFireEvent {
+        range_multiplier: 1.0,
+        close_range_multiplier: 1.0,
         position: Vec2::new(0.0, -250.0),
         direction: Vec2::new(0.0, 1.0),
         weapon_type: WeaponType::Laser,

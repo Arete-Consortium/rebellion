@@ -84,6 +84,10 @@ impl Plugin for SimulationPlugin {
                 FixedUpdate,
                 (CollisionPhase::Detection, CollisionPhase::Resolution).chain(),
             )
+            .configure_sets(
+                FixedUpdate,
+                crate::systems::ability::AbilityUpdate.before(CollisionPhase::Resolution),
+            )
             .add_systems(
                 FixedUpdate,
                 (

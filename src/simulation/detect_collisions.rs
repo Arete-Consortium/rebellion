@@ -133,12 +133,18 @@ pub fn detect_enemy_projectile_hits(
 pub fn detect_player_projectile_environment_hits(
     grid: Res<SpatialGrid>,
     projectile_query: Query<
-        (Entity, &Transform, &ProjectileDamage, Option<&Pierce>),
+        (
+            Entity,
+            &Transform,
+            &ProjectileDamage,
+            Option<&Pierce>,
+            Option<&CloseRangeBonus>,
+        ),
         With<PlayerProjectile>,
     >,
     mut contact_events: EventWriter<ProjectileEnvironmentContact>,
 ) {
-    for (proj_entity, proj_transform, proj_damage, pierce) in projectile_query.iter() {
+    for (proj_entity, proj_transform, proj_damage, pierce, close_range) in projectile_query.iter() {
         let proj_pos = proj_transform.translation.truncate();
 
         for (env_entity, env_pos, env_radius) in grid.get_nearby_environments(proj_pos) {
@@ -150,7 +156,9 @@ pub fn detect_player_projectile_environment_hits(
                     environment: env_entity,
                     projectile_pos: proj_pos,
                     environment_pos: env_pos,
-                    damage: proj_damage.damage,
+                    damage: close_range.map_or(proj_damage.damage, |bonus| {
+                        bonus.damage_at(proj_damage.damage, proj_pos)
+                    }),
                     damage_type: proj_damage.damage_type,
                     pierce_remaining: pierce.map(|p| p.0),
                     is_player_projectile: true,

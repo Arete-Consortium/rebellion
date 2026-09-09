@@ -29,7 +29,7 @@ impl Plugin for BossPlugin {
                 (
                     handle_boss_spawn,
                     boss_intro_sequence,
-                    boss_movement,
+                    boss_movement.after(crate::systems::ability::AbilityUpdate),
                     boss_attack,
                     boss_phase_check,
                     boss_drone_spawning,
@@ -206,12 +206,15 @@ fn boss_intro_sequence(
 fn boss_movement(
     time: Res<Time>,
     mut boss_query: Query<(&mut Transform, &mut BossMovement, &BossState, &BossData), With<Boss>>,
-    player_query: Query<&Transform, (With<crate::entities::Player>, Without<Boss>)>,
+    player_query: Query<
+        (&Transform, Option<&crate::systems::AbilityEffects>),
+        (With<crate::entities::Player>, Without<Boss>),
+    >,
 ) {
     let dt = time.delta_secs();
     let player_x = player_query
         .get_single()
-        .map(|t| t.translation.x)
+        .map(|(t, _)| t.translation.x)
         .unwrap_or(0.0);
 
     for (mut transform, mut movement, state, _data) in boss_query.iter_mut() {
@@ -219,6 +222,15 @@ fn boss_movement(
             continue;
         }
 
+        let dt = dt
+            * player_query.get_single().map_or(1.0, |(player, ability)| {
+                ability.map_or(1.0, |a| {
+                    a.enemy_speed_at(
+                        player.translation.truncate(),
+                        transform.translation.truncate(),
+                    )
+                })
+            });
         movement.timer += dt;
 
         match movement.pattern {
@@ -892,7 +904,12 @@ fn boss_damage(
     mut commands: Commands,
     mut boss_query: Query<(Entity, &Transform, &mut BossData, &mut BossState), With<Boss>>,
     projectile_query: Query<
-        (Entity, &Transform, &ProjectileDamage),
+        (
+            Entity,
+            &Transform,
+            &ProjectileDamage,
+            Option<&crate::entities::CloseRangeBonus>,
+        ),
         With<crate::entities::PlayerProjectile>,
     >,
     mut score: ResMut<ScoreSystem>,
@@ -912,13 +929,15 @@ fn boss_damage(
         let boss_radius = 60.0; // Approximate hitbox
 
         // Check projectile collisions (only player projectiles in this query)
-        for (proj_entity, proj_transform, damage) in projectile_query.iter() {
+        for (proj_entity, proj_transform, damage, close_range) in projectile_query.iter() {
             let proj_pos = proj_transform.translation.truncate();
             let distance = (boss_pos - proj_pos).length();
 
             if distance < boss_radius + 10.0 {
                 // Hit!
-                data.health -= damage.damage;
+                data.health -= close_range.map_or(damage.damage, |bonus| {
+                    bonus.damage_at(damage.damage, proj_pos)
+                });
                 commands.entity(proj_entity).despawn();
 
                 // Check for defeat

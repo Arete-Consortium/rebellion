@@ -160,6 +160,8 @@ pub struct Ability {
     pub effect_remaining: f32,
     /// Whether ability is currently active
     pub is_active: bool,
+    /// Extra shots in a one-shot burst, consumed by the firing system.
+    pub pending_burst: u32,
 }
 
 impl Ability {
@@ -169,6 +171,7 @@ impl Ability {
             cooldown_remaining: 0.0,
             effect_remaining: 0.0,
             is_active: false,
+            pending_burst: 0,
         }
     }
 
@@ -182,6 +185,11 @@ impl Ability {
 
     /// Activate the ability
     pub fn activate(&mut self) {
+        self.pending_burst = match self.ability_type {
+            AbilityType::RocketBarrage => 2,
+            AbilityType::Salvo => 3,
+            _ => 0,
+        };
         self.is_active = true;
         self.effect_remaining = self.ability_type.duration();
         self.cooldown_remaining = self.ability_type.cooldown();
@@ -218,14 +226,14 @@ pub struct AbilityEffects {
     pub speed_multiplier: f32,
     /// Damage taken multiplier (1.0 = normal, 0.5 = half damage)
     pub damage_taken_multiplier: f32,
-    /// Damage dealt multiplier (1.0 = normal)
-    pub damage_dealt_multiplier: f32,
+    /// Damage multiplier for hits near the shot's launch point.
+    pub close_range_multiplier: f32,
     /// Weapon range multiplier
     pub range_multiplier: f32,
     /// Invulnerable (afterburner dash)
     pub invulnerable: bool,
-    /// Extra projectiles per shot
-    pub extra_projectiles: u32,
+    /// Radius of the active 50% movement slow (zero when inactive).
+    pub disruption_radius: f32,
 }
 
 impl Default for AbilityEffects {
@@ -233,10 +241,10 @@ impl Default for AbilityEffects {
         Self {
             speed_multiplier: 1.0,
             damage_taken_multiplier: 1.0,
-            damage_dealt_multiplier: 1.0,
+            close_range_multiplier: 1.0,
             range_multiplier: 1.0,
             invulnerable: false,
-            extra_projectiles: 0,
+            disruption_radius: 0.0,
         }
     }
 }
@@ -244,6 +252,35 @@ impl Default for AbilityEffects {
 impl AbilityEffects {
     pub fn reset(&mut self) {
         *self = Self::default();
+    }
+
+    /// Evaluate the moving disruption field without mutating base enemy stats.
+    pub fn enemy_speed_at(&self, player: Vec2, enemy: Vec2) -> f32 {
+        if self.disruption_radius > 0.0
+            && player.distance_squared(enemy) <= self.disruption_radius.powi(2)
+        {
+            0.5
+        } else {
+            1.0
+        }
+    }
+}
+
+/// Shared mitigation before the ship's damage-type resistance and layer routing.
+/// All player damage sources use this so immunity and hardeners agree.
+pub fn player_incoming_damage(
+    damage: f32,
+    ability: Option<&AbilityEffects>,
+    powerups: Option<&crate::entities::PowerupEffects>,
+    maneuver: Option<&crate::systems::ManeuverState>,
+) -> f32 {
+    if ability.is_some_and(|a| a.invulnerable)
+        || powerups.is_some_and(|p| p.is_invulnerable())
+        || maneuver.is_some_and(|m| m.invincible)
+    {
+        0.0
+    } else {
+        damage * ability.map_or(1.0, |a| a.damage_taken_multiplier)
     }
 }
 
@@ -263,9 +300,9 @@ impl Plugin for AbilityPlugin {
                 (
                     ability_input,
                     ability_update_cooldowns,
+                    ability_end_effects,
                     ability_apply_effects,
                     ability_handle_instant_effects,
-                    ability_end_effects,
                 )
                     .chain()
                     .in_set(AbilityUpdate)
@@ -349,17 +386,12 @@ fn ability_apply_effects(
                 effects.speed_multiplier = 2.0;
                 effects.invulnerable = true;
             }
-            AbilityType::RocketBarrage => {
-                effects.extra_projectiles = 2; // Triple shot
-            }
+            AbilityType::RocketBarrage | AbilityType::Salvo => {}
             AbilityType::Scorch => {
                 effects.range_multiplier = 1.5;
             }
             AbilityType::ArmorHardener => {
                 effects.damage_taken_multiplier = 0.5;
-            }
-            AbilityType::Salvo => {
-                effects.extra_projectiles = 3; // 4 missiles total
             }
             AbilityType::ShieldBoost => {
                 // Instant effect - handled in ability_activated
@@ -370,9 +402,12 @@ fn ability_apply_effects(
                 stats.armor = (stats.armor + heal_per_sec * time.delta_secs()).min(stats.max_armor);
             }
             AbilityType::CloseRange => {
-                effects.damage_dealt_multiplier = 2.0;
+                effects.close_range_multiplier = 2.0;
             }
-            AbilityType::WarpDisruptor | AbilityType::DeployDrone | AbilityType::DroneBay => {
+            AbilityType::WarpDisruptor => {
+                effects.disruption_radius = 300.0;
+            }
+            AbilityType::DeployDrone | AbilityType::DroneBay => {
                 // These spawn entities - handled elsewhere
             }
             AbilityType::None => {}
@@ -401,8 +436,8 @@ fn ability_handle_instant_effects(
                 );
             }
             AbilityType::Salvo | AbilityType::RocketBarrage => {
-                // Instant burst abilities - already handled by weapon system via extra_projectiles
-                // But we mark the ability as done since duration is 0
+                // The firing system consumes pending_burst exactly once, even
+                // though the zero-duration ability has already ended.
             }
             _ => {
                 // Other abilities have duration-based effects or are entity spawners

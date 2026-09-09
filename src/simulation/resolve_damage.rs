@@ -16,9 +16,10 @@ use crate::entities::environment::{
     ProjectileInteraction,
 };
 use crate::entities::{
-    BurnOnHit, BurnStatus, ChainOnHit, Enemy, EnemyProjectile, EnemyStats, Hitbox, Movement,
-    Pierce, Player, PlayerProjectile, PowerupEffects, ProjectileDamage, ShipStats,
+    BurnOnHit, BurnStatus, ChainOnHit, CloseRangeBonus, Enemy, EnemyProjectile, EnemyStats, Hitbox,
+    Movement, Pierce, Player, PlayerProjectile, PowerupEffects, ProjectileDamage, ShipStats,
 };
+use crate::systems::ability::{player_incoming_damage, AbilityEffects};
 use crate::systems::collision::SpatialGrid;
 use crate::systems::ManeuverState;
 use bevy::prelude::*;
@@ -171,6 +172,7 @@ pub fn resolve_player_projectile_damage(
     mut sim_rng: ResMut<crate::simulation::SimulationRng>,
     mut contact_events: EventReader<ContactDetected>,
     mut enemy_query: Query<&mut EnemyStats, With<Enemy>>,
+    projectile_bonuses: Query<&CloseRangeBonus, With<PlayerProjectile>>,
     mut damage_applied_events: EventWriter<EnemyDamageAppliedEvent>,
     mut chain_bolt_events: EventWriter<crate::core::ChainBoltSpawnEvent>,
 ) {
@@ -178,7 +180,7 @@ pub fn resolve_player_projectile_damage(
         let ContactType::PlayerProjectileEnemy {
             projectile: proj_entity,
             enemy: enemy_entity,
-            projectile_pos: _proj_pos,
+            projectile_pos: proj_pos,
             enemy_pos,
             damage,
             damage_type,
@@ -201,7 +203,9 @@ pub fn resolve_player_projectile_damage(
         let is_crit = sim_rng.f32() < crit_chance;
         let crit_mult = if is_crit { crit_multiplier } else { 1.0 };
         let ammo_mult = ammo_type.armor_mult();
-        let final_damage = damage * crit_mult * ammo_mult;
+        let close_range = projectile_bonuses.get(proj_entity).ok().copied();
+        let hit_damage = close_range.map_or(damage, |bonus| bonus.damage_at(damage, proj_pos));
+        let final_damage = hit_damage * crit_mult * ammo_mult;
 
         enemy_stats.health -= final_damage;
 
@@ -261,9 +265,11 @@ pub fn resolve_player_projectile_damage(
         }
 
         // Execute chain-lightning plan
-        let chain_dmg = damage * 0.9;
         let mut prev = enemy_pos;
         for (tgt, tpos) in chain_plan {
+            // Each chained impact has its own distance check. A nearby first
+            // hit cannot carry the close-range bonus to a distant target.
+            let chain_dmg = close_range.map_or(damage, |bonus| bonus.damage_at(damage, tpos)) * 0.9;
             if let Ok(mut tstats) = enemy_query.get_mut(tgt) {
                 tstats.health -= chain_dmg;
                 damage_applied_events.send(EnemyDamageAppliedEvent {
@@ -289,13 +295,19 @@ pub fn resolve_enemy_projectile_damage(
     mut commands: Commands,
     mut contact_events: EventReader<ContactDetected>,
     mut player_query: Query<
-        (&Transform, &mut ShipStats, &PowerupEffects, &ManeuverState),
+        (
+            &Transform,
+            &mut ShipStats,
+            &PowerupEffects,
+            &ManeuverState,
+            Option<&AbilityEffects>,
+        ),
         With<Player>,
     >,
     mut damage_events: EventWriter<PlayerDamagedEvent>,
     mut damage_layer_events: EventWriter<DamageLayerEvent>,
 ) {
-    let Ok((player_transform, mut player_stats, powerups, maneuver)) =
+    let Ok((player_transform, mut player_stats, powerups, maneuver, ability)) =
         player_query.get_single_mut()
     else {
         return;
@@ -317,8 +329,8 @@ pub fn resolve_enemy_projectile_damage(
         // Despawn projectile regardless
         commands.entity(projectile).despawn_recursive();
 
-        // Check invulnerability (powerups OR barrel roll i-frames)
-        if powerups.is_invulnerable() || maneuver.invincible {
+        let damage = player_incoming_damage(damage, ability, Some(powerups), Some(maneuver));
+        if damage <= 0.0 {
             continue;
         }
 
@@ -382,6 +394,8 @@ pub fn resolve_player_environment_contacts(
             &mut ShipStats,
             &ManeuverState,
             &Hitbox,
+            Option<&AbilityEffects>,
+            Option<&PowerupEffects>,
         ),
         (With<Player>, Without<EnvironmentObject>),
     >,
@@ -397,8 +411,15 @@ pub fn resolve_player_environment_contacts(
     mut damage_events: EventWriter<PlayerDamagedEvent>,
     mut damage_layer_events: EventWriter<DamageLayerEvent>,
 ) {
-    let Ok((mut player_transform, mut movement, mut player_stats, maneuver, hitbox)) =
-        player_query.get_single_mut()
+    let Ok((
+        mut player_transform,
+        mut movement,
+        mut player_stats,
+        maneuver,
+        hitbox,
+        ability,
+        powerups,
+    )) = player_query.get_single_mut()
     else {
         return;
     };
@@ -458,8 +479,9 @@ pub fn resolve_player_environment_contacts(
                 true
             };
 
-            if can_damage && !maneuver.invincible {
-                let damage_result = player_stats.take_damage_detailed(dmg.amount, dmg.damage_type);
+            let damage = player_incoming_damage(dmg.amount, ability, powerups, Some(maneuver));
+            if can_damage && damage > 0.0 {
+                let damage_result = player_stats.take_damage_detailed(damage, dmg.damage_type);
                 let direction = contact.normal;
 
                 if damage_result.shield_damage > 0.0 {
@@ -488,7 +510,7 @@ pub fn resolve_player_environment_contacts(
                 }
 
                 damage_events.send(PlayerDamagedEvent {
-                    damage: dmg.amount,
+                    damage,
                     damage_type: dmg.damage_type,
                     source_position: env_pos,
                     shield_damage: damage_result.shield_damage,

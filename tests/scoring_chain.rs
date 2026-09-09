@@ -27,6 +27,8 @@ fn send_spawn_event(mut events: EventWriter<SpawnEnemyEvent>) {
 /// Fire a high-damage projectile straight upward to kill the enemy in one hit.
 fn send_fire_event(mut events: EventWriter<PlayerFireEvent>) {
     events.send(PlayerFireEvent {
+        range_multiplier: 1.0,
+        close_range_multiplier: 1.0,
         position: Vec2::new(0.0, -250.0),
         direction: Vec2::new(0.0, 1.0),
         weapon_type: WeaponType::Laser,
