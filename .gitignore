@@ -55,6 +55,8 @@ assets/_orientation_preview/
 /build/audio-review/
 /build/playtest-review/
 /build/linux-smoke/
+/build/windows-smoke/
+/build/platform-parity/
 /build/ship-audit.md
 /build/ship-audit.json
 /build/ship-contact-sheet.png

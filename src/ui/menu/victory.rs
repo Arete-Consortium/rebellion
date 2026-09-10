@@ -51,24 +51,31 @@ pub(crate) fn spawn_victory_screen(
     session: Res<GameSession>,
     campaign: Res<CampaignState>,
     mut save_data: ResMut<SaveData>,
+    active_module: Res<crate::games::ActiveModule>,
+    run_result: Res<RunResult>,
 ) {
     // Initialize selection
     commands.insert_resource(VictorySelection::default());
 
-    // Check for new high score
-    let previous_high =
-        save_data.get_high_score(session.player_faction.name(), session.enemy_faction.name());
-    let is_new_high_score = score.score > previous_high;
-
-    // Record the score if it's a new high
-    if is_new_high_score {
-        save_data.record_score(
-            session.player_faction.name(),
-            session.enemy_faction.name(),
-            score.score,
-            campaign.stage_number(),
-        );
-    }
+    // Elder Fleet was finalized before this screen. Preserve the legacy
+    // campaign fallback without writing the supported run a second time.
+    let recorded_campaign = active_module.is_elder_fleet() && run_result.recorded;
+    let (previous_high, is_new_high_score) = if recorded_campaign {
+        (run_result.previous_best, run_result.is_new_best())
+    } else {
+        let previous_high =
+            save_data.get_high_score(session.player_faction.name(), session.enemy_faction.name());
+        let is_new_high_score = score.score > previous_high;
+        if is_new_high_score {
+            save_data.record_score(
+                session.player_faction.name(),
+                session.enemy_faction.name(),
+                score.score,
+                campaign.stage_number(),
+            );
+        }
+        (previous_high, is_new_high_score)
+    };
 
     // Spawn celebration particles
     for _ in 0..60 {
@@ -112,7 +119,7 @@ pub(crate) fn spawn_victory_screen(
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(12.0),
+                row_gap: Val::Px(8.0),
                 ..default()
             },
             BackgroundColor(Color::srgba(0.0, 0.02, 0.05, 0.9)),
@@ -122,7 +129,7 @@ pub(crate) fn spawn_victory_screen(
             parent.spawn((
                 Text::new("LIBERATION COMPLETE"),
                 TextFont {
-                    font_size: 64.0,
+                    font_size: 48.0,
                     ..default()
                 },
                 TextColor(Color::srgb(1.0, 0.85, 0.2)), // Gold
@@ -146,7 +153,7 @@ pub(crate) fn spawn_victory_screen(
             parent
                 .spawn((
                     Node {
-                        padding: UiRect::all(Val::Px(20.0)),
+                        padding: UiRect::all(Val::Px(16.0)),
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::Center,
                         row_gap: Val::Px(8.0),
@@ -178,8 +185,16 @@ pub(crate) fn spawn_victory_screen(
                         TextColor(Color::srgb(1.0, 0.9, 0.3)),
                     ));
 
-                    // Show previous high if not beaten
-                    if !is_new_high_score && previous_high > 0 {
+                    if recorded_campaign {
+                        stats.spawn((
+                            Text::new(run_result.comparison()),
+                            TextFont {
+                                font_size: 18.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                        ));
+                    } else if !is_new_high_score && previous_high > 0 {
                         stats.spawn((
                             Text::new(format!("High Score: {}", format_score(previous_high))),
                             TextFont {
@@ -200,7 +215,11 @@ pub(crate) fn spawn_victory_screen(
                     ));
 
                     stats.spawn((
-                        Text::new(format!("Kill Multiplier: {:.1}x", score.multiplier)),
+                        Text::new(if recorded_campaign {
+                            score.run.summary()
+                        } else {
+                            format!("Kill Multiplier: {:.1}x", score.multiplier)
+                        }),
                         TextFont {
                             font_size: 20.0,
                             ..default()
@@ -225,7 +244,7 @@ pub(crate) fn spawn_victory_screen(
             ));
 
             parent.spawn((
-                Text::new("— Elder Drupar Maak"),
+                Text::new("- Elder Drupar Maak"),
                 TextFont {
                     font_size: 14.0,
                     ..default()
@@ -318,7 +337,7 @@ pub(crate) fn spawn_victory_screen(
 
             // Controller hint
             parent.spawn((
-                Text::new("D-PAD Navigate  •  A Select"),
+                Text::new("D-PAD Navigate  |  A Select"),
                 TextFont {
                     font_size: 12.0,
                     ..default()
@@ -428,4 +447,57 @@ pub(crate) fn despawn_victory_screen(
         commands.entity(entity).despawn_recursive();
     }
     commands.remove_resource::<VictorySelection>();
+}
+
+#[cfg(test)]
+mod run_statistics_ui_tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn elder_fleet_victory_uses_retained_best_comparison_and_run_statistics() {
+        let mut app = App::new();
+        let mut active = crate::games::ActiveModule::default();
+        active.set_module("elder_fleet");
+        let mut score = ScoreSystem::default();
+        for _ in 0..7 {
+            score.on_kill(10);
+        }
+        score.update(60.0);
+        score.score = 150;
+        score.run.combat_seconds = 125.0;
+        app.insert_resource(active)
+            .insert_resource(score)
+            .insert_resource(GameSession::new(Faction::Minmatar, Faction::Amarr))
+            .insert_resource(RunResult {
+                score: 150,
+                previous_best: 100,
+                recorded: true,
+            })
+            .init_resource::<CampaignState>()
+            .init_resource::<SaveData>();
+        app.world_mut().resource_mut::<SaveData>().record_score(
+            "Minmatar Republic",
+            "Amarr Empire",
+            150,
+            9,
+        );
+        app.world_mut()
+            .run_system_once(spawn_victory_screen)
+            .unwrap();
+        let labels: Vec<_> = app
+            .world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .map(|text| text.0.clone())
+            .collect();
+        assert!(labels
+            .iter()
+            .any(|text| text == "Best chain: 7x  |  Combat: 2:05"));
+        assert!(labels.iter().any(|text| text == "New personal best +50"));
+        assert!(labels.iter().any(|text| text == "★ NEW HIGH SCORE ★"));
+        let saved = &app.world().resource::<SaveData>().high_scores;
+        assert_eq!(saved.len(), 1);
+        assert_eq!(saved[0].stage, 9);
+    }
 }

@@ -45,6 +45,10 @@ cp -R assets "$PACKAGE/assets"
 cp LICENSE "$PACKAGE/LICENSE"
 cp docs/LINUX_PLAYTEST.md "$PACKAGE/README.md"
 install -m 755 scripts/play-linux.sh "$PACKAGE/play.sh"
+python3 scripts/playtest-manifest.py write --target "$TARGET" \
+  --output "$PACKAGE/PLAYTEST-MANIFEST.json"
+python3 scripts/playtest-manifest.py verify \
+  --manifest "$PACKAGE/PLAYTEST-MANIFEST.json" --assets "$PACKAGE/assets"
 
 # Record the source revision plus local changes and the exact compiler used.
 {

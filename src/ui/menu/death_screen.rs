@@ -69,6 +69,7 @@ pub(crate) fn spawn_death_screen(
     mut nightmare: ResMut<crate::games::caldari_gallente::ShiigeruNightmare>,
     session: Res<GameSession>,
     save_data: Res<SaveData>,
+    run_result: Res<RunResult>,
     bindings: Res<KeyBindings>,
 ) {
     // Initialize selection resource
@@ -98,10 +99,21 @@ pub(crate) fn spawn_death_screen(
         nightmare.end();
     }
 
-    // Get high score for comparison
-    let high_score =
-        save_data.get_high_score(session.player_faction.name(), session.enemy_faction.name());
-    let is_new_high = score.score > high_score && score.score > 0;
+    // Read the retained comparison from before the campaign score was saved.
+    let recorded_campaign = run_result.recorded
+        && !was_endless
+        && !was_nightmare
+        && (active_module.is_caldari_gallente() || active_module.is_elder_fleet());
+    let high_score = if recorded_campaign {
+        run_result.previous_best
+    } else {
+        save_data.get_high_score(session.player_faction.name(), session.enemy_faction.name())
+    };
+    let is_new_high = if recorded_campaign {
+        run_result.is_new_best()
+    } else {
+        score.score > high_score && score.score > 0
+    };
 
     // Get mission info - different for endless/nightmare mode / CG slice
     let mission_name = if was_nightmare {
@@ -267,8 +279,24 @@ pub(crate) fn spawn_death_screen(
                 TextColor(COLOR_AMBER),
             ));
 
-            // Previous high score (if not beaten)
-            if !is_new_high && high_score > 0 {
+            if recorded_campaign {
+                parent.spawn((
+                    Text::new(run_result.comparison()),
+                    TextFont {
+                        font_size: 18.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                ));
+                parent.spawn((
+                    Text::new(score.run.summary()),
+                    TextFont {
+                        font_size: 20.0,
+                        ..default()
+                    },
+                    TextColor(Color::srgb(0.75, 0.67, 0.50)),
+                ));
+            } else if !is_new_high && high_score > 0 {
                 parent.spawn((
                     Text::new(format!("High Score: {}", format_score(high_score))),
                     TextFont {
@@ -380,7 +408,7 @@ pub(crate) fn spawn_death_screen(
                             ));
                         }
 
-                        if score.chain > 1 {
+                        if !recorded_campaign && score.chain > 1 {
                             row.spawn((
                                 Text::new(format!("Chain: {}x", score.chain)),
                                 TextFont {
@@ -513,17 +541,21 @@ pub(crate) fn spawn_death_screen(
 
             // Controller hint
             parent.spawn((
-                Text::new(format!(
-                    "Left/Right or D-pad: Choose  |  {} / Pad A: Select  |  {} / Pad B: Exit",
-                    bindings
-                        .get(Action::Confirm)
-                        .map(|b| b.label())
-                        .unwrap_or_default(),
-                    bindings
-                        .get(Action::Cancel)
-                        .map(|b| b.label())
-                        .unwrap_or_default()
-                )),
+                Text::new(if bindings.controller_only {
+                    "Left stick / D-pad: Choose  |  A Select  |  B Exit".to_string()
+                } else {
+                    format!(
+                        "Left/Right or D-pad: Choose  |  {} / Pad A: Select  |  {} / Pad B: Exit",
+                        bindings
+                            .get(Action::Confirm)
+                            .map(|b| b.label())
+                            .unwrap_or_default(),
+                        bindings
+                            .get(Action::Cancel)
+                            .map(|b| b.label())
+                            .unwrap_or_default()
+                    )
+                }),
                 TextFont {
                     font_size: 12.0,
                     ..default()
@@ -656,4 +688,65 @@ pub(crate) fn despawn_death_screen(
         commands.entity(entity).despawn_recursive();
     }
     commands.remove_resource::<DeathSelection>();
+}
+
+#[cfg(test)]
+mod run_statistics_ui_tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn campaign_death_uses_retained_chain_time_and_saved_comparison() {
+        let mut app = App::new();
+        let mut active = ActiveModule::default();
+        active.set_module("caldari_gallente");
+        let mut score = ScoreSystem::default();
+        for _ in 0..7 {
+            score.on_kill(10);
+        }
+        score.update(60.0);
+        score.score = 150;
+        score.run.combat_seconds = 125.0;
+        app.insert_resource(active)
+            .insert_resource(score)
+            .insert_resource(GameSession::new(Faction::Caldari, Faction::Gallente))
+            .insert_resource(RunResult {
+                score: 150,
+                previous_best: 100,
+                recorded: true,
+            })
+            .init_resource::<CampaignState>()
+            .init_resource::<CGCampaignState>()
+            .init_resource::<SaveData>()
+            .init_resource::<KeyBindings>()
+            .init_resource::<EndlessMode>()
+            .init_resource::<crate::games::caldari_gallente::ShiigeruNightmare>();
+        // The stored best has already changed; the result must retain +50.
+        app.world_mut().resource_mut::<SaveData>().record_score(
+            "cg_CALDARI",
+            "cg_GALLENTE",
+            150,
+            1,
+        );
+        app.world_mut()
+            .resource_mut::<KeyBindings>()
+            .controller_only = true;
+        app.world_mut().run_system_once(spawn_death_screen).unwrap();
+        let labels: Vec<_> = app
+            .world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .map(|text| text.0.clone())
+            .collect();
+        assert!(labels
+            .iter()
+            .any(|text| text == "Best chain: 7x  |  Combat: 2:05"));
+        assert!(labels.iter().any(|text| text == "New personal best +50"));
+        assert!(labels.iter().any(|text| text == "★ NEW HIGH SCORE ★"));
+        assert!(!labels.iter().any(|text| text == "Chain: 0x"));
+        assert!(labels
+            .iter()
+            .any(|text| text == "Left stick / D-pad: Choose  |  A Select  |  B Exit"));
+        assert!(!labels.iter().any(|text| text.contains("Enter / Pad A")));
+    }
 }

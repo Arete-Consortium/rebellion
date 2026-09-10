@@ -1,25 +1,31 @@
-name: Linux Playtest
+name: Platform Playtest
 
 on:
   workflow_dispatch:
   push:
     branches: ['codex/linux-playtest']
     paths:
+      - '.gitattributes'
+      - '.cargo/**'
       - 'src/**'
       - 'assets/**'
       - 'config/**'
+      - 'games/**/config/**'
+      - 'web/index.html'
+      - 'build-wasm.sh'
       - 'tests/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
-      - 'scripts/*linux*'
-      - 'docs/LINUX_PLAYTEST.md'
+      - 'scripts/*playtest*'
+      - 'scripts/test_playtest_manifest.py'
+      - 'docs/*PLAYTEST.md'
       - '.github/workflows/linux-playtest.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: linux-playtest-${{ github.ref }}
+  group: platform-playtest-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,6 +48,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libasound2-dev libudev-dev libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev libxkbcommon-x11-0 libvulkan1 mesa-vulkan-drivers xvfb xauth
+      - name: Test package fingerprints
+        run: python3 scripts/test_playtest_manifest.py
+
       - name: Fetch locked dependencies
         run: cargo fetch --locked --target x86_64-unknown-linux-gnu
       - name: Run gameplay regressions
@@ -72,4 +81,112 @@ jobs:
           name: Rebellion-linux-startup-evidence
           path: build/linux-smoke/
           if-no-files-found: ignore
+          retention-days: 30
+
+  native:
+    name: Package (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: Rebellion-macos-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: Rebellion-windows-x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: platform-playtest-${{ matrix.target }}
+      - name: Fetch locked dependencies
+        run: cargo fetch --locked --target ${{ matrix.target }}
+      - name: Package Mac
+        if: runner.os == 'macOS'
+        run: bash scripts/package-macos-playtest.sh ${{ matrix.target }} release Rebellion dist/macos-playtest
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/package-windows-playtest.ps1
+      - name: Check Windows extracted startup
+        if: runner.os == 'Windows'
+        run: python scripts/smoke-windows-playtest.py dist/windows-playtest/Rebellion-windows-x86_64.zip build/windows-smoke
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            dist/macos-playtest/*.zip
+            dist/windows-playtest/*.zip
+            dist/windows-playtest/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v7
+        if: always() && runner.os == 'Windows'
+        with:
+          name: Rebellion-windows-startup-evidence
+          path: build/windows-smoke/
+          if-no-files-found: warn
+          retention-days: 30
+
+  web:
+    name: Package (wasm32-unknown-unknown)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      CARGO_BUILD_JOBS: 2
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: platform-playtest-web
+      - name: Install matching wasm-bindgen
+        run: |
+          VERSION=$(python3 -c 'import tomllib; print(next(p["version"] for p in tomllib.load(open("Cargo.lock", "rb"))["package"] if p["name"] == "wasm-bindgen"))')
+          cargo install wasm-bindgen-cli --locked --version "$VERSION"
+      - name: Fetch locked dependencies
+        run: cargo fetch --locked --target wasm32-unknown-unknown
+      - name: Package Web
+        run: bash scripts/package-web-playtest.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Rebellion-web
+          path: |
+            dist/web-playtest/*.zip
+            dist/web-playtest/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  parity:
+    name: Verify package parity
+    needs: [linux-x86_64, native, web]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: Rebellion-*
+          path: artifacts
+      - name: Verify all packaged content
+        run: python3 scripts/check-playtest-parity.py artifacts build/platform-parity
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: Rebellion-platform-parity
+          path: build/platform-parity/
+          if-no-files-found: error
           retention-days: 30

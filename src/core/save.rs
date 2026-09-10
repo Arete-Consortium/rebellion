@@ -82,6 +82,9 @@ pub struct HighScore {
     pub enemy_faction: String,
     pub score: u64,
     pub stage: u32,
+    /// Absent on older saves; never infer historical chain/time from a score.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run: Option<super::RunStatistics>,
 }
 
 /// A single leaderboard entry recording a completed run
@@ -318,6 +321,7 @@ impl SaveData {
                 if score > hs.score {
                     hs.score = score;
                     hs.stage = stage;
+                    hs.run = None;
                 }
                 found = true;
                 break;
@@ -330,7 +334,30 @@ impl SaveData {
                 enemy_faction: enemy.to_string(),
                 score,
                 stage,
+                run: None,
             });
+        }
+    }
+
+    /// Store the statistics belonging to a strictly better score, preserving ties.
+    pub fn record_run_score(
+        &mut self,
+        faction: &str,
+        enemy: &str,
+        score: u64,
+        stage: u32,
+        run: super::RunStatistics,
+    ) {
+        if score <= self.get_high_score(faction, enemy) {
+            return;
+        }
+        self.record_score(faction, enemy, score, stage);
+        if let Some(best) = self
+            .high_scores
+            .iter_mut()
+            .find(|best| best.player_faction == faction && best.enemy_faction == enemy)
+        {
+            best.run = Some(run);
         }
     }
 

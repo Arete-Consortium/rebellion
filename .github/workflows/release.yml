@@ -149,31 +149,19 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - name: Install wasm-bindgen-cli
-        run: cargo install wasm-bindgen-cli --version 0.2.106
-
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-
-      - name: Build WASM
-        run: cargo build --release --target wasm32-unknown-unknown
-
-      - name: Generate JS bindings
+      - name: Install matching wasm-bindgen-cli
         run: |
-          wasm-bindgen --out-dir web --out-name rebellion --target web \
-            target/wasm32-unknown-unknown/release/rebellion.wasm
+          VERSION=$(python3 -c 'import tomllib; print(next(p["version"] for p in tomllib.load(open("Cargo.lock", "rb"))["package"] if p["name"] == "wasm-bindgen"))')
+          cargo install wasm-bindgen-cli --locked --version "$VERSION"
 
-      - name: Copy assets
-        run: cp -r assets web/
-
-      - name: Copy index.html
-        run: cp web/index.html web/ 2>/dev/null || echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Rebellion</title><style>body{margin:0;background:#000;display:flex;justify-content:center;align-items:center;height:100vh}canvas{max-width:100%;max-height:100%}</style></head><body><script type="module">import init from "./rebellion.js";init();</script></body></html>' > web/index.html
+      - name: Build canonical Web package
+        run: bash build-wasm.sh dist/web-release
 
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v7
         with:
           name: web-wasm
-          path: web/
+          path: dist/web-release/
           retention-days: 7
 
   deploy-itch:

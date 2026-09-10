@@ -1,205 +1,44 @@
-# Handoff: Triglavian Campaign + Abyssal Depths Build Sprint
+# Rebellion handoff — September 9, 2026
 
-**Branch**: `feat/triglavian-campaign-20260723`  
-**Date**: 2026-07-23  
-**Status**: Active — all tests passing (328 unit + 35 integration), clippy clean  
-**Last commit**: `2663c33` — Elder Fleet expanded to 9 missions across 3 acts with dialogue
+The finishing target is a complete **Caldari–Gallente three-mission slice**, with both Minmatar–Amarr and Caldari–Gallente chapters exposed for playtesting. The [production plan](docs/PRODUCTION_PLAN.md) owns priorities and release gates. Start with the [run-results checkpoint](docs/RUN_RESULTS_PLAYTEST_2026-09-09.md) for current source and the local Mac candidate. The [manual booster checkpoint](docs/MANUAL_BOOSTER_PLAYTEST_2026-09-08.md) retains the latest Linux candidate and preceding Mac evidence.
 
----
+## Source and candidate state
 
-## What Was Built
+September 9 follow-up: [run results and personal bests](docs/RUN_RESULTS_PLAYTEST_2026-09-09.md) implements retained chain/time, terminal records and new-attempt resets. Its local Mac candidate and fresh validation are separate from the September 8 Mac/Linux candidate described below. Start with this follow-up for current source changes.
 
-### 1. Triglavian Invasion Campaign (`src/games/triglavian_invasion/`)
+- Local checkout observed September 9: `codex/finishability-pass`, HEAD `226f3bc`, with extensive existing staged, unstaged and untracked work. Preserve those changes; the local branch name and HEAD alone do not identify the candidate's game content.
+- Recorded candidate source: `80f311f4d51ca6d2b283bb15c8370c3241fad3e6` on `codex/linux-playtest`. Its checkpoint records 338 frozen source, test, asset and packaging inputs matching that Git tree.
+- Apple Silicon Mac: `dist/manual-boosters-20260908/Rebellion.app` and the adjacent `Rebellion.app.zip`.
+- Intel/AMD Ubuntu x86_64: the [recorded candidate download](https://github.com/Arete-Consortium/rebellion/actions/runs/34306848068/artifacts/10087123527). GitHub sign-in is required; the recorded expiration is October 9, 2026 UTC. Use the [Linux instructions](docs/LINUX_PLAYTEST.md) for extraction, dependencies and isolated saves.
 
-- **`games/triglavian_invasion/config/module.json`** (NEW)
-  - Complete 9-mission module config with ship pools (EDENCOM + Triglavian),
-    enemy spawn weights, mission definitions, boss stat blocks, epilogue text.
-- **`campaign.rs`** — Boss mechanics fully implemented:
-  - `trig_boss_intro()`: Boss descends to y=200, transitions to BossFight after 2s.
-  - `update_trig_boss()`: Sweep movement, 3-phase transitions, enrage at 20% health.
-  - Attack patterns: 360° ring (XORDAZH), spread shot (LESHAK/IKITURSA), aimed single.
-  - `spawn_trig_projectile()` helper with `EnemyProjectile` + `ProjectileDamage`.
-  - `spawn_trig_boss()` now spawns with `Enemy` + `EnemyStats` for collision compatibility.
-- **`mod.rs`** — Victory screen wired:
-  - `spawn_trig_victory_screen` with faction-specific content (EDENCOM blue / Triglavian red).
-  - Input handling (Space/ESC → MainMenu).
-  - Boss intro UI with pulsing warning text, boss name card, phase indicator.
-- **`ships.rs`** — 5 unit tests for stats, spawn weights, progression.
-- **`mod.rs`** — High score persistence wired into victory screen (matches CG pattern).
-- **`tests/triglavian_boss_phases.rs`** (NEW) — Integration tests:
-  - `trig_boss_phase_transition_and_enrage`: Phase 1→2→3 at correct thresholds,
-    speed increases (×1.2 per phase), enrage at 20% (×1.5).
-  - `trig_boss_spawns_projectiles_during_boss_fight`: Leshak fires 5-bullet spread.
-  - `trig_boss_does_not_fire_when_not_in_battle_state`: Intro state suppresses firing.
+The candidate checkpoint records **570 passing tests**, formatting and all-target Clippy with warnings denied; native HUD/controller-guide captures; extracted Mac startup/signature checks; and Ubuntu 22.04 extracted-package checks under Xvfb/software Vulkan. These are September 8 checkpoint results, not a fresh verification of every change in the current working tree. Evidence lives in `build/playtest-review/manual-boosters-20260908/`, including source manifests, `linux-ci-verification.json`, package logs and captures.
 
-### 2. Abyssal Depths Campaign (`src/games/abyssal_depths/`)
+Scripted controller pilots completed all three missions for Caldari/Kestrel and Gallente/Tristan with ordinary right-stick fire and no forced kills. Content/drop randomness was unseeded. Physical controller detection, feel, sound, rumble, hardware performance and complete human playthroughs remain unqualified. The longer Tristan boss encounters remain a human pacing check.
 
-- **`games/abyssal_depths/config/module.json`** (NEW)
-  - 3-room survival mode config: POCKET (8 enemies) → ESCALATION (12) → EXTRACTION (15 + Drekavac boss).
-  - 11 cross-faction player ships, 4 enemy types, time limit, extraction channel time.
-- **`mod.rs`** — Fixes and features:
-  - `.chain()` added to Update systems to prevent race conditions between
-    `check_room_clear` and `handle_extraction`.
-  - 8 unit tests for `AbyssalState` and `AbyssalRoom`.
-  - Victory screen wired: extraction success with loot display.
-- High score persistence wired into victory screen (matches CG pattern).
-- **`tests/abyssal_room_progression.rs`** (NEW) — Integration tests:
-  - `abyssal_room1_clears_and_spawns_transition_gate`: Room clear detection + gate spawn.
-  - `abyssal_room3_extraction_gate_triggers_victory`: Extraction channeling accumulates
-    progress and marks `extracted = true`.
-  - `abyssal_timer_runs_out_triggers_game_over`: Timer expiry transitions to `GameOver`.
+## Current player behavior
 
-### 3. Core Engine Fix — BossFight State Damage Gap
+Controller-only: left stick moves; right stick aims and fires, centering stops primary fire; RT thrusts; LT activates the hull ability; RB dodges; LB uses a charged overload. X/B or D-pad left/right cycles autocannon ammunition. A confirms/interacts, B goes back in menus, and Menu pauses/resumes.
 
-**Critical bug fixed**: Simulation collision/damage systems and ALL core gameplay
-systems (player, enemy, projectile, effects, audio, music, HUD, abilities,
-maneuvers, scoring, collectibles) were gated to `GameState::Playing` only.
-Campaigns using `BossIntro`/`BossFight` (Triglavian, Caldari-Gallente) had
-unplayable boss fights — no input, no damage, no visuals.
+Timed boosters store up to three doses each of Overclocker, Pyrolancea and X-Instinct. D-pad up/down selects an occupied slot; Y uses one dose per fresh press. Empty/already-active selections spend nothing. Doses carry between missions and through pause; death, a new run/hull selection or explicit restart clears them. Repairs, capacitor and cooling pickups remain immediate. Approved booster artwork and combat statistics are unchanged by the manual-use checkpoint.
 
-- `src/simulation/mod.rs` — `simulation_active` condition matches `Playing | BossFight`.
-- 17 files updated with `.or(in_state(GameState::BossFight))`.
-- Wave spawning (`systems/spawning.rs`) correctly remains `Playing`-only.
-- Elder Fleet unaffected (never enters `BossFight`).
-- **`tests/boss_fight_e2e.rs`** (NEW) — Regression integration tests:
-  - `projectile_deals_damage_during_boss_fight`: Validates collision/damage
-    systems run during BossFight by spawning enemy, firing projectile, asserting
-    health reduction and state hash change.
-  - `player_can_move_during_boss_fight`: Spawns player with Movement component,
-    verifies 10 ticks pass without panic during BossFight.
+Startup and reconnect require neutral controls followed by pressing and releasing A. Disconnect freezes simulation; an existing pause menu stays paused after acknowledgement. Keyboard, pointer and touch cannot play or navigate player builds. The [controller guide](docs/CONTROLLER_PLAYTEST.md) is the physical-device acceptance checklist.
 
----
+## Resume work
 
-## Known Issues / Next Steps
+1. Inspect the current diff and the relevant checkpoint before changing files. Use a separate checkout for candidate reconstruction; do not switch this dirty workspace to the candidate branch.
+2. Qualify the packaged route on the actual Mac and Ubuntu PC: controller connection/reconnect, all controls, stored boosters while dodging, sound, pause/death/retry, mission continuation and final results. Record platform, controller, hull, candidate source, outcome and reproduction steps for failures.
+3. Repair concrete blockers and run checks appropriate to each change. Full gameplay verification uses an isolated save:
 
-### P0 — Must Fix Before Merge
-- [x] **Integration test for BossFight state** — `tests/boss_fight_e2e.rs` added.
-- [x] **Integration test for Triglavian boss phases** — `tests/triglavian_boss_phases.rs` added.
-- [x] **Integration test for Abyssal Depths room progression** — `tests/abyssal_room_progression.rs` added.
-- [x] **Integration tests for recent objective fixes** — `tests/campaign_objectives.rs` added:
-  `player_damage_sets_no_damage_taken_false` (PlayerDamagedEvent → no_damage_taken=false),
-  `no_boss_mission_completes_without_boss` (BossType::None → StageComplete after waves),
-  `bonus_complete_when_no_damage_taken` (no-damage path + souls threshold path verified).
-
-### P1 — Polish
-- [x] **Triglavian boss intro UI** — Boss intro screen with warning text, boss name,
-  mission name, phase indicator, "Prepare for battle..." (commit `1897c32`).
-- [x] **Caldari-Gallente BossFight validation** — `tests/cg_boss_phases.rs` added:
-  phase transitions (1→2→3 with speed/fire_rate multipliers), projectile spawning
-  during BossFight, and Carebear difficulty damage scaling. All green.
-- [x] **High score persistence** — Triglavian and Abyssal victory screens now
-  persist scores to `SaveData` (matches CG pattern).
-
-### P2 — Content Expansion
-- [x] **Elder Fleet module.json** — `games/elder_fleet/config/module.json` created
-  with full Minmatar vs Amarr campaign: factions, ship pools, 5 missions, epilogues,
-  4 bosses (SquadronLeader → ImperialAdmiral progression).
-- [x] **Additional enemy variants** — Added `Kikimora` (rapid disintegrator
-  destroyer, 200 HP) and `Leshak` (siege disintegrator battleship, 600 HP) to
-  `EnemyVariant`, wired into Triglavian campaign wave spawning. All 13 spawn
-  unit tests green.
-- [x] **Mission-specific objectives** — Fixed generic campaign objective tracking:
-  `no_damage_taken` now actually flips to false when player takes damage;
-  `bonus_complete` evaluated at mission end (no_damage_taken || souls_to_liberate
-  threshold met). No-boss missions (BossType::None) now correctly transition to
-  StageComplete instead of hanging at BossIntro.
-- [x] **Enemy kill tracking** — `CampaignState.enemies_killed` tracks kills per
-  mission, displayed on HUD as "ENEMIES DEFEATED: N". Reset on mission start.
-  Integration test: `enemy_death_increments_enemies_killed`.
-- [x] **Timed survival objective** — `Mission.timed_survival_seconds` field.
-  `check_timed_survival` system transitions to `StageComplete` when timer reaches
-  target. HUD shows countdown: "SURVIVE: X.Ys".
-- [x] **Kill count objective** — `Mission.kill_count_target` field.
-  `check_kill_count` system transitions to `StageComplete` when `enemies_killed`
-  reaches target. HUD shows "KILLS: X/Y ✓" with completion checkmark.
-- [x] **Headless app fixes** — Added missing resources (`SimulationRng`,
-  `ScoreSystem`, `SaltMinerSystem`) and `EnemyDestroyedEvent` registration to
-  `build_headless_app()`, preventing systems from being silently skipped in tests.
-- [x] **Abyssal Depths bioadaptive hazards** — `AbyssalHazard` component with
-  tick-based DoT (0.25s intervals), shield→armor→hull damage priority using
-  `ShipStats::take_damage` for proper overflow and recharge-delay logic.
-  3 hazards spawn in Room 2 (ESCAlATION). `update_hazards` wired into Update
-  chain. Cleanup on room transition. Integration tests:
-  `abyssal_room2_spawns_hazards` (3 hazards) and
-  `abyssal_hazard_deals_damage_to_player` (hull decreases after exposure).
-- [x] **Abyssal room transition bugfix** — `check_room_clear` was setting
-  `enemies_spawned = room.enemy_count()` even when `enemy_count == 0`, causing
-  `handle_extraction` to skip spawning for subsequent rooms. Fixed with
-  `&& enemy_count > 0` guard. This was a pre-existing bug blocking Room 2+
-  progression.
-- [x] **Elder Fleet custom campaign** — `ef_campaign.rs` created with
-  `ElderFleetCampaignState` resource, replacing generic campaign for Elder Fleet
-  (added `.run_if(not(is_elder_fleet_module))` to generic `CampaignPlugin`).
-  5 missions per faction: Minmatar (First Blood → Empire's End) and Amarr
-  (Insurrection Suppression → Purity Restored). Custom spawning with faction-
-  specific enemy pools (Amarr: Punisher/Executioner/Maller + variants;
-  Minmatar: Rifter/Slasher/Stabber + variants). Boss spawning with phase
-  transitions (2–4 phases), enrage at 25%, spread-shot attack pattern.
-  4 unit tests (mission counts, state reset, wave counts, ship class mapping).
-  3 integration tests: `elder_fleet_spawns_enemies_on_wave_start`,
-  `elder_fleet_spawns_boss_after_waves`,
-  `elder_fleet_amarr_campaign_spawns_minmatar_enemies`.
-- [x] **Escort objective system** — `Friendly` marker component + `EscortData`
-  (health, waypoints, movement, speed) in `src/entities/escort.rs`.
-  `EscortPlugin` wired into gameplay with `update_escort_movement` and
-  `despawn_escorts`. `spawn_friendly_escort` helper for campaign spawning.
-  `Mission.escort_must_survive` field; `CampaignState.escort_alive` tracked.
-  `check_escort_survival` system blocks mission completion if escort dies.
-  HUD shows "ESCORT: N%" (cyan) or "ESCORT: DESTROYED" (red).
-  Unit tests: `horizontal_path_points`, `health_fraction`, `take_damage`.
-- [x] **Kill count objective evaluation** — `evaluate_post_wave` now respects
-  `kill_count_target`: does NOT auto-complete on wave clear when kill target
-  is set; transitions only after `check_kill_count` sets `primary_complete`.
-  Unit tests: `evaluate_post_wave_kill_count_ignores_wave_clear_until_target_met`.
-- [x] **Timed survival objective evaluation** — `evaluate_post_wave` respects
-  `timed_survival_seconds`: wave clear does not auto-complete; transition
-  happens only after `check_timed_survival` sets `primary_complete`.
-  Unit tests: `evaluate_post_wave_timed_survival_ignores_wave_clear_until_timer_expires`.
-- [x] **Escort objective evaluation** — `evaluate_post_wave` blocks completion
-  when `escort_must_survive && !escort_alive`. Completes normally when escort
-  survives. Unit tests: `evaluate_post_wave_escort_death_blocks_completion`.
-- [x] **Clippy field_reassign_with_default fixes** — Fixed across `core/campaign.rs`,
-  `games/abyssal_depths/mod.rs`, `games/elder_fleet/ef_campaign.rs`,
-  `games/triglavian_invasion/campaign.rs` (5 locations total).
-- [x] **Elder Fleet boss intro transition test** —
-  `elder_fleet_boss_intro_transitions_to_boss_fight` verifies `BossIntro`
-  → `BossFight` and `BossState::Intro` → `Battle`.
-- [x] **Elder Fleet content expansion** — Both Minmatar and Amarr campaigns
-  expanded from 5 to 9 missions across 3 acts (Act 1: The Spark/The Heresy,
-  Act 2: The Storm/The Crusade, Act 3: The Reckoning/The Judgment).
-  Progressive boss scaling: 300 HP/2 phases → 1800 HP/5 phases.
-  New missions: Border Siege, Harbinger Hunt, Deep Strike, Titan's Shadow
-  (Minmatar); Purification, Wolf Pack, Core Breach, Republic's Last Stand
-  (Amarr). `EFMissionInfo` gains `act` and `dialogue_start` fields.
-- [x] **Elder Fleet mission dialogue** — `start_ef_mission` sends
-  `DialogueEvent::Custom` with faction- and mission-specific text on each
-  mission start (e.g., "The Elders have watched from the shadows...").
-- [x] **Elder Fleet act transition dialogue** — `check_ef_boss_defeated`
-  detects act boundaries (missions 3 and 6) and sends
-  `DialogueEvent::ActComplete` with priority 10 and 5-second duration.
-
----
-
-## How to Resume
-
-```bash
-cd /home/arete/projects/rebellion
-git checkout feat/triglavian-campaign-20260723
-cargo test && cargo clippy -- -D warnings
+```sh
+cargo fmt --all -- --check
+REBELLION_HOME="$(mktemp -d /tmp/rebellion-tests.XXXXXX)" cargo test --offline --locked --no-fail-fast
+REBELLION_HOME="$(mktemp -d /tmp/rebellion-clippy.XXXXXX)" cargo clippy --offline --locked --all-targets -- -D warnings
 ```
 
----
+4. Build into a fresh output directory and tie new candidate evidence to the exact source. The [Linux guide](docs/LINUX_PLAYTEST.md) and `scripts/package-macos-playtest.sh` describe packaging. Documentation edits do not update existing archives; regenerate packages before distributing revised bundled instructions.
 
-## Session Notes
+The production plan keeps public release qualification open. Wider campaigns and platform support require their own acceptance evidence.
 
-- BossFight state bug was the biggest blocker. Fixing it required touching 17
-  core files but was essential for any boss-fight campaign to be playable.
-- All `EnemyVariant` references used in Triglavian and Abyssal spawns verified
-  against `src/entities/enemy/spawn.rs` — all valid.
-- Bevy 0.15 `.or()` condition chaining confirmed working (used in
-  `platform/mod.rs` already).
-- Default path for Abyssal Depths (`AbyssalState::default()`) uses Room1 with
-  600s timer — confirmed in tests.
-- Headless test note: `ButtonInput::just_pressed` never auto-clears without
-  Bevy's input plugin. Use `clear_just_pressed` manually or avoid asserting
-  state transitions that depend on `just_pressed` in headless mode.
+## Earlier work
+
+The [July 23 campaign sprint handoff](docs/HANDOFF_2026-07-23.md) is preserved unchanged as historical context. Its branch, commands, input bindings and test counts describe that older work. September checkpoints linked from the [README](README.md) record the later chapter, save/audio, transport, booster, hull-ability and controller changes.

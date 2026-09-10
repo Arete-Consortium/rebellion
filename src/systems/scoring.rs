@@ -4,6 +4,7 @@
 
 use crate::core::*;
 use bevy::prelude::*;
+use bevy::state::state::StateTransitionSteps;
 
 // Combo/heat system lives in scoring_v2.rs; this plugin owns all scoring resources.
 use super::scoring_v2::{update_combo_heat_system, ComboHeatSystem};
@@ -14,8 +15,15 @@ pub struct ScoringPlugin;
 impl Plugin for ScoringPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ScoreSystem>()
+            .init_resource::<RunResult>()
             .init_resource::<SaltMinerSystem>()
             .init_resource::<ComboHeatSystem>()
+            .add_systems(
+                StateTransition,
+                track_run_transition
+                    .after(crate::core::game_state::track_pause_transition)
+                    .before(StateTransitionSteps::ExitSchedules),
+            )
             .add_systems(
                 FixedUpdate,
                 (
@@ -31,6 +39,102 @@ impl Plugin for ScoringPlugin {
 /// Update score chain timer
 fn update_score_system(time: Res<Time>, mut score: ResMut<ScoreSystem>) {
     score.update(time.delta_secs());
+    score.run.combat_seconds += time.delta_secs_f64();
+}
+
+/// Finalize before exit hooks can clear special-mode identity, and before UI
+/// entry hooks read the comparison. Reset only at an attempt boundary. Campaign
+/// continuation and boss transitions preserve totals, while an explicit restart
+/// begins a fresh attempt on the currently selected mission.
+#[allow(clippy::too_many_arguments)]
+fn track_run_transition(
+    mut transitions: EventReader<StateTransitionEvent<GameState>>,
+    mut score: ResMut<ScoreSystem>,
+    mut result: ResMut<RunResult>,
+    mut salt: ResMut<SaltMinerSystem>,
+    mut combo: ResMut<ComboHeatSystem>,
+    active: Res<crate::games::ActiveModule>,
+    session: Res<GameSession>,
+    cg: Option<Res<crate::games::caldari_gallente::CGCampaignState>>,
+    ef: Option<Res<crate::games::elder_fleet::ElderFleetCampaignState>>,
+    mut save: ResMut<SaveData>,
+    pause: Res<PauseContext>,
+    nightmare: Option<Res<crate::games::caldari_gallente::ShiigeruNightmare>>,
+    last_stand: Option<Res<crate::games::caldari_gallente::LastStandState>>,
+    endless: Option<Res<EndlessMode>>,
+) {
+    let resuming = !not_resuming_gameplay(pause);
+    for transition in transitions.read() {
+        if resuming && transition.exited == Some(GameState::Paused) {
+            continue;
+        }
+        let Some(entered) = transition.entered else {
+            continue;
+        };
+        let reset = matches!(entered, GameState::MainMenu | GameState::ShipSelect)
+            || (entered == GameState::Playing
+                && matches!(
+                    transition.exited,
+                    Some(GameState::Paused | GameState::GameOver)
+                ));
+        if reset {
+            score.reset_game();
+            *result = RunResult::default();
+            *salt = SaltMinerSystem::default();
+            *combo = ComboHeatSystem::default();
+        } else if entered == GameState::Playing
+            && matches!(
+                transition.exited,
+                Some(GameState::StageComplete | GameState::MissionBriefing)
+            )
+        {
+            score.reset_stage();
+        }
+
+        if !matches!(
+            entered,
+            GameState::GameOver | GameState::SliceComplete | GameState::Victory
+        ) || result.recorded
+            || nightmare.as_deref().is_some_and(|mode| mode.active)
+            || last_stand.as_deref().is_some_and(|mode| mode.active)
+            || endless.as_deref().is_some_and(|mode| mode.active)
+        {
+            continue;
+        }
+        // The exposed chapters retain their existing victory-save keys. Hidden
+        // modes keep their existing persistence until separately qualified.
+        let (faction, enemy, stage) = if active.is_caldari_gallente() {
+            (
+                format!("cg_{}", session.player_faction.short_name()),
+                format!("cg_{}", session.enemy_faction.short_name()),
+                cg.as_deref()
+                    .map(|c| c.mission_number() as u32)
+                    .unwrap_or(1),
+            )
+        } else if active.is_elder_fleet() {
+            (
+                session.player_faction.name().to_string(),
+                session.enemy_faction.name().to_string(),
+                ef.as_deref()
+                    .map(|c| {
+                        if entered == GameState::Victory {
+                            c.current_mission
+                        } else {
+                            c.current_mission + 1
+                        }
+                    })
+                    .unwrap_or(1),
+            )
+        } else {
+            continue;
+        };
+        *result = RunResult {
+            score: score.score,
+            previous_best: save.get_high_score(&faction, &enemy),
+            recorded: true,
+        };
+        save.record_run_score(&faction, &enemy, score.score, stage, score.run);
+    }
 }
 
 /// Update salt miner meter and handle activation input

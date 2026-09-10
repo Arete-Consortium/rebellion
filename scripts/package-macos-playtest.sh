@@ -47,6 +47,11 @@ mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 cp -X "$BINARY" "$APP_DIR/Contents/MacOS/$APP_NAME"
 chmod +x "$APP_DIR/Contents/MacOS/$APP_NAME"
 cp -RX assets "$APP_DIR/Contents/Resources/"
+python3 scripts/playtest-manifest.py write --target "$TARGET" \
+  --output "$APP_DIR/Contents/Resources/PLAYTEST-MANIFEST.json"
+python3 scripts/playtest-manifest.py verify \
+  --manifest "$APP_DIR/Contents/Resources/PLAYTEST-MANIFEST.json" \
+  --assets "$APP_DIR/Contents/Resources/assets"
 
 cat > "$APP_DIR/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

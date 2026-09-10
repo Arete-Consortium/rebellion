@@ -92,7 +92,7 @@ pub fn spawn_cg_stage_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("Finishing Chain: {}x", score.chain)),
+                Text::new(score.run.summary()),
                 TextFont {
                     font_size: 20.0,
                     ..default()
@@ -208,6 +208,7 @@ pub fn spawn_cg_victory_screen(
     session: Res<GameSession>,
     cg_campaign: Res<CGCampaignState>,
     mut save_data: ResMut<crate::core::SaveData>,
+    run_result: Res<crate::core::RunResult>,
 ) {
     // Determine faction-specific content
     let (header, subtitle, quote, author, motto, particle_color1, particle_color2) =
@@ -241,15 +242,20 @@ pub fn spawn_cg_victory_screen(
             ),
         };
 
-    // Check for new high score
-    let faction_key = format!("cg_{}", session.player_faction.short_name());
-    let enemy_key = format!("cg_{}", session.enemy_faction.short_name());
-    let previous_high = save_data.get_high_score(&faction_key, &enemy_key);
-    let is_new_high_score = score.score > previous_high;
-
-    if is_new_high_score {
-        save_data.record_score(&faction_key, &enemy_key, score.score, 5);
-    }
+    // Campaign results were finalized before this screen; keep the legacy
+    // path for special modes that do not participate in campaign run records.
+    let (previous_high, is_new_high_score) = if run_result.recorded {
+        (run_result.previous_best, run_result.is_new_best())
+    } else {
+        let faction_key = format!("cg_{}", session.player_faction.short_name());
+        let enemy_key = format!("cg_{}", session.enemy_faction.short_name());
+        let previous_high = save_data.get_high_score(&faction_key, &enemy_key);
+        let is_new_high_score = score.score > previous_high;
+        if is_new_high_score {
+            save_data.record_score(&faction_key, &enemy_key, score.score, 5);
+        }
+        (previous_high, is_new_high_score)
+    };
 
     // Spawn celebration particles
     for _ in 0..60 {
@@ -292,7 +298,7 @@ pub fn spawn_cg_victory_screen(
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(12.0),
+                row_gap: Val::Px(8.0),
                 ..default()
             },
             BackgroundColor(Color::srgba(0.0, 0.02, 0.05, 0.9)),
@@ -302,7 +308,7 @@ pub fn spawn_cg_victory_screen(
             parent.spawn((
                 Text::new(header),
                 TextFont {
-                    font_size: 64.0,
+                    font_size: 48.0,
                     ..default()
                 },
                 TextColor(particle_color1),
@@ -326,7 +332,7 @@ pub fn spawn_cg_victory_screen(
             parent
                 .spawn((
                     Node {
-                        padding: UiRect::all(Val::Px(20.0)),
+                        padding: UiRect::all(Val::Px(16.0)),
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::Center,
                         row_gap: Val::Px(8.0),
@@ -358,7 +364,16 @@ pub fn spawn_cg_victory_screen(
                         TextColor(Color::srgb(1.0, 0.9, 0.3)),
                     ));
 
-                    if !is_new_high_score && previous_high > 0 {
+                    if run_result.recorded {
+                        stats.spawn((
+                            Text::new(run_result.comparison()),
+                            TextFont {
+                                font_size: 18.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                        ));
+                    } else if !is_new_high_score && previous_high > 0 {
                         stats.spawn((
                             Text::new(format!("High Score: {}", previous_high)),
                             TextFont {
@@ -370,9 +385,13 @@ pub fn spawn_cg_victory_screen(
                     }
 
                     stats.spawn((
-                        Text::new(format!("Max Multiplier: {:.1}x", score.multiplier)),
+                        Text::new(if run_result.recorded {
+                            score.run.summary()
+                        } else {
+                            format!("Finishing Multiplier: {:.1}x", score.multiplier)
+                        }),
                         TextFont {
-                            font_size: 24.0,
+                            font_size: 20.0,
                             ..default()
                         },
                         TextColor(Color::srgb(0.8, 0.8, 0.8)),
@@ -553,6 +572,7 @@ pub fn spawn_cg_slice_complete(
     score: Res<crate::core::ScoreSystem>,
     session: Res<GameSession>,
     cg_campaign: Res<CGCampaignState>,
+    run_result: Res<crate::core::RunResult>,
 ) {
     let faction_color = match session.player_faction {
         Faction::Caldari => Color::srgb(0.2, 0.6, 1.0),
@@ -590,7 +610,7 @@ pub fn spawn_cg_slice_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("{} — Reconstructed", mission_name)),
+                Text::new(format!("{} - Reconstructed", mission_name)),
                 TextFont {
                     font_size: 28.0,
                     ..default()
@@ -613,12 +633,21 @@ pub fn spawn_cg_slice_complete(
             ));
 
             parent.spawn((
-                Text::new(format!("Finishing Chain: {}x", score.chain)),
+                Text::new(score.run.summary()),
                 TextFont {
                     font_size: 20.0,
                     ..default()
                 },
                 TextColor(Color::srgb(0.8, 0.8, 0.8)),
+            ));
+
+            parent.spawn((
+                Text::new(run_result.comparison()),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(1.0, 0.9, 0.3)),
             ));
 
             parent.spawn(Node {
@@ -691,5 +720,90 @@ pub fn despawn_cg_slice_complete(
 ) {
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+#[cfg(test)]
+mod run_statistics_ui_tests {
+    use super::*;
+    use crate::core::{RunResult, SaveData, ScoreSystem};
+    use bevy::ecs::system::RunSystemOnce;
+
+    fn result_app() -> App {
+        let mut app = App::new();
+        app.init_resource::<KeyBindings>()
+            .init_resource::<CGCampaignState>()
+            .init_resource::<SaveData>()
+            .insert_resource(GameSession::new(Faction::Caldari, Faction::Gallente))
+            .insert_resource(RunResult {
+                score: 150,
+                previous_best: 100,
+                recorded: true,
+            });
+        let mut score = ScoreSystem::default();
+        for _ in 0..7 {
+            score.on_kill(10);
+        }
+        score.update(60.0);
+        score.score = 150;
+        score.run.combat_seconds = 125.0;
+        app.insert_resource(score);
+        app.world_mut().resource_mut::<SaveData>().record_score(
+            "cg_CALDARI",
+            "cg_GALLENTE",
+            150,
+            5,
+        );
+        app
+    }
+
+    fn labels(app: &mut App) -> Vec<String> {
+        app.world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .map(|text| text.0.clone())
+            .collect()
+    }
+
+    #[test]
+    fn stage_statistics_retain_peak_after_combo_expires() {
+        let mut app = result_app();
+        app.world_mut()
+            .run_system_once(spawn_cg_stage_complete)
+            .unwrap();
+        let labels = labels(&mut app);
+        assert!(labels
+            .iter()
+            .any(|text| text == "Best chain: 7x  |  Combat: 2:05"));
+        assert!(!labels.iter().any(|text| text.contains("Finishing Chain")));
+    }
+
+    #[test]
+    fn slice_result_uses_comparison_from_before_save() {
+        let mut app = result_app();
+        app.world_mut()
+            .run_system_once(spawn_cg_slice_complete)
+            .unwrap();
+        let labels = labels(&mut app);
+        assert!(labels
+            .iter()
+            .any(|text| text == "Best chain: 7x  |  Combat: 2:05"));
+        assert!(labels.iter().any(|text| text == "New personal best +50"));
+    }
+
+    #[test]
+    fn victory_preserves_new_best_banner_after_score_is_saved() {
+        let mut app = result_app();
+        app.world_mut()
+            .run_system_once(spawn_cg_victory_screen)
+            .unwrap();
+        let labels = labels(&mut app);
+        assert!(labels.iter().any(|text| text == "★ NEW HIGH SCORE ★"));
+        assert!(labels.iter().any(|text| text == "New personal best +50"));
+        assert!(labels
+            .iter()
+            .any(|text| text == "Best chain: 7x  |  Combat: 2:05"));
+        assert!(!labels.iter().any(|text| text.contains("Max Multiplier")));
+        assert_eq!(app.world().resource::<SaveData>().high_scores.len(), 1);
     }
 }

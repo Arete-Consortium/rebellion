@@ -10,7 +10,7 @@ The current finishing target is the **Caldari–Gallente three-mission vertical 
 
 ## Run on desktop
 
-**Controller required.** The [manual booster checkpoint](docs/MANUAL_BOOSTER_PLAYTEST_2026-09-08.md) records the current Apple Silicon Mac and Intel/AMD Ubuntu candidates. For Linux runtime libraries, downloads and source packaging, see the [Linux playtest instructions](docs/LINUX_PLAYTEST.md).
+**Controller required.** The [run-results checkpoint](docs/RUN_RESULTS_PLAYTEST_2026-09-09.md) records the latest local Apple Silicon Mac build. The [manual booster checkpoint](docs/MANUAL_BOOSTER_PLAYTEST_2026-09-08.md) records the latest Intel/AMD Ubuntu candidate and the preceding Mac build. For Linux runtime libraries, downloads and source packaging, see the [Linux playtest instructions](docs/LINUX_PLAYTEST.md).
 
 Install a current stable [Rust toolchain](https://rust-lang.org/tools/install/) and your platform's compiler tools. The manifest declares Rust 1.85 or later. On macOS, install Xcode Command Line Tools; Linux builds also need ALSA, udev, XKB, and Wayland development libraries (see the CI workflow).
 
@@ -71,7 +71,8 @@ The project supports WebAssembly. Install the `wasm32-unknown-unknown` Rust targ
 ## Continue development
 
 - [Production plan, milestones and prioritized backlog](docs/PRODUCTION_PLAN.md)
-- [Current Mac and Linux candidates: on-demand boosters](docs/MANUAL_BOOSTER_PLAYTEST_2026-09-08.md)
+- [Run results: best chain, combat time and personal bests](docs/RUN_RESULTS_PLAYTEST_2026-09-09.md)
+- [Latest Linux candidate and preceding Mac build: on-demand boosters](docs/MANUAL_BOOSTER_PLAYTEST_2026-09-08.md)
 - [Hull ability fixes and three-mission probes](docs/HULL_ABILITY_PLAYTEST_2026-09-08.md)
 - [Previous booster combat checkpoint](docs/BOOSTER_COMBAT_PLAYTEST_2026-09-08.md)
 - [Approved classic booster artwork](docs/CLASSIC_BOOSTER_PLAYTEST_2026-09-08.md)

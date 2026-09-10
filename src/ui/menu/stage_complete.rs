@@ -127,7 +127,7 @@ pub(crate) fn spawn_stage_complete(
 
             parent.spawn((
                 Text::new(if active.is_elder_fleet() {
-                    format!("Mission {} complete", completed_stage)
+                    score.run.summary()
                 } else {
                     format!("Time: {:.1}s", campaign.mission_timer)
                 }),
@@ -255,5 +255,45 @@ pub(crate) fn stage_complete_input(
 
     if is_cancel(&keyboard, &joystick, &bindings) {
         transitions.send(TransitionEvent::to(GameState::MainMenu));
+    }
+}
+
+#[cfg(test)]
+mod run_statistics_ui_tests {
+    use super::*;
+    use bevy::ecs::system::RunSystemOnce;
+
+    #[test]
+    fn elder_fleet_stage_displays_run_statistics_after_combo_expires() {
+        let mut app = App::new();
+        let mut active = crate::games::ActiveModule::default();
+        active.set_module("elder_fleet");
+        let mut score = ScoreSystem::default();
+        for _ in 0..7 {
+            score.on_kill(10);
+        }
+        score.update(60.0);
+        score.run.combat_seconds = 125.0;
+        app.insert_resource(active)
+            .insert_resource(score)
+            .insert_resource(GameSession::new(Faction::Minmatar, Faction::Amarr))
+            .insert_resource(crate::games::elder_fleet::ElderFleetCampaignState {
+                current_mission: 1,
+                ..default()
+            })
+            .init_resource::<CampaignState>()
+            .init_resource::<KeyBindings>();
+        app.world_mut()
+            .run_system_once(spawn_stage_complete)
+            .unwrap();
+        let labels: Vec<_> = app
+            .world_mut()
+            .query::<&Text>()
+            .iter(app.world())
+            .map(|text| text.0.clone())
+            .collect();
+        assert!(labels
+            .iter()
+            .any(|text| text == "Best chain: 7x  |  Combat: 2:05"));
     }
 }

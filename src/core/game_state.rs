@@ -95,7 +95,7 @@ impl Plugin for PauseLifecyclePlugin {
     }
 }
 
-fn track_pause_transition(
+pub(crate) fn track_pause_transition(
     mut transitions: EventReader<StateTransitionEvent<GameState>>,
     mut pause: ResMut<PauseContext>,
 ) {
@@ -716,6 +716,15 @@ mod tests {
         assert_eq!(stage.wave_number, 1);
         assert!(!stage.is_boss_stage);
     }
+
+    #[test]
+    fn player_default_keeps_legacy_itch_shortcuts_disabled() {
+        // This contract is identical when this test is compiled for native or
+        // WASM: platform selection must not change the HUD or retry route.
+        let mode = ItchMode::default();
+        assert!(!mode.enabled);
+        assert!(!mode.completed_first_run);
+    }
 }
 
 /// Selected ship for current run
@@ -724,29 +733,15 @@ pub struct SelectedShip {
     pub ship: MinmatarShip,
 }
 
-/// Itch.io vertical slice mode — bypasses menus for first-run web builds.
-#[derive(Debug, Clone, Resource)]
+/// Optional legacy preview shortcuts. Player builds use the same campaign
+/// menus, HUD and retry behavior on every platform unless explicitly enabled.
+#[derive(Debug, Clone, Resource, Default)]
 pub struct ItchMode {
-    /// When true, the web build skips selection screens on first run.
+    /// Enables the legacy preview HUD and simplified retry/navigation paths.
     pub enabled: bool,
     /// Set to true after the player completes the first slice.
     /// After this, the full archive menu becomes available.
     pub completed_first_run: bool,
-}
-
-// Clippy 1.92 sees `cfg!(target_arch = "wasm32")` and thinks this could
-// be `#[derive(Default)]` since it can't constant-fold the cfg expression.
-// Newer clippy (1.97+) handles this correctly; the allow keeps the
-// platform-aware default without fighting the lint version skew.
-#[allow(clippy::derivable_impls)]
-impl Default for ItchMode {
-    fn default() -> Self {
-        Self {
-            // Web build skips selection screens on first run; native always shows menus.
-            enabled: cfg!(target_arch = "wasm32"),
-            completed_first_run: false,
-        }
-    }
 }
 
 /// Current stage/level being played

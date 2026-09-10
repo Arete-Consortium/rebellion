@@ -5,10 +5,77 @@
 #![allow(dead_code)]
 
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
+
+/// Statistics for one attempt, retained when the live combo expires or a mission ends.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct RunStatistics {
+    pub max_chain: u32,
+    pub max_multiplier: f32,
+    /// Simulation time in Playing/BossFight, excluding pauses and menus.
+    pub combat_seconds: f64,
+}
+
+impl Default for RunStatistics {
+    fn default() -> Self {
+        Self {
+            max_chain: 0,
+            max_multiplier: 1.0,
+            combat_seconds: 0.0,
+        }
+    }
+}
+
+impl RunStatistics {
+    pub fn combat_time(&self) -> String {
+        let seconds = self.combat_seconds.max(0.0) as u64;
+        format!("{}:{:02}", seconds / 60, seconds % 60)
+    }
+
+    pub fn summary(&self) -> String {
+        format!(
+            "Best chain: {}x  |  Combat: {}",
+            self.max_chain,
+            self.combat_time()
+        )
+    }
+}
+
+/// Pre-save comparison retained while a terminal result screen is visible.
+#[derive(Resource, Debug, Clone, Default)]
+pub struct RunResult {
+    pub score: u64,
+    pub previous_best: u64,
+    pub recorded: bool,
+}
+
+impl RunResult {
+    pub fn is_new_best(&self) -> bool {
+        self.recorded && self.score > self.previous_best
+    }
+
+    pub fn comparison(&self) -> String {
+        if self.previous_best == 0 {
+            if self.score > 0 {
+                "First scored run".to_string()
+            } else {
+                "No personal best yet".to_string()
+            }
+        } else if self.score > self.previous_best {
+            format!("New personal best +{}", self.score - self.previous_best)
+        } else if self.score == self.previous_best {
+            "Personal best tied".to_string()
+        } else {
+            format!("{} to personal best", self.previous_best - self.score)
+        }
+    }
+}
 
 /// Player score and combo system
 #[derive(Debug, Clone, Resource)]
 pub struct ScoreSystem {
+    /// Cumulative attempt statistics, separate from the expiring combo.
+    pub run: RunStatistics,
     /// Current score
     pub score: u64,
     /// Current multiplier (1.0 - 99.9)
@@ -30,6 +97,7 @@ pub struct ScoreSystem {
 impl Default for ScoreSystem {
     fn default() -> Self {
         Self {
+            run: RunStatistics::default(),
             score: 0,
             multiplier: 1.0,
             chain: 0,
@@ -54,6 +122,8 @@ impl ScoreSystem {
         self.chain += 1;
         self.chain_timer = self.max_chain_time;
         self.multiplier = (1.0 + self.chain as f32 * 0.1).min(99.9);
+        self.run.max_chain = self.run.max_chain.max(self.chain);
+        self.run.max_multiplier = self.run.max_multiplier.max(self.multiplier);
         self.add_score(base_points);
     }
 

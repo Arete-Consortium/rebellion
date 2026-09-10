@@ -2,9 +2,11 @@
 
 The Intel/AMD package targets **64-bit Ubuntu 22.04 or newer**. It includes the game, all runtime artwork/audio, a launcher, source/compiler information and checksums. Rust is not needed to play the downloaded package. Other Linux distributions may work with equivalent libraries; they need their own playtest.
 
+**Controller required.** Matching Mac, Linux, Windows and browser candidates share their game source and runtime content. `PLAYTEST-MANIFEST.json` identifies those inputs, including the current run-results and stored-booster mechanics. Older archives may contain different mechanics or outdated instructions; choose all platform packages from the same successful Platform Playtest run.
+
 ## Download and play
 
-1. Open the repository's [Linux Playtest runs](https://github.com/Arete-Consortium/rebellion/actions/workflows/linux-playtest.yml), select the latest successful run for `codex/linux-playtest`, and download **Rebellion-linux-x86_64** under Artifacts. GitHub requires sign-in to download Actions artifacts; these downloads expire after 30 days.
+1. Open the repository's [Platform Playtest runs](https://github.com/Arete-Consortium/rebellion/actions/workflows/linux-playtest.yml), select the successful run matching the checkpoint being tested, and download **Rebellion-linux-x86_64** under Artifacts. Its **Verify package parity** job must pass before treating the four packages as a matched set. GitHub requires sign-in; Actions downloads expire after 30 days.
 2. Extract the downloaded artifact ZIP. It contains `Rebellion-linux-x86_64.tar.gz` and its checksum file.
 3. In a terminal in that folder:
 
@@ -29,11 +31,27 @@ Saves normally live in `~/.local/share/rebellion/` (or your configured XDG data 
 REBELLION_HOME="$HOME/rebellion-test-save" ./Rebellion-linux-x86_64/play.sh
 ```
 
-Use **Play → chapter → faction → difficulty → hull**. WASD moves, Space fires, IJKL aims, and Escape pauses. Xbox-compatible controllers use the game's existing gamepad support; detection, reconnect, rumble and mapping still need checking on your machine.
+Connect a controller, release the sticks/buttons, then press and release **A** to continue. Use **Play → chapter → faction → difficulty → hull**. The fixed layout uses Xbox-style button names:
+
+| Action | Input |
+| --- | --- |
+| Move | Left stick |
+| Aim and fire | Push right stick; center it to stop firing |
+| Thrust / hull ability | RT / LT |
+| Dodge / charged overload | RB + left-stick direction / LB |
+| Previous / next ammunition | X / B or D-pad left / right; autocannon hulls |
+| Select / use timed booster | D-pad up/down / Y |
+| Interact / confirm | A |
+| Pause / resume | Menu |
+| Menu navigation / back | Left stick or D-pad / B |
+
+Timed pickups store up to three doses each of Overclocker, Pyrolancea and X-Instinct. Select an occupied slot with D-pad up/down and press Y to use one dose. An empty or already-active selection spends nothing; holding Y cannot use another dose when the effect ends. Unused doses carry between missions, but death, a new run/hull selection or an explicit restart clears them. Repairs, capacitor and cooling pickups remain immediate.
+
+Keyboard, mouse and touch do not control player builds. Disconnect freezes play: reconnect, release all controls, then press and release A again. An existing pause menu remains paused. Options → Controls shows the layout. Follow the [controller playtest guide](https://github.com/Arete-Consortium/rebellion/blob/codex/linux-playtest/docs/CONTROLLER_PLAYTEST.md) to check physical detection, reconnect, stick feel, sound and rumble on your machine.
 
 ## Build from the repository on Ubuntu
 
-Check out `codex/linux-playtest` to get the current playtest work. Install a current stable Rust toolchain and these development libraries:
+Use a separate clean checkout of `codex/linux-playtest` for source builds. To reproduce a candidate, select the source commit in its `PLAYTEST-MANIFEST.json` and the compiler in `BUILD-INFO.txt`. Install the recorded Rust toolchain and these development libraries:
 
 The window, audio and input dependencies follow [Bevy 0.15's Linux setup](https://github.com/bevyengine/bevy/blob/v0.15.3/docs/linux_dependencies.md).
 
@@ -50,10 +68,10 @@ For another candidate, pass a fresh output directory, such as `bash scripts/pack
 
 The workflow runs the gameplay regression suite, packages the release executable, extracts it in a fresh temporary folder, verifies checksums/shared libraries, and starts the real game with Xvfb/software Vulkan and a muted isolated save. The package is uploaded only after that check succeeds. The software-rendering check does not certify hardware performance, sound, controller support or human playability.
 
-When reporting a problem, include `BUILD-INFO.txt`, your Ubuntu version, GPU, display session (X11 or Wayland), selected chapter/faction/hull, and what happened. Capture launch output with:
+When reporting a problem, include `BUILD-INFO.txt` and `PLAYTEST-MANIFEST.json`, your Ubuntu version, GPU, display session (X11 or Wayland), selected chapter/faction/hull, and what happened. Capture launch output with:
 
 ```sh
 RUST_LOG=info ./Rebellion-linux-x86_64/play.sh > rebellion-linux.log 2>&1
 ```
 
-Try the complete Caldari/Gallente three-mission route first. Check booster pickup/effect readability, boss health depletion, sound levels, pause/resume and controller behavior. See [the combat checkpoint](https://github.com/Arete-Consortium/rebellion/blob/codex/linux-playtest/docs/BOOSTER_COMBAT_PLAYTEST_2026-09-08.md) for the matching gameplay changes and remaining balance work.
+Try the complete Caldari/Gallente three-mission route first. Check stored-dose counts, D-pad selection and Y activation while dodging, effect/countdown readability, boss health depletion, sound levels, pause/resume and controller disconnect/reconnect. Confirm unused doses reach the next mission and an explicit restart clears them. Confirm results retain the best chain after the live combo expires, combat time pauses in menus, and terminal scores compare against the previous personal best. Complete human playthroughs and physical-device qualification remain open.
