@@ -9,7 +9,7 @@ PROFILE="${2:-release}"
 APP_NAME="${3:-Rebellion}"
 OUTPUT_DIR="${4:-dist}"
 BINARY="target/${TARGET}/${PROFILE}/rebellion"
-VERSION="${VERSION:-$(rg -m 1 '^version\s*=' Cargo.toml | sed -E 's/.*"([^"]+)"/\1/')}"
+VERSION="${VERSION:-$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)}"
 
 if [[ "${PROFILE}" != "release" && "${PROFILE}" != "debug" ]]; then
   echo "[package] unsupported profile '${PROFILE}' (expected 'debug' or 'release')"
