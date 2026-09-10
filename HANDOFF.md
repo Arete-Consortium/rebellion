@@ -1,19 +1,16 @@
 # Rebellion handoff — September 9, 2026
 
-The finishing target is a complete **Caldari–Gallente three-mission slice**, with both Minmatar–Amarr and Caldari–Gallente chapters exposed for playtesting. The [production plan](docs/PRODUCTION_PLAN.md) owns priorities and release gates. Start with the [run-results checkpoint](docs/RUN_RESULTS_PLAYTEST_2026-09-09.md) for current source and the local Mac candidate. The [manual booster checkpoint](docs/MANUAL_BOOSTER_PLAYTEST_2026-09-08.md) retains the latest Linux candidate and preceding Mac evidence.
+The finishing target is a complete **Caldari–Gallente three-mission slice**, with both Minmatar–Amarr and Caldari–Gallente chapters exposed for playtesting. The [production plan](docs/PRODUCTION_PLAN.md) owns priorities and release gates. Start with the [platform parity checkpoint](docs/PLATFORM_PARITY_2026-09-09.md) for the matching Mac, Linux, Windows and browser candidate, verification state and remaining acceptance. The owner requires similar content and mechanics on all versions.
 
 ## Source and candidate state
 
-September 9 follow-up: [run results and personal bests](docs/RUN_RESULTS_PLAYTEST_2026-09-09.md) implements retained chain/time, terminal records and new-attempt resets. Its local Mac candidate and fresh validation are separate from the September 8 Mac/Linux candidate described below. Start with this follow-up for current source changes.
+- Matching candidate source: `6bf8ca15c93a685c257956dcf1b816815833fbac` on `codex/linux-playtest`. [Platform Playtest run 34422890302](https://github.com/Arete-Consortium/rebellion/actions/runs/34422890302) succeeded for Apple Silicon Mac, Ubuntu x86_64, Windows x86_64 and browser packages. The final gate verified one clean source commit and identical source/configuration plus all 132 packaged assets.
+- Local packages: `dist/platform-parity-20260909/`. The extracted Mac app is `macos/Rebellion.app`; downloadable archives and CI startup/parity reports are in `artifacts/`. Browser files are in `web/Rebellion-web/`.
+- Fresh validation: 586 gameplay tests on Mac and Linux, 18 package-manifest tests, formatting and all-target Clippy. The Mac package passed signature/assets and isolated LaunchServices startup; Windows and Linux passed native extracted-package startup checks. The compiled browser game passed controller-fixture navigation, combat, pause/reconnect, natural death/results and score persistence after reload in Chrome 152.
+- Source and detailed evidence: [platform checkpoint](docs/PLATFORM_PARITY_2026-09-09.md), with local reports at `build/playtest-review/platform-parity-20260909/`. Physical-controller detection, feel, sound, rumble, hardware performance and complete human playthroughs remain unqualified.
+- The original workspace remains on `codex/finishability-pass`, HEAD `226f3bc`, with extensive earlier staged, unstaged and untracked work. It was not switched or committed wholesale; candidate publication used a separate checkout. Its branch name and HEAD alone do not identify its current game content.
 
-- Local checkout observed September 9: `codex/finishability-pass`, HEAD `226f3bc`, with extensive existing staged, unstaged and untracked work. Preserve those changes; the local branch name and HEAD alone do not identify the candidate's game content.
-- Recorded candidate source: `80f311f4d51ca6d2b283bb15c8370c3241fad3e6` on `codex/linux-playtest`. Its checkpoint records 338 frozen source, test, asset and packaging inputs matching that Git tree.
-- Apple Silicon Mac: `dist/manual-boosters-20260908/Rebellion.app` and the adjacent `Rebellion.app.zip`.
-- Intel/AMD Ubuntu x86_64: the [recorded candidate download](https://github.com/Arete-Consortium/rebellion/actions/runs/34306848068/artifacts/10087123527). GitHub sign-in is required; the recorded expiration is October 9, 2026 UTC. Use the [Linux instructions](docs/LINUX_PLAYTEST.md) for extraction, dependencies and isolated saves.
-
-The candidate checkpoint records **570 passing tests**, formatting and all-target Clippy with warnings denied; native HUD/controller-guide captures; extracted Mac startup/signature checks; and Ubuntu 22.04 extracted-package checks under Xvfb/software Vulkan. These are September 8 checkpoint results, not a fresh verification of every change in the current working tree. Evidence lives in `build/playtest-review/manual-boosters-20260908/`, including source manifests, `linux-ci-verification.json`, package logs and captures.
-
-Scripted controller pilots completed all three missions for Caldari/Kestrel and Gallente/Tristan with ordinary right-stick fire and no forced kills. Content/drop randomness was unseeded. Physical controller detection, feel, sound, rumble, hardware performance and complete human playthroughs remain unqualified. The longer Tristan boss encounters remain a human pacing check.
+The [earlier run-results checkpoint](docs/RUN_RESULTS_PLAYTEST_2026-09-09.md) and [manual-booster checkpoint](docs/MANUAL_BOOSTER_PLAYTEST_2026-09-08.md) retain the preceding local Mac and Mac/Linux candidates. Their old archives remain historical evidence; use the platform checkpoint for current downloads.
 
 ## Current player behavior
 

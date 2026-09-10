@@ -1,5 +1,10 @@
 # Rebellion improvement and production plan
 
+September 9 platform requirement: all versions must share content and mechanics.
+Use the [platform parity checkpoint](PLATFORM_PARITY_2026-09-09.md) and require
+its four-package source/asset gate before promoting a matched candidate. Device
+acceptance remains separate for each platform.
+
 Prepared 2026-09-07. Status: proposed production roadmap for the existing
 `codex/finishability-pass` working tree, based on source revision `226f3bc` and
 the local repairs. This is the active planning document; the

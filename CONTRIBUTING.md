@@ -127,7 +127,7 @@ rebellion/
 │       └── triglavian_invasion/ # Triglavian Invasion (in development)
 ├── assets/                  # Sprites, icons
 ├── config/                  # JSON definitions (enemies, bosses, dialogue, stages)
-├── web/                     # WASM build files and HTML shell
+├── web/                     # Browser source shell; generated builds go in dist/
 ├── docs/                    # Design documents and narrative bible
 └── Cargo.toml               # Dependencies (Bevy 0.15, bevy_egui)
 ```
@@ -135,8 +135,8 @@ rebellion/
 ## Building for Web (WASM)
 
 ```bash
-./build-wasm.sh
-cd web && python3 -m http.server 8080
+bash build-wasm.sh dist/web-build
+python3 -m http.server 8080 --bind 127.0.0.1 --directory dist/web-build
 ```
 
 ## Areas for Contribution
