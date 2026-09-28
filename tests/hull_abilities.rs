@@ -131,11 +131,17 @@ fn receive_damage(app: &mut App, player: Entity, source: DamageSource) -> f32 {
             .world_mut()
             .spawn((
                 Enemy,
+                EnemyStats { speed: 0.0, ..default() },
                 EnemyAI {
                     active: true,
                     ..default()
                 },
-                DisintegratorRamp::new(600.0, 1.0, 1.0),
+                // This fixture compares defenses against an established beam.
+                // Acquisition grace/range reset are exercised by damage_tests.
+                DisintegratorRamp {
+                    time_on_target: DISINTEGRATOR_LOCK_SECS,
+                    ..DisintegratorRamp::new(600.0, 1.0, 1.0)
+                },
                 Transform::from_translation(pos + Vec3::Y * 100.0),
             ))
             .id(),
@@ -162,7 +168,7 @@ fn defensive_abilities_protect_against_projectiles_terrain_and_beams_then_expire
             ] {
                 let (mut app, player) = setup(state);
                 let normal = receive_damage(&mut app, player, source);
-                assert!(normal > 0.0, "fixture must deal real damage");
+                assert!(normal > 0.0, "{state:?}/{source:?}: fixture must deal real damage");
                 activate(&mut app, player, kind);
                 let protected = receive_damage(&mut app, player, source);
                 assert!(
