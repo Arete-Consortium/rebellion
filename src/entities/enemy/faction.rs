@@ -18,7 +18,7 @@ pub(super) fn get_enemy_color(type_id: u32) -> Color {
         // Minmatar - Rust (frigates)
         587 | 585 | 598 | 622 => COLOR_MINMATAR,
         // Triglavian - Crimson (Damavik, Vedmak, Leshak, Kikimora, Drekavac, Nergal)
-        47269 | 47270 | 47271 | 49710 | 49711 | 52250 => COLOR_TRIGLAVIAN,
+        47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => COLOR_TRIGLAVIAN,
         _ => Color::srgb(0.5, 0.5, 0.5),
     }
 }
@@ -59,7 +59,7 @@ pub(super) fn get_faction_weapon(type_id: u32) -> WeaponType {
         // Minmatar - Autocannons
         585 | 587 | 598 => WeaponType::Autocannon,
         // Triglavian — Disintegrators (Damavik, Vedmak, Leshak, Kikimora, Drekavac, Nergal)
-        47269 | 47270 | 47271 | 49710 | 49711 | 52250 => WeaponType::Disintegrator,
+        47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => WeaponType::Disintegrator,
         // EDENCOM - Vorton projectors (chain lightning)
         54731..=54733 => WeaponType::Vorton,
         _ => WeaponType::Laser,
@@ -94,7 +94,7 @@ pub fn get_player_weapon_type(type_id: u32, faction: Faction) -> WeaponType {
         // EDENCOM — Vorton projectors (chain lightning)
         54731..=54733 => WeaponType::Vorton,
         // Triglavian + derived — Entropic disintegrators (ramping damage)
-        47269 | 47270 | 47271 | 49710 | 49711 | 52250 => WeaponType::Disintegrator,
+        47269 | 47270 | 47271 | 49710 | 49711 | 52250 | 52252 | 52254 => WeaponType::Disintegrator,
         // Caldari missile hulls (Kestrel, Condor, Hawk rockets, Jackdaw, Caracal, Drake)
         602 | 583 | 11379 | 34828 | 621 | 24698 => WeaponType::MissileLauncher,
         // Caldari hybrid hulls (Merlin, Cormorant) — railguns

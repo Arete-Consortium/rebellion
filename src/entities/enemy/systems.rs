@@ -31,6 +31,7 @@ pub(super) fn enemy_movement(
     let player_pos = player_tracker.position;
 
     for (mut transform, stats, mut ai, sprite_rotation) in query.iter_mut() {
+        if !ai.active || stats.health <= 0.0 { continue; }
         let pos = transform.translation.truncate();
         let movement_dt = dt
             * player_ability
@@ -72,7 +73,8 @@ pub(super) fn enemy_movement(
                 // Fast sine-wave, wide amplitude, harassing movement
                 let amplitude = 200.0;
                 let frequency = 4.0;
-                let x = (ai.timer * frequency + ai.phase).sin() * amplitude * dt * 2.0;
+                // Velocity is integrated once below, not twice per tick.
+                let x = (ai.timer * frequency + ai.phase).sin() * amplitude;
                 Vec2::new(x, -stats.speed * 0.7)
             }
             EnemyBehavior::Spawner => {
@@ -140,6 +142,7 @@ pub(super) fn enemy_shooting(
             &Transform,
             &mut EnemyWeapon,
             &EnemyAI,
+            &EnemyStats,
             Option<&crate::entities::escort::EscortAttacker>,
         ),
         With<Enemy>,
@@ -150,8 +153,8 @@ pub(super) fn enemy_shooting(
     let player_pos = player_tracker.position;
     let player_vel = player_tracker.velocity;
 
-    for (transform, mut weapon, ai, escort_target) in query.iter_mut() {
-        if !ai.active {
+    for (transform, mut weapon, ai, stats, escort_target) in query.iter_mut() {
+        if !ai.active || stats.health <= 0.0 || weapon.fire_rate <= 0.0 || weapon.damage <= 0.0 {
             continue;
         }
 
@@ -216,7 +219,7 @@ pub(super) fn disintegrator_update(
         ),
         With<crate::entities::Player>,
     >,
-    mut enemy_query: Query<(&Transform, &mut DisintegratorRamp, &EnemyAI), With<Enemy>>,
+    mut enemy_query: Query<(&Transform, &mut DisintegratorRamp, &EnemyAI, &EnemyStats), With<Enemy>>,
     mut damage_events: EventWriter<PlayerDamagedEvent>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
@@ -229,8 +232,8 @@ pub(super) fn disintegrator_update(
     };
     let player_pos = player_transform.translation.truncate();
 
-    for (enemy_transform, mut disintegrator, ai) in enemy_query.iter_mut() {
-        if !ai.active {
+    for (enemy_transform, mut disintegrator, ai, stats) in enemy_query.iter_mut() {
+        if !ai.active || stats.health <= 0.0 {
             disintegrator.update(dt, false);
             continue;
         }

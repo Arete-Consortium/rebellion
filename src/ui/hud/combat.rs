@@ -111,7 +111,13 @@ pub fn update_ability_indicator(
 
     // Update ability name
     for mut text in text_query.iter_mut() {
-        **text = ability.ability_type.name().to_string();
+        **text = if ability.is_active {
+            format!("{} · ACTIVE", ability.ability_type.name())
+        } else if ability.cooldown_progress() >= 1.0 {
+            format!("{} · READY", ability.ability_type.name())
+        } else {
+            format!("{} · RECHARGING", ability.ability_type.name())
+        };
     }
 
     // Update cooldown bar

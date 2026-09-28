@@ -46,7 +46,7 @@ pub fn spawn_hud(
                             ScoreText,
                             Text::new("SCORE: 0"),
                             TextFont {
-                                font_size: 28.0,
+                                font_size: 24.0,
                                 ..default()
                             },
                             TextColor(Color::WHITE),
@@ -67,7 +67,7 @@ pub fn spawn_hud(
                                 font_size: 16.0,
                                 ..default()
                             },
-                            TextColor(Color::srgb(0.6, 0.6, 0.6)),
+                            TextColor(Color::srgb(0.78, 0.82, 0.86)),
                         ));
                         if !itch_mode.enabled {
                             left.spawn((

@@ -26,6 +26,7 @@ pub mod combat_reactions;
 pub mod debug_overlay;
 pub mod rng;
 pub mod transport;
+pub mod enemy_threats;
 
 pub use rng::PresentationRng;
 
@@ -70,8 +71,9 @@ impl Plugin for PresentationPlugin {
             )
             .add_systems(
                 Update,
-                transport::draw_transport_objective
-                    .run_if(in_state(crate::core::GameState::Playing)),
+                (transport::draw_transport_objective, enemy_threats::draw_enemy_threats)
+                    .run_if(in_state(crate::core::GameState::Playing)
+                        .or(in_state(crate::core::GameState::BossFight))),
             );
     }
 }
