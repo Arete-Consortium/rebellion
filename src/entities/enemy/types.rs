@@ -66,7 +66,7 @@ impl EnemyBehavior {
             EnemyBehavior::Homing => 0.5,
             EnemyBehavior::Orbital => 0.4,
             EnemyBehavior::Sniper => 0.9,   // Precision platform
-            EnemyBehavior::Kamikaze => 0.0, // Doesn't shoot
+            EnemyBehavior::Kamikaze => 0.0, // Direct fire; rush is the primary threat
             EnemyBehavior::Weaver => 0.3,
             EnemyBehavior::Spawner => 0.2,
             EnemyBehavior::Tank => 0.5,
@@ -247,6 +247,9 @@ impl Default for DisintegratorRamp {
     }
 }
 
+/// Visible lock-on grace before continuous damage begins; leaving range resets it.
+pub const DISINTEGRATOR_LOCK_SECS: f32 = 0.65;
+
 impl DisintegratorRamp {
     /// Create a new disintegrator with specified parameters
     pub fn new(base_damage: f32, ramp_max: f32, ramp_time: f32) -> Self {
@@ -262,9 +265,10 @@ impl DisintegratorRamp {
     pub fn update(&mut self, dt: f32, hitting_target: bool) {
         if hitting_target {
             self.time_on_target += dt;
-            let ramp_progress = (self.time_on_target / self.ramp_time).min(1.0);
+            let ramp_progress = ((self.time_on_target - DISINTEGRATOR_LOCK_SECS).max(0.0)
+                / self.ramp_time.max(0.01)).min(1.0);
             self.current_mult = 1.0 + (self.ramp_max - 1.0) * ramp_progress;
-            self.beam_active = true;
+            self.beam_active = self.time_on_target >= DISINTEGRATOR_LOCK_SECS;
             self.beam_intensity = 0.3 + 0.7 * ramp_progress; // 30% to 100% intensity
         } else {
             // Reset ramp when not hitting
@@ -282,7 +286,7 @@ impl DisintegratorRamp {
 
     /// Get ramp progress (0.0 to 1.0)
     pub fn ramp_progress(&self) -> f32 {
-        (self.time_on_target / self.ramp_time).min(1.0)
+        ((self.time_on_target - DISINTEGRATOR_LOCK_SECS).max(0.0) / self.ramp_time.max(0.01)).min(1.0)
     }
 }
 

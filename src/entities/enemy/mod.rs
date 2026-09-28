@@ -7,6 +7,8 @@ mod faction;
 mod spawn;
 mod systems;
 mod types;
+#[cfg(test)]
+mod damage_tests;
 
 // Re-export all public types
 pub use ai::PlayerTracker;
@@ -50,7 +52,8 @@ impl Plugin for EnemyPlugin {
                     enemy_movement.after(crate::systems::ability::AbilityUpdate),
                     enemy_shooting,
                 )
-                    .chain(),
+                    .chain()
+                    .before(crate::simulation::CollisionPhase::Detection),
                 // These can run in parallel
                 update_enemy_ship_rotation,
                 disintegrator_update.after(crate::systems::ability::AbilityUpdate),

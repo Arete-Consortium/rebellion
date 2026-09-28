@@ -74,6 +74,9 @@ pub(super) fn enemy_spatial_awareness(
         .map(|(e, t, ai)| (e, t.translation.truncate(), ai.behavior))
         .collect();
 
+    // Sorting makes escort slots stable across ECS iteration-order changes.
+    let mut enemy_data = enemy_data;
+    enemy_data.sort_by_key(|(entity, _, _)| entity.to_bits());
     // Identify leader positions (Spawner and Tank enemies act as squad leaders)
     let leaders: Vec<Vec2> = enemy_data
         .iter()
@@ -144,7 +147,7 @@ pub(super) fn enemy_spatial_awareness(
         // 4. Coordinated tactics — escort enemies rally near leaders
         // Non-leader enemies are gently pulled toward the nearest Spawner or Tank
         let is_leader = matches!(ai.behavior, EnemyBehavior::Spawner | EnemyBehavior::Tank);
-        if !is_leader && !leaders.is_empty() {
+        if !is_leader && ai.behavior != EnemyBehavior::Kamikaze && !leaders.is_empty() {
             let mut nearest_leader: Option<Vec2> = None;
             let mut nearest_dist = LEADER_RALLY_RADIUS;
             for &leader_pos in &leaders {
@@ -155,18 +158,36 @@ pub(super) fn enemy_spatial_awareness(
                 }
             }
             if let Some(leader_pos) = nearest_leader {
-                let to_leader = leader_pos - pos;
-                let dist = to_leader.length();
-                // Only pull if beyond comfortable escort distance (40 units)
-                if dist > 40.0 {
-                    let cohesion = to_leader.normalize_or_zero()
-                        * (dist / LEADER_RALLY_RADIUS)
-                        * LEADER_COHESION_STRENGTH;
-                    impulse += cohesion;
-                }
+                let slot = enemy_data.iter()
+                    .filter(|(_, _, behavior)| !matches!(behavior,
+                        EnemyBehavior::Spawner | EnemyBehavior::Tank | EnemyBehavior::Kamikaze))
+                    .position(|(other, _, _)| *other == entity).unwrap_or(0);
+                let to_station = leader_pos + escort_offset(slot) - pos;
+                // Alternating wings create crossfire lanes around the leader.
+                impulse += (to_station * 0.8).clamp_length_max(LEADER_COHESION_STRENGTH);
+
             }
         }
 
         ai.dodge_impulse = impulse.clamp_length_max(MAX_DODGE_IMPULSE);
+    }
+}
+
+/// Alternating wings, with further rows trailing their leader.
+fn escort_offset(slot: usize) -> Vec2 {
+    let side = if slot % 2 == 0 { -1.0 } else { 1.0 };
+    let row = (slot / 2) as f32;
+    Vec2::new(side * (65.0 + row * 18.0), -25.0 + row * 28.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn escorts_take_separate_wings_and_rows() {
+        assert!(escort_offset(0).x < 0.0 && escort_offset(1).x > 0.0);
+        for a in 0..8 { for b in a+1..8 {
+            assert!(escort_offset(a).distance(escort_offset(b)) > 25.0);
+        }}
     }
 }

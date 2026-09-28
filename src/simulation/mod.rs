@@ -31,6 +31,7 @@ use sim_id::assign_sim_ids;
 use state_hash::{compute_state_hash_system, SimStateHash};
 
 pub mod detect_collisions;
+pub mod enemy_contacts;
 pub mod fixed_step;
 pub mod resolve_damage;
 pub mod resolve_deaths;
@@ -76,6 +77,8 @@ impl Plugin for SimulationPlugin {
             .init_resource::<SimIdGenerator>()
             .init_resource::<SimStateHash>()
             .init_resource::<SimulationDiagnostics>()
+            .init_resource::<enemy_contacts::ShipContactGrace>()
+            .add_event::<enemy_contacts::EnemyShipContact>()
             .add_event::<PlayerEnvironmentContact>()
             .add_event::<ProjectileEnvironmentContact>()
             .add_event::<EnvironmentDamageAppliedEvent>()
@@ -94,6 +97,7 @@ impl Plugin for SimulationPlugin {
                     update_spatial_grid,
                     detect_player_projectile_hits,
                     detect_enemy_projectile_hits,
+                    enemy_contacts::detect_enemy_ship_contacts,
                     detect_player_environment_contacts,
                     detect_player_projectile_environment_hits,
                     detect_enemy_projectile_environment_hits,
@@ -108,6 +112,7 @@ impl Plugin for SimulationPlugin {
                     enrich_contacts,
                     resolve_player_projectile_damage,
                     resolve_enemy_projectile_damage,
+                    enemy_contacts::resolve_enemy_ship_contacts,
                     resolve_escort_damage,
                     resolve_player_environment_contacts,
                     resolve_projectile_environment_contacts,

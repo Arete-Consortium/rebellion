@@ -160,7 +160,7 @@ pub fn spawn_enemy(
     let total_rotation = base_rotation + correction;
 
     // Use sprites (2D camera compatible)
-    if let Some(texture) = sprite {
+    let entity = if let Some(texture) = sprite {
         commands
             .spawn((
                 Enemy,
@@ -196,7 +196,15 @@ pub fn spawn_enemy(
                 Transform::from_xyz(position.x, position.y, LAYER_ENEMIES),
             ))
             .id()
+    };
+    // Generic wave spawns do not pass through spawn_variant. A disintegrator
+    // hull must receive the beam component here, never a zero-damage gun.
+    if weapon_type == WeaponType::Disintegrator {
+        commands.entity(entity)
+            .remove::<EnemyWeapon>()
+            .insert(DisintegratorRamp::default());
     }
+    entity
 }
 
 /// Spawner update - spawns fighter escorts from Spawner enemies
