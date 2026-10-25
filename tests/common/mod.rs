@@ -19,10 +19,8 @@
 //!   unchanged.
 //! - Each `tests/save_disk_*.rs` is one Cargo test target, which
 //!   compiles into one binary and runs in one process. Splitting
-//!   the four scenarios into four files costs ~4 × 5 seconds of
-//!   compile time, but eliminates the env-var race class
-//!   entirely. The `dynamic_linking` Bevy dev-dep makes
-//!   per-test binary compile much cheaper than release builds.
+//!   the four scenarios into four files adds compile work, but
+//!   eliminates the env-var race class entirely.
 
 use std::env;
 use std::fs;
