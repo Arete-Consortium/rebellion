@@ -192,7 +192,9 @@ jobs:
           sudo apt-get install -y libasound2-dev libudev-dev libxkbcommon-dev libwayland-dev
 
       - name: Run benchmarks
-        run: cargo bench --bench game_systems -- --output-format bencher | tee bench-output.txt
+        run: |
+          set -o pipefail
+          cargo bench --bench game_systems -- --output-format bencher | tee bench-output.txt
 
       - name: Store benchmark results
         uses: benchmark-action/github-action-benchmark@v1

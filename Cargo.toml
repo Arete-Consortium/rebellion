@@ -98,7 +98,7 @@ features = [
 name = "rebellion"
 
 [dev-dependencies]
-bevy = { version = "0.15", default-features = false, features = ["dynamic_linking"] }
+bevy = { version = "0.15", default-features = false }
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [[bench]]
@@ -117,10 +117,6 @@ lto = "thin"
 codegen-units = 1
 strip = "symbols"
 panic = "abort"
-
-# Bench profile inherits release settings
-[profile.bench]
-# Note: panic setting cannot differ from release profile, using abort
 
 # WASM release profile - optimize for size
 [profile.wasm-release]
